@@ -8,7 +8,7 @@ Independent Angular frontend deployment for Dokploy.
 - Build type: Dockerfile
 - Build path/context: `/frontend`
 - Dockerfile: `/frontend/Dockerfile`
-- Internal port: `80`
+- Internal port: `80` or `3000` (the container listens on both to prevent Dokploy gateway port mismatches)
 - Health check: `/health`
 
 Set the runtime environment variable below in Dokploy:
