@@ -34,7 +34,10 @@
             "production": { "buildTarget": "superoffer:build:production" },
             "development": { "buildTarget": "superoffer:build:development" }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          }
         }
       }
     }

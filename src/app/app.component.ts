@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 type Screen =
   | 'landing' | 'register' | 'status' | 'login' | 'plans' | 'dashboard'
   | 'campaign' | 'criteria' | 'matching' | 'students' | 'profile'
-  | 'shortlist' | 'offer' | 'offers';
+  | 'shortlist' | 'offer' | 'offers' | 'student-login' | 'student-portal';
 type RegistrationStatus = 'pending' | 'accepted' | 'rejected';
 
 interface Student {
@@ -31,8 +31,12 @@ interface Student {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  readonly apiBaseUrl = (window as Window & { SUPER_OFFER_API_URL?: string }).SUPER_OFFER_API_URL || 'http://localhost:3000/api/v1';
+  readonly apiBaseUrl = (window as Window & { SUPER_OFFER_API_URL?: string }).SUPER_OFFER_API_URL || '/api/v1';
   apiStatus: 'checking' | 'connected' | 'offline' = 'checking';
+  apiError = '';
+  studentPortalLoading = false;
+  studentProfile: any = null;
+  studentOffers: any[] = [];
   screen: Screen = 'landing';
   registrationStep = 1;
   registrationStatus: RegistrationStatus = 'pending';
@@ -100,6 +104,39 @@ export class AppComponent {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${this.apiBaseUrl}${path}`, {
+      ...options,
+      headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(body?.message || `API request failed with status ${response.status}`);
+    }
+    this.apiStatus = 'connected';
+    this.apiError = '';
+    return body as T;
+  }
+
+  async openStudentPortal(): Promise<void> {
+    this.go('student-portal');
+    this.studentPortalLoading = true;
+    this.apiError = '';
+    try {
+      const [profile, offers] = await Promise.all([
+        this.apiRequest<any>('/students/me'),
+        this.apiRequest<{ results: any[] }>('/students/me/offers')
+      ]);
+      this.studentProfile = profile;
+      this.studentOffers = offers.results;
+    } catch (error) {
+      this.apiStatus = 'offline';
+      this.apiError = error instanceof Error ? error.message : 'Unable to connect to the API';
+    } finally {
+      this.studentPortalLoading = false;
+    }
+  }
+
   nextRegistrationStep(): void {
     if (this.registrationStep < 3) this.registrationStep += 1;
     else this.go('status');
@@ -113,17 +150,14 @@ export class AppComponent {
     this.screen = 'matching';
     this.matchingProgress = 8;
     try {
-      const response = await fetch(`${this.apiBaseUrl}/university/search`, {
+      const body = await this.apiRequest<{ results: Student[] }>('/university/search', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ sort: 'MATCH_SCORE', page: 1, page_size: 25 })
       });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      const body = await response.json();
       this.students = body.results;
-      this.apiStatus = 'connected';
-    } catch {
+    } catch (error) {
       this.apiStatus = 'offline';
+      this.apiError = error instanceof Error ? error.message : 'Matching API failed';
     }
     const timer = window.setInterval(() => {
       this.matchingProgress = Math.min(100, this.matchingProgress + 8);
@@ -140,23 +174,21 @@ export class AppComponent {
     student.shortlisted = !student.shortlisted;
     this.notify(student.shortlisted ? `${student.name} added to shortlist` : `${student.name} removed from shortlist`);
     try {
-      const response = await fetch(`${this.apiBaseUrl}/university/shortlists/students/${student.id}`, {
+      await this.apiRequest(`/university/shortlists/students/${student.id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ shortlisted: student.shortlisted })
       });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      this.apiStatus = 'connected';
-    } catch {
+    } catch (error) {
       this.apiStatus = 'offline';
+      student.shortlisted = !student.shortlisted;
+      this.notify(error instanceof Error ? error.message : 'Shortlist API failed');
     }
   }
 
   async sendOffer(): Promise<void> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/university/offers`, {
+      await this.apiRequest('/university/offers', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           student_id: this.selectedStudent.id,
           program: this.selectedStudent.program,
@@ -165,14 +197,12 @@ export class AppComponent {
           award: '30% Global Excellence Scholarship'
         })
       });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
-      this.apiStatus = 'connected';
       this.offerSent = true;
       this.notify(`Offer sent to ${this.selectedStudent.name} through the API`);
       window.setTimeout(() => this.go('offers'), 900);
-    } catch {
+    } catch (error) {
       this.apiStatus = 'offline';
-      this.notify('Backend is offline — start the API and try again');
+      this.notify(error instanceof Error ? error.message : 'Offer API failed');
     }
   }
 
