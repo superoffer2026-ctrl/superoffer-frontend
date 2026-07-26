@@ -1,0 +1,14 @@
+node_modules
+dist
+.angular
+.git
+.DS_Store
+npm-debug.log*
+Dockerfile*
+README.md
+API
+Database
+Modules
+Product
+Users
+Workflows

@@ -1,0 +1,210 @@
+/* Keep the profile builder at familiar form typography, independent of offer-page scaling. */
+.onboarding .onboarding-top h1{font-size:32px}
+.onboarding .onboarding-top>div:first-child>p:last-child{font-size:14px;line-height:1.5}
+.onboarding .eyebrow{font-size:11px!important}
+.onboarding h2,.onboarding .profile-form h2{font-size:22px}
+.onboarding h3{font-size:17px}
+.onboarding p{font-size:14px;line-height:1.5}
+.onboarding small{font-size:11px}
+.onboarding button,.onboarding .primary-btn,.onboarding .secondary-btn,.onboarding .submit-profile{font-size:14px}
+.onboarding label,.onboarding .form-grid label{font-size:13px}
+.onboarding input,.onboarding select,.onboarding textarea,
+.onboarding .form-grid input,.onboarding .form-grid select,.onboarding .profile-form textarea{font-size:14px;line-height:1.45}
+.onboarding .profile-stepper button strong{font-size:12px}
+.onboarding .profile-stepper button small{font-size:10px}
+.onboarding .education-choice strong{font-size:16px}
+.onboarding .education-choice b,.onboarding .education-choice small{font-size:12px}
+.onboarding .document-list strong{font-size:13px}
+.onboarding .document-list small{font-size:11px}
+.onboarding .review-grid small{font-size:10px}
+.onboarding .review-grid strong{font-size:13px}
+.onboarding .review-step>p,.onboarding .consent{font-size:13px!important}
+
+/* Full-screen profile workspace with a hamburger step drawer. */
+.content.onboarding{width:100%;max-width:none!important;min-height:calc(100vh - 76px);padding:26px 34px 34px!important;background:#f7f9f7}
+.onboarding-heading{display:flex;align-items:flex-start;gap:15px;min-width:0}
+.profile-hamburger{display:none}
+.profile-hamburger span{display:block;width:19px;height:2px;border-radius:2px;background:#17231d}
+.onboarding .onboarding-layout{display:grid!important;grid-template-columns:minmax(250px,25%) minmax(0,75%);gap:22px;align-items:start}
+.onboarding .profile-form{width:100%!important;max-width:none!important;min-height:calc(100vh - 220px);margin:0!important;padding:34px 42px;border-radius:16px}
+.onboarding .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+.profile-drawer{position:sticky!important;z-index:1;left:auto;top:18px;bottom:auto;width:100%!important;height:auto;max-height:calc(100vh - 110px);padding:18px!important;display:flex!important;flex-direction:column;grid-template-columns:none!important;gap:4px!important;overflow-y:auto!important;border:1px solid #dfe6e1!important;border-radius:16px!important;background:#fff;box-shadow:none;transform:none;transition:none}
+.profile-drawer.open{transform:none}
+.profile-drawer-backdrop{display:none}
+.profile-drawer-head{display:flex;align-items:center;justify-content:space-between;padding:7px 5px 17px;margin-bottom:8px;border-bottom:1px solid #e3e9e5}
+.profile-drawer-head small,.profile-drawer-head strong{display:block}.profile-drawer-head small{font-size:10px;color:#0a7c55;letter-spacing:.13em;font-weight:900}.profile-drawer-head strong{font-size:17px;margin-top:4px}.profile-drawer-head>button{display:none}
+.onboarding .profile-drawer .journey-label{display:block;padding:10px 8px;font-size:10px}
+.onboarding .profile-drawer>button{width:100%;min-width:0;display:flex;align-items:center;gap:12px;padding:12px!important;text-align:left;border:0;border-radius:10px;background:transparent;color:#53605a;cursor:pointer}
+.onboarding .profile-drawer>button>span{width:30px;height:30px;flex:0 0 auto;margin:0;border-radius:9px;display:grid;place-items:center;background:#eef2ef;font-size:11px;font-weight:900}
+.onboarding .profile-drawer>button>div{min-width:0}.onboarding .profile-drawer>button strong{font-size:13px}.onboarding .profile-drawer>button small{font-size:10px}.onboarding .profile-drawer>button.current{background:#e8f6ef;color:#087a50}.onboarding .profile-drawer>button.current>span{background:#087a50;color:#fff}.onboarding .profile-drawer>button.complete>span{background:#e5f6ee;color:#087a50}
+
+@media(max-width:720px){
+  .content.onboarding{padding:18px 14px 24px!important;min-height:calc(100vh - 64px)}
+  .onboarding .onboarding-top h1{font-size:28px}
+  .onboarding h2,.onboarding .profile-form h2{font-size:20px}
+  .onboarding p{font-size:13px}
+  .onboarding .onboarding-top{gap:16px}
+  .onboarding-heading{gap:10px}
+  .onboarding .profile-form{min-height:calc(100vh - 245px);padding:24px 18px}
+  .onboarding .form-grid{grid-template-columns:1fr;column-gap:0}
+  .onboarding .onboarding-layout{grid-template-columns:1fr;gap:14px}
+  .profile-drawer{position:relative!important;top:auto;max-height:none;width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;padding:10px!important}
+  .profile-drawer-head,.onboarding .profile-drawer .journey-label{grid-column:1/-1}
+  .onboarding .profile-drawer>button{padding:9px!important;gap:7px}
+  .onboarding .profile-drawer>button>span{width:26px;height:26px}
+  .onboarding .profile-drawer>button strong{font-size:10px}
+  .onboarding .profile-drawer>button small{display:none}
+}
+
+/* Equal-height profile columns with normal, readable typography. */
+@media(min-width:721px){
+  .onboarding .onboarding-top{padding-top:4px;padding-bottom:7px}
+  .onboarding .onboarding-top h1{font-size:27px;line-height:1.12;margin:0 0 3px}
+  .onboarding .onboarding-top>div:first-child>p:last-child{font-size:12px}
+  .onboarding .onboarding-layout{height:calc(100vh - 128px);min-height:560px;align-items:stretch}
+  .onboarding .profile-drawer,
+  .onboarding .profile-form{height:100%;min-height:0;max-height:none;box-sizing:border-box}
+  .onboarding .profile-drawer{position:relative!important;top:0;overflow-y:auto;padding:10px 16px!important}
+  .profile-drawer-head{padding:4px 5px 8px;margin-bottom:3px}
+  .profile-drawer-head strong{font-size:17px}
+  .onboarding .profile-drawer .journey-label{padding:5px 8px}
+  .onboarding .profile-drawer>button{padding:7px 10px!important;gap:10px}
+  .onboarding .profile-drawer>button>span{width:28px;height:28px}
+  .onboarding .profile-drawer>button strong{font-size:11px}
+  .onboarding .profile-drawer>button small{font-size:9px}
+  .onboarding .profile-form{overflow-y:auto;padding-top:20px}
+}
+
+/* Profile builder typography: +2px only. */
+.onboarding .onboarding-top h1{font-size:29px}
+.onboarding .onboarding-top>div:first-child>p:last-child{font-size:14px}
+.onboarding h2,.onboarding .profile-form h2{font-size:21px}
+.onboarding h3{font-size:17px}
+.onboarding p{font-size:14px}
+.onboarding small{font-size:12px}
+.onboarding button,.onboarding .primary-btn,.onboarding .secondary-btn,.onboarding .submit-profile{font-size:14px}
+.onboarding label,.onboarding .form-grid label{font-size:13px}
+.onboarding input,.onboarding select,.onboarding textarea,
+.onboarding .form-grid input,.onboarding .form-grid select,.onboarding .profile-form textarea{font-size:14px}
+.onboarding .profile-drawer>button strong{font-size:13px}
+.onboarding .profile-drawer>button small{font-size:11px}
+.onboarding .profile-drawer-head strong{font-size:19px}
+.onboarding .profile-drawer-head small{font-size:12px}
+.onboarding .profile-drawer .journey-label{font-size:12px}
+.onboarding .profile-drawer>button>span{font-size:13px}
+
+/* Submitted profile: flat, editorial layout instead of nested dashboard cards. */
+.profile-centre{background:#fff!important}
+.profile-centre .profile-centre-head{margin-bottom:20px}
+.profile-centre .live-profile-status{border:0;background:#eef8f3;padding:10px 12px}
+.profile-centre .profile-health-grid{gap:0;margin:0 0 30px;background:#f5f8f6;border-radius:14px;overflow:hidden}
+.profile-centre .profile-health-card,
+.profile-centre .profile-health-card.needs-attention{border:0;border-radius:0;background:transparent;padding:17px 20px}
+.profile-centre .profile-health-card+.profile-health-card{border-left:1px solid #dfe7e2}
+.profile-centre .profile-centre-layout{grid-template-columns:minmax(0,1fr) 330px;gap:32px}
+.profile-centre .saved-profile-hero{border:0;border-radius:0;box-shadow:none;padding:18px 0 24px;margin:0;border-bottom:1px solid #e3e9e5}
+.profile-centre .saved-avatar{border-radius:50%}
+.profile-centre .saved-section-grid{gap:0 28px}
+.profile-centre .saved-section-card{border:0;border-radius:0;box-shadow:none;padding:24px 0;background:transparent}
+.profile-centre .saved-section-card:nth-child(n+3){border-top:1px solid #e3e9e5}
+.profile-centre .saved-section-title{border:0;padding:0 0 14px}
+.profile-centre .saved-section-card dl{margin-top:4px}
+.profile-centre .document-checklist{border:0;border-radius:14px;box-shadow:none;background:#f3f8f5;padding:24px 20px}
+.profile-centre .document-mini-list>div{border-top:1px solid #dfe8e3;padding:12px 0}
+.profile-centre .document-mini-list>div:first-child{border-top:0}
+.profile-centre .student-account-settings{border:0;margin-top:36px}
+.profile-centre .account-preferences,
+.profile-centre .account-actions{border:0;border-radius:0;box-shadow:none;background:transparent}
+.profile-centre .account-settings-grid{background:#f6f8f7;border-radius:14px;padding:0 18px;gap:20px}
+
+@media(max-width:900px){
+  .profile-centre .profile-centre-layout{grid-template-columns:1fr}
+  .profile-centre .document-checklist{width:100%}
+}
+@media(max-width:720px){
+  .profile-centre .profile-health-grid{display:block}
+  .profile-centre .profile-health-card+.profile-health-card{border-left:0;border-top:1px solid #dfe7e2}
+  .profile-centre .saved-section-grid{grid-template-columns:1fr}
+  .profile-centre .saved-section-card{border-top:1px solid #e3e9e5}
+}
+
+/* Final compact onboarding top rhythm. */
+.content.onboarding{padding-top:0!important}
+.onboarding .onboarding-top{
+  min-height:0;
+  margin:0;
+  padding:8px 28px 10px;
+  align-items:center;
+  border-bottom:0!important;
+}
+.onboarding .profile-drawer-head,
+.onboarding .form-title{border-bottom:0!important}
+.onboarding .onboarding-top h1{font-size:25px;margin:1px 0 2px;line-height:1.12}
+.onboarding .onboarding-top .eyebrow{margin:0 0 3px}
+.onboarding .onboarding-top>div:first-child>p:last-child{margin:0;line-height:1.35}
+.onboarding .progress-summary{width:220px}
+.onboarding .progress-summary strong{font-size:14px}
+.onboarding .progress-summary>span{margin:3px 0;height:5px}
+.onboarding .progress-summary small{font-size:8px}
+.onboarding .profile-drawer{min-height:calc(100vh - 134px)}
+
+@media(max-width:720px){
+  .onboarding .onboarding-top{padding:7px 14px 9px;gap:8px}
+  .onboarding .onboarding-top h1{font-size:22px}
+  .onboarding .progress-summary{width:100%}
+  .onboarding .profile-drawer{min-height:0}
+}
+
+/* Compact student profile typography. */
+.onboarding .onboarding-top h1{font-size:27px}
+.onboarding .onboarding-top>div:first-child>p:last-child{font-size:12px}
+.onboarding h2,.onboarding .profile-form h2{font-size:19px}
+.onboarding h3{font-size:15px}
+.onboarding p{font-size:12px}
+.onboarding small{font-size:10px}
+.onboarding button,.onboarding .primary-btn,.onboarding .secondary-btn,.onboarding .submit-profile{font-size:12px}
+.onboarding label,.onboarding .form-grid label{font-size:11px}
+.onboarding input,.onboarding select,.onboarding textarea,.onboarding .form-grid input,.onboarding .form-grid select,.onboarding .profile-form textarea{font-size:12px}
+.onboarding .profile-drawer>button strong{font-size:11px}
+.onboarding .profile-drawer>button small{font-size:9px}
+.profile-centre h1{font-size:29px!important}.profile-centre h2{font-size:19px!important}.profile-centre h3{font-size:14px!important}.profile-centre p{font-size:12px!important}.profile-centre small{font-size:9px!important}.profile-centre button{font-size:11px!important}.profile-centre dt,.profile-centre dd{font-size:11px!important}
+.profile-centre .profile-centre-head{border-bottom:0!important;padding-bottom:0}
+
+/* Keep the profile-building workspace anchored near the top. */
+.content.onboarding{padding-top:4px!important}
+.onboarding .onboarding-top{margin-bottom:12px;padding-bottom:10px}
+.onboarding .onboarding-top h1{margin-top:2px;margin-bottom:3px}
+.onboarding .profile-form{padding-top:24px}
+.onboarding .form-title{padding-bottom:14px}
+.onboarding .form-grid{margin-top:18px}
+
+@media(max-width:720px){
+  .content.onboarding{padding-top:2px!important}
+  .onboarding .onboarding-top{margin-bottom:10px}
+  .onboarding .profile-form{padding-top:19px}
+}
+
+/* Flush coloured profile-step rail. */
+.content.onboarding{padding-left:0!important;padding-right:0!important}
+.onboarding .onboarding-top{padding-left:34px;padding-right:34px}
+.onboarding .onboarding-layout{gap:0}
+.profile-drawer{
+  top:0;
+  min-height:calc(100vh - 150px);
+  max-height:calc(100vh - 64px);
+  padding:20px 18px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#eaf5ef;
+}
+.profile-drawer-head{border-bottom-color:#cfe2d8}
+.onboarding .profile-drawer>button{color:#43564c}
+.onboarding .profile-drawer>button:hover{background:rgba(255,255,255,.58)}
+.onboarding .profile-drawer>button.current{background:#fff;color:#087a50;box-shadow:0 4px 14px rgba(22,83,56,.08)}
+.onboarding .profile-form{border-radius:0;border:0;box-shadow:none;padding-left:38px;padding-right:38px}
+
+@media(max-width:720px){
+  .onboarding .onboarding-top{padding-left:14px;padding-right:14px}
+  .profile-drawer{min-height:0;max-height:none;background:#eaf5ef}
+  .onboarding .profile-form{padding-left:18px;padding-right:18px}
+}
