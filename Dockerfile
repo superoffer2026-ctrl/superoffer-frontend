@@ -17,7 +17,7 @@ RUN chmod +x /docker-entrypoint.d/40-superoffer-config.sh
 
 EXPOSE 80
 
-ENV SUPER_OFFER_API_URL=/api/v1
+ENV SUPER_OFFER_API_URL=https://api.superoffer.net/api/v1
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1/health || exit 1

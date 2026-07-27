@@ -1,3 +1,2 @@
-// Deployment startup scripts overwrite this using SUPER_OFFER_API_URL.
-// The relative fallback requires /api to be routed to the backend.
-window.SUPER_OFFER_API_URL = '/api/v1';
+// Deployment startup scripts can override this using SUPER_OFFER_API_URL.
+window.SUPER_OFFER_API_URL = 'https://api.superoffer.net/api/v1';
