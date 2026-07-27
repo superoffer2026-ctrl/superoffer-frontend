@@ -15,7 +15,7 @@ COPY --from=build /app/dist/superoffer/browser /usr/share/nginx/html
 COPY runtime-config.sh /docker-entrypoint.d/40-superoffer-config.sh
 RUN chmod +x /docker-entrypoint.d/40-superoffer-config.sh
 
-EXPOSE 80 3000
+EXPOSE 80
 
 ENV SUPER_OFFER_API_URL=/api/v1
 

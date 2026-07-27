@@ -34,6 +34,7 @@ export class AppComponent {
   readonly apiBaseUrl = (window as Window & { SUPER_OFFER_API_URL?: string }).SUPER_OFFER_API_URL || '/api/v1';
   apiStatus: 'checking' | 'connected' | 'offline' = 'checking';
   apiError = '';
+  authLoading = false;
   studentPortalLoading = false;
   studentProfile: any = null;
   studentOffers: any[] = [];
@@ -49,6 +50,17 @@ export class AppComponent {
   sortBy = 'Match score';
   matchingProgress = 0;
   offerSent = false;
+
+  universityRegistration = {
+    email: 'maya.chen@northbridge.edu',
+    password: 'password123'
+  };
+
+  universityLogin = {
+    email: 'maya.chen@northbridge.edu',
+    password: 'password123',
+    remember: true
+  };
 
   campaign = {
     name: 'Fall 2027 — Data & AI Graduate Intake',
@@ -109,9 +121,17 @@ export class AppComponent {
       ...options,
       headers: { 'content-type': 'application/json', ...(options.headers || {}) }
     });
-    const body = await response.json().catch(() => null);
+    const contentType = response.headers.get('content-type') || '';
+    const body = contentType.includes('application/json')
+      ? await response.json().catch(() => null)
+      : null;
     if (!response.ok) {
       throw new Error(body?.message || `API request failed with status ${response.status}`);
+    }
+    if (body === null) {
+      throw new Error(
+        `API returned a non-JSON response for ${path}. Check SUPER_OFFER_API_URL and the backend domain.`
+      );
     }
     this.apiStatus = 'connected';
     this.apiError = '';
@@ -137,9 +157,58 @@ export class AppComponent {
     }
   }
 
-  nextRegistrationStep(): void {
-    if (this.registrationStep < 3) this.registrationStep += 1;
-    else this.go('status');
+  async nextRegistrationStep(): Promise<void> {
+    if (this.registrationStep < 3) {
+      this.registrationStep += 1;
+      return;
+    }
+
+    this.authLoading = true;
+    this.apiError = '';
+    try {
+      await this.apiRequest<{ user_id: string; otp_required: boolean }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: this.universityRegistration.email,
+          password: this.universityRegistration.password,
+          role: 'UNIVERSITY_OFFICER'
+        })
+      });
+      this.go('status');
+    } catch (error) {
+      this.apiStatus = 'offline';
+      this.apiError = error instanceof Error ? error.message : 'Registration failed';
+    } finally {
+      this.authLoading = false;
+    }
+  }
+
+  async loginUniversity(): Promise<void> {
+    this.authLoading = true;
+    this.apiError = '';
+    try {
+      const session = await this.apiRequest<{
+        access_token: string;
+        refresh_token: string;
+        role: string;
+        expires_in: number;
+      }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          identifier: this.universityLogin.email,
+          password: this.universityLogin.password
+        })
+      });
+      sessionStorage.setItem('superoffer_access_token', session.access_token);
+      const refreshStorage = this.universityLogin.remember ? localStorage : sessionStorage;
+      refreshStorage.setItem('superoffer_refresh_token', session.refresh_token);
+      this.go('plans');
+    } catch (error) {
+      this.apiStatus = 'offline';
+      this.apiError = error instanceof Error ? error.message : 'Login failed';
+    } finally {
+      this.authLoading = false;
+    }
   }
 
   selectStatus(status: RegistrationStatus): void {
