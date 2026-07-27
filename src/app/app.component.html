@@ -1,164 +1,193 @@
-<header class="public-header" *ngIf="screen === 'landing' || screen === 'register' || screen === 'status' || screen === 'login' || screen === 'plans' || screen === 'student-login'">
-  <button class="brand" (click)="go('landing')" aria-label="SuperOffer home"><span class="brand-symbol"><i></i><i></i></span><strong>Super<span>Offer</span></strong></button>
-  <nav><button (click)="go('student-login')">For students</button><button class="active" (click)="go('landing')">For universities</button><button>Resources</button></nav>
-  <div><button class="student-entry" (click)="go('student-login')">Student portal</button><button class="text-btn" (click)="go('login')">University login</button><button class="primary small" (click)="go('register')">Register university</button></div>
-</header>
+<div class="app-shell">
+  <header class="navbar">
+    <button class="brand" (click)="navigate('landing')" aria-label="SuperOffer home">
+      <span class="brand-mark">S</span><span>SuperOffer</span>
+    </button>
+    <button class="menu-button" (click)="menuOpen = !menuOpen" aria-label="Toggle menu">Menu</button>
+    <nav [class.open]="menuOpen" aria-label="Main navigation">
+      <button *ngFor="let key of audienceKeys"
+        (click)="openAudience(key)">{{ audiences[key].label }}</button>
+    </nav>
+    <button class="nav-login" (click)="navigate('login')">Sign in <span>→</span></button>
+  </header>
 
-<main class="landing" *ngIf="screen === 'landing'">
-  <section class="hero">
-    <div class="hero-copy">
-      <span class="eyebrow">UNIVERSITY ADMISSIONS, REIMAGINED</span>
-      <h1>Meet the students who are already looking for <em>you.</em></h1>
-      <p>SuperOffer helps universities discover verified, best-fit students and turn great matches into accepted admissions—faster.</p>
-      <div class="hero-actions"><button class="primary" (click)="go('register')">Register your university <b>→</b></button><button class="secondary" (click)="go('login')">University login</button><button class="student-portal-cta" (click)="go('student-login')">I’m a student →</button></div>
-      <div class="trust-row"><span>✓ Verified student profiles</span><span>✓ AI-powered matching</span><span>✓ Privacy-first outreach</span></div>
-    </div>
-    <div class="hero-visual" aria-label="Student matching preview">
-      <div class="visual-glow"></div>
-      <article class="match-card main-card">
-        <div class="match-head"><span class="avatar purple">AM</span><div><strong>Aarav Mehta</strong><small>Mumbai, India · MSc Data Science</small></div><b>96%</b></div>
-        <div class="score-line"><i style="width:96%"></i></div>
-        <div class="skill-row"><span>Python</span><span>Machine Learning</span><span>IELTS 8.0</span></div>
-        <button>View matched profile →</button>
-      </article>
-      <article class="float-card stat-float"><small>HIGH-INTENT STUDENTS</small><strong>1,284</strong><span>↑ 18% this intake</span></article>
-      <article class="float-card offer-float"><span class="mini-icon">✦</span><div><strong>Offer accepted</strong><small>Mei Lin · MSc Data Science</small></div></article>
-      <div class="university-chip"><span>N</span><div><strong>Northbridge University</strong><small>Verified institution</small></div><b>✓</b></div>
-    </div>
-  </section>
-  <section class="proof"><span>Trusted by admissions teams across 18 countries</span><div><b>WESTFORD</b><b>Northbridge</b><b>LAKEVIEW</b><b>RIVERDALE</b><b>ASTON BAY</b></div></section>
-  <section class="how"><span class="eyebrow">BUILT FOR MODERN ADMISSIONS TEAMS</span><h2>From discovery to admission offer, in one flow.</h2><div class="feature-grid"><article><b>01</b><span>⌕</span><h3>Define your ideal cohort</h3><p>Create admission campaigns and set precise academic, geographic, and financial criteria.</p></article><article><b>02</b><span>✦</span><h3>Let AI surface the fit</h3><p>Understand every match through transparent fit scores and verified student signals.</p></article><article><b>03</b><span>↗</span><h3>Reach out with confidence</h3><p>Shortlist top candidates and send tailored admission offers directly through SuperOffer.</p></article></div></section>
-</main>
+  <main *ngIf="screen === 'landing'">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Education opportunities, connected</span>
+        <h1>One trusted place for the decisions that shape a future.</h1>
+        <p>SuperOffer brings students, universities, finance partners, and education consultants into one clear and dependable journey.</p>
+        <div class="hero-actions">
+          <button class="primary" (click)="openAudience('student')">Start as a student <span>→</span></button>
+          <a href="#how-it-works">See how it works</a>
+        </div>
+        <div class="trust-line"><span>✓ Verified partners</span><span>✓ Transparent journeys</span><span>✓ Secure by design</span></div>
+      </div>
+      <div class="hero-visual" aria-label="SuperOffer connected education network">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="center-card"><span class="brand-mark">S</span><strong>One connected journey</strong><small>From ambition to opportunity</small></div>
+        <div class="float-card student-card"><b>Student</b><span>Build your future</span></div>
+        <div class="float-card university-card"><b>University</b><span>Find the right talent</span></div>
+        <div class="float-card bank-card"><b>Bank</b><span>Enable education</span></div>
+        <div class="float-card consultant-card"><b>Consultancy</b><span>Guide with confidence</span></div>
+      </div>
+    </section>
 
-<main class="student-login-page" *ngIf="screen === 'student-login'">
-  <section><span class="eyebrow">STUDENT PORTAL</span><h1>Your next opportunity is waiting.</h1><p>Complete your verified profile, compare personalized offers, and connect with universities looking for students like you.</p><div class="student-login-points"><span>✓ One profile, multiple opportunities</span><span>✓ Verified university offers</span><span>✓ Your details stay protected</span></div></section>
-  <form (ngSubmit)="openStudentPortal()"><div class="student-login-avatar">AM</div><h2>Welcome back, Aarav</h2><p>Sign in to view your profile and offers.</p><label>Email address<input type="email" value="aarav.mehta@email.com" required></label><label>Password<input type="password" value="password123" required></label><button class="primary wide-btn" type="submit">Open student portal →</button><small>Demo account connected to the SuperOffer API</small></form>
-</main>
+    <section class="proof-strip">
+      <div><strong>4</strong><span>connected participant groups</span></div>
+      <div><strong>1</strong><span>trusted platform</span></div>
+      <div><strong>100%</strong><span>partner verification</span></div>
+      <div><strong>Clear</strong><span>status at every step</span></div>
+    </section>
 
-<main class="student-portal-page" *ngIf="screen === 'student-portal'">
-  <header><button class="brand" (click)="go('landing')"><span class="brand-symbol"><i></i><i></i></span><strong>Super<span>Offer</span></strong></button><nav><button class="active">Dashboard</button><button>My profile</button><button>Offers <b>{{studentOffers.length}}</b></button></nav><div><span class="api-state" [class.connected]="apiStatus==='connected'" [class.offline]="apiStatus==='offline'"><i></i>{{apiStatus==='connected' ? 'API connected' : 'API offline'}}</span><button class="student-user">AM</button></div></header>
-  <section class="student-loading" *ngIf="studentPortalLoading"><span></span><h2>Loading your student portal…</h2><p>Fetching your profile and offers from the API.</p></section>
-  <section class="student-error" *ngIf="!studentPortalLoading && apiError"><span>!</span><h2>We couldn’t load your portal</h2><p>{{apiError}}</p><button class="primary" (click)="openStudentPortal()">Retry API connection</button><button class="secondary" (click)="go('landing')">Back to home</button></section>
-  <section class="student-dashboard" *ngIf="!studentPortalLoading && studentProfile">
-    <div class="student-welcome"><div><span class="eyebrow">SUNDAY, 26 JULY</span><h1>Good afternoon, {{studentProfile.name.split(' ')[0]}}.</h1><p>Your profile is attracting attention from universities.</p></div><button class="primary">Complete your profile →</button></div>
-    <div class="student-profile-progress"><span class="student-big-avatar">{{studentProfile.initials}}</span><div><small>PROFILE STRENGTH</small><h2>{{studentProfile.completion_percent}}% complete</h2><i><b [style.width.%]="studentProfile.completion_percent"></b></i><p>Add your Statement of Purpose to become visible to 18 more universities.</p></div><button class="secondary">Update profile</button></div>
-    <div class="student-metrics"><article><span>✉</span><div><small>ACTIVE OFFERS</small><strong>{{studentOffers.length}}</strong><p>Personalized for you</p></div></article><article><span>◉</span><div><small>PROFILE VIEWS</small><strong>28</strong><p>↑ 6 this week</p></div></article><article><span>✦</span><div><small>TOP MATCH</small><strong>96%</strong><p>Northbridge University</p></div></article></div>
-    <div class="student-content-grid"><article class="student-offers-card"><header><div><span class="eyebrow">YOUR OPPORTUNITIES</span><h2>University offers</h2></div><button>View all →</button></header><div class="student-offer-row" *ngFor="let offer of studentOffers"><span class="offer-school">{{offer.institution_initial || 'U'}}</span><div><strong>{{offer.institution}}</strong><p>{{offer.program}}</p><small>{{offer.award}}</small></div><b [class.accepted]="offer.status==='ACCEPTED'">{{offer.status_label}}</b><button class="secondary">View offer</button></div><div class="student-offers-empty" *ngIf="!studentOffers.length"><span>✉</span><h3>No active offers yet</h3><p>Complete your profile to become visible to more universities.</p></div></article><aside><span class="eyebrow">STUDY PREFERENCES</span><h3>Fall 2027 goals</h3><dl><div><dt>Target countries</dt><dd>{{studentProfile.preferences.target_countries.join(', ')}}</dd></div><div><dt>Courses</dt><dd>{{studentProfile.preferences.target_courses.join(', ')}}</dd></div><div><dt>Budget</dt><dd>{{studentProfile.preferences.budget_band}}</dd></div><div><dt>Scholarship</dt><dd>Required</dd></div></dl><button class="secondary">Edit preferences</button></aside></div>
-  </section>
-</main>
+    <section class="section intro" id="how-it-works">
+      <span class="eyebrow">Built around real journeys</span>
+      <h2>Different goals. One place to move them forward.</h2>
+      <p>Choose your path to see how SuperOffer supports you from registration through secure access.</p>
+      <div class="path-grid">
+        <button class="path-card" *ngFor="let key of audienceKeys; let i=index" (click)="openAudience(key)">
+          <span class="path-number">0{{i + 1}}</span>
+          <h3>{{audiences[key].label}}</h3>
+          <p>{{audiences[key].description}}</p>
+          <b>Explore your path →</b>
+        </button>
+      </div>
+    </section>
 
-<main class="onboarding" *ngIf="screen === 'register'">
-  <section class="onboarding-aside"><button class="brand light" (click)="go('landing')"><span class="brand-symbol"><i></i><i></i></span><strong>Super<span>Offer</span></strong></button><div><span class="eyebrow">JOIN 240+ INSTITUTIONS</span><h1>Build your next exceptional cohort.</h1><p>Complete your institution profile and our verification team will review it within two business days.</p></div><ol><li [class.done]="registrationStep > 1" [class.active]="registrationStep === 1"><b>{{registrationStep > 1 ? '✓' : '1'}}</b><span>Institution details<small>Tell us about your university</small></span></li><li [class.done]="registrationStep > 2" [class.active]="registrationStep === 2"><b>{{registrationStep > 2 ? '✓' : '2'}}</b><span>Primary contact<small>Your admissions representative</small></span></li><li [class.active]="registrationStep === 3"><b>3</b><span>Verification<small>Accreditation and documents</small></span></li></ol><small>© 2026 SuperOffer · Privacy · Support</small></section>
-  <section class="form-stage">
-    <div class="form-top"><span>Step {{registrationStep}} of 3</span><div><i [style.width.%]="registrationStep * 33.33"></i></div><span>{{registrationStep * 33}}% complete</span></div>
-    <form class="form-card" (ngSubmit)="nextRegistrationStep()">
-      <ng-container *ngIf="registrationStep === 1"><span class="form-icon">▦</span><h2>Tell us about your institution</h2><p>Use your official registered details. You can update these later in settings.</p><div class="field-grid"><label class="wide">Official institution name<input value="Northbridge University" required></label><label>Institution type<select><option>Private university</option><option>Public university</option><option>College</option></select></label><label>Year established<input value="1984" type="number"></label><label>Country<select><option>Canada</option><option>United Kingdom</option><option>United States</option></select></label><label>City<input value="Toronto"></label><label class="wide">Official website<input value="https://northbridge.edu"></label></div></ng-container>
-      <ng-container *ngIf="registrationStep === 2"><span class="form-icon">◎</span><h2>Who should we contact?</h2><p>This person will be the primary administrator for your SuperOffer workspace.</p><div class="field-grid"><label>First name<input value="Maya" required></label><label>Last name<input value="Chen" required></label><label class="wide">Official work email<input [(ngModel)]="universityRegistration.email" name="registrationEmail" type="email" required></label><label>Job title<input value="Director of International Admissions"></label><label>Phone number<input value="+1 416 555 0182"></label><label class="wide">Create password<input [(ngModel)]="universityRegistration.password" name="registrationPassword" type="password" minlength="8" required></label></div></ng-container>
-      <ng-container *ngIf="registrationStep === 3"><span class="form-icon">✓</span><h2>Help us verify your university</h2><p>Upload current accreditation proof. Your documents remain private and secure.</p><div class="upload-box"><span>⇧</span><strong>Drop accreditation document here</strong><small>PDF, JPG or PNG · Maximum 10 MB</small><button type="button">Choose file</button></div><div class="file-item"><span>▤</span><div><strong>Northbridge_Accreditation_2026.pdf</strong><small>2.4 MB · Ready to submit</small></div><b>✓</b></div><label class="check"><input type="checkbox" checked> I confirm I am authorized to register this institution and the information provided is accurate.</label></ng-container>
-      <p class="auth-error" *ngIf="apiError">{{apiError}}</p>
-      <footer><button type="button" class="text-btn" (click)="registrationStep > 1 ? registrationStep = registrationStep - 1 : go('landing')">← Back</button><button class="primary" type="submit" [disabled]="authLoading">{{authLoading ? 'Please wait…' : registrationStep === 3 ? 'Submit for verification' : 'Continue'}} →</button></footer>
-    </form>
-  </section>
-</main>
+    <section class="section feature-band">
+      <div><span class="eyebrow light">Why SuperOffer</span><h2>Clarity creates better outcomes.</h2></div>
+      <div class="feature-list">
+        <article><span>01</span><div><h3>Relevant connections</h3><p>Bring the right people and opportunities together around genuine goals.</p></div></article>
+        <article><span>02</span><div><h3>Trust at every step</h3><p>Institutional partners are reviewed before entering the platform.</p></div></article>
+        <article><span>03</span><div><h3>A journey you can follow</h3><p>Know what comes next, from account creation through portal access.</p></div></article>
+      </div>
+    </section>
 
-<main class="status-page" *ngIf="screen === 'status'">
-  <div class="status-wrap"><div class="status-switcher" aria-label="Preview registration states"><button [class.active]="registrationStatus==='pending'" (click)="selectStatus('pending')">Pending</button><button [class.active]="registrationStatus==='accepted'" (click)="selectStatus('accepted')">Accepted</button><button [class.active]="registrationStatus==='rejected'" (click)="selectStatus('rejected')">Rejected</button></div>
-    <article class="status-card" [class.accepted]="registrationStatus === 'accepted'" [class.rejected]="registrationStatus === 'rejected'">
-      <div class="status-icon">{{registrationStatus === 'pending' ? '◷' : registrationStatus === 'accepted' ? '✓' : '!'}}</div><span class="eyebrow">{{registrationStatus === 'pending' ? 'VERIFICATION IN PROGRESS' : registrationStatus === 'accepted' ? 'REGISTRATION APPROVED' : 'ACTION REQUIRED'}}</span>
-      <h1>{{registrationStatus === 'pending' ? 'We’re reviewing your registration' : registrationStatus === 'accepted' ? 'Welcome to SuperOffer!' : 'We couldn’t verify your registration'}}</h1>
-      <p *ngIf="registrationStatus === 'pending'">Our verification team is reviewing Northbridge University. We’ll send an update to <strong>maya.chen@northbridge.edu</strong> within two business days.</p>
-      <p *ngIf="registrationStatus === 'accepted'">Northbridge University has been successfully verified. You can now sign in, choose a plan, and start building your admissions pipeline.</p>
-      <p *ngIf="registrationStatus === 'rejected'">The accreditation document you submitted expired on 30 June 2026. Please upload a current certificate and resubmit for review.</p>
-      <div class="status-detail"><span>Application ID<strong>UNI-2026-04829</strong></span><span>Submitted<strong>26 July 2026</strong></span><span>Status<strong>{{registrationStatus | titlecase}}</strong></span></div>
-      <button *ngIf="registrationStatus === 'pending'" class="secondary" (click)="notify('Status refreshed — still under review')">Refresh status</button>
-      <button *ngIf="registrationStatus === 'accepted'" class="primary" (click)="go('login')">Continue to login →</button>
-      <button *ngIf="registrationStatus === 'rejected'" class="primary" (click)="registrationStep=3; go('register')">Update and resubmit →</button>
-      <small>Need help? <button (click)="notify('Support request opened')">Contact verification support</button></small>
-    </article>
-  </div>
-</main>
+    <section class="section final-cta">
+      <span class="eyebrow">Your next step starts here</span>
+      <h2>Find the SuperOffer path built for you.</h2>
+      <div class="audience-pills">
+        <button *ngFor="let key of audienceKeys" (click)="openAudience(key)">{{audiences[key].label}} →</button>
+      </div>
+    </section>
+  </main>
 
-<main class="login-page" *ngIf="screen === 'login'">
-  <section class="login-story"><span class="eyebrow">YOUR ADMISSIONS COMMAND CENTER</span><h1>Every great cohort starts with the right connection.</h1><p>Sign in to discover students, manage campaigns, and turn promising matches into enrolled students.</p><div class="quote">“SuperOffer helped us find qualified international candidates we would never have reached through traditional channels.”<span><b>Elena Rossi</b> · International Admissions, Westford</span></div></section>
-  <section class="login-panel"><button class="brand" (click)="go('landing')"><span class="brand-symbol"><i></i><i></i></span><strong>Super<span>Offer</span></strong></button><form (ngSubmit)="loginUniversity()"><span class="eyebrow">UNIVERSITY PORTAL</span><h2>Welcome back</h2><p>Sign in to your verified institution workspace.</p><label>Work email<input type="email" [(ngModel)]="universityLogin.email" name="loginEmail" required></label><label>Password <button type="button" (click)="notify('Password reset will be added in the next authentication step')">Forgot password?</button><input type="password" [(ngModel)]="universityLogin.password" name="loginPassword" required></label><label class="check"><input type="checkbox" [(ngModel)]="universityLogin.remember" name="rememberLogin"> Keep me signed in</label><p class="auth-error" *ngIf="apiError">{{apiError}}</p><button class="primary wide-btn" type="submit" [disabled]="authLoading">{{authLoading ? 'Signing in…' : 'Sign in to university portal →'}}</button><small>University not registered? <button type="button" (click)="go('register')">Start registration</button></small></form></section>
-</main>
+  <main *ngIf="screen === 'audience'" class="audience-page">
+    <section class="audience-hero">
+      <button class="back-link" (click)="navigate('landing')">← Back to SuperOffer</button>
+      <div>
+        <span class="eyebrow">{{audience.eyebrow}}</span>
+        <h1>{{audience.headline}}</h1>
+        <p>{{audience.description}}</p>
+        <div class="hero-actions">
+          <button class="primary" (click)="beginRegistration()">Register as {{audience.label}} <span>→</span></button>
+          <button class="text-button" (click)="navigate('login')">Already registered? Sign in</button>
+        </div>
+      </div>
+      <div class="audience-badge"><small>SuperOffer for</small><strong>{{audience.label}}</strong><span>{{needsApproval ? 'Verified access' : 'Instant account access'}}</span></div>
+    </section>
+    <section class="section">
+      <span class="eyebrow">What you gain</span><h2>A more confident way forward.</h2>
+      <div class="benefit-grid"><article *ngFor="let benefit of audience.benefits"><span>✓</span><h3>{{benefit.title}}</h3><p>{{benefit.text}}</p></article></div>
+    </section>
+    <section class="section steps-section">
+      <div><span class="eyebrow">Simple by design</span><h2>From registration to your portal.</h2></div>
+      <ol><li *ngFor="let step of audience.steps; let i=index"><span>0{{i+1}}</span><p>{{step}}</p></li></ol>
+    </section>
+    <section class="section bottom-register">
+      <h2>Ready to join SuperOffer?</h2>
+      <p>{{needsApproval ? 'Create your account and submit your organisation for verification.' : 'Create your free account and continue directly to your student journey.'}}</p>
+      <button class="primary light-button" (click)="beginRegistration()">Register as {{audience.label}} →</button>
+    </section>
+  </main>
 
-<main class="plans-page" *ngIf="screen === 'plans'">
-  <section class="plan-heading"><span class="eyebrow">CHOOSE YOUR PLAN</span><h1>Find the right students. At your pace.</h1><p>Start with what fits your current admissions goals. You can upgrade or change plans anytime.</p><div class="billing-toggle"><button class="active">Annual <b>Save 20%</b></button><button>Monthly</button></div></section>
-  <section class="plan-grid">
-    <article><span class="plan-name">STARTER</span><h2>$249<small>/month</small></h2><p>For smaller teams testing proactive student recruitment.</p><ul><li>✓ 1 active campaign</li><li>✓ 150 student matches / month</li><li>✓ 50 admission offers</li><li>✓ 3 team members</li><li>✓ Email support</li></ul><button class="secondary" (click)="selectedPlan='Starter'; go('dashboard')">Choose Starter</button></article>
-    <article class="popular"><div class="popular-tag">MOST POPULAR</div><span class="plan-name">GROWTH</span><h2>$599<small>/month</small></h2><p>For ambitious admissions teams scaling international recruitment.</p><ul><li>✓ 5 active campaigns</li><li>✓ 1,000 student matches / month</li><li>✓ Unlimited admission offers</li><li>✓ 10 team members</li><li>✓ Advanced analytics</li><li>✓ Priority support</li></ul><button class="primary" (click)="selectedPlan='Growth'; go('dashboard')">Choose Growth →</button></article>
-    <article><span class="plan-name">ENTERPRISE</span><h2>Custom</h2><p>For multi-campus institutions with complex recruitment needs.</p><ul><li>✓ Unlimited campaigns</li><li>✓ Unlimited student matches</li><li>✓ Custom team access</li><li>✓ API & CRM integrations</li><li>✓ Dedicated success manager</li></ul><button class="secondary" (click)="selectedPlan='Enterprise'; go('dashboard')">Contact sales</button></article>
-  </section>
-  <p class="plan-foot">All plans include verified profiles, transparent AI match scores, and secure student outreach.</p>
-</main>
+  <main *ngIf="screen === 'register' || screen === 'login'" class="auth-page">
+    <section class="auth-story">
+      <button class="back-link light" (click)="openAudience(audienceKey)">← Back</button>
+      <div><span class="eyebrow light">SuperOffer for {{audience.label}}</span><h1>{{screen === 'register' ? 'Create your account.' : 'Welcome back.'}}</h1>
+      <p>{{needsApproval ? 'Organisation accounts are reviewed by our admin team to protect the quality of the SuperOffer network.' : 'Your student account gives you immediate access after registration.'}}</p></div>
+      <small>Secure registration • Clear status • Trusted access</small>
+    </section>
+    <section class="auth-form-wrap">
+      <form *ngIf="screen === 'register'" (ngSubmit)="register()" #registerNgForm="ngForm">
+        <span class="form-step">ACCOUNT REGISTRATION</span><h2>Register as {{audience.label}}</h2><p>Enter accurate details so we can set up your account correctly.</p>
+        <div class="field-grid">
+          <label>Full name<input name="fullName" [(ngModel)]="registerForm.fullName" required placeholder="Your full name"></label>
+          <label>Phone number<input name="phone" [(ngModel)]="registerForm.phone" placeholder="+91 00000 00000"></label>
+          <label class="wide">Email address<input name="email" type="email" [(ngModel)]="registerForm.email" required placeholder="you@example.com"></label>
+          <label class="wide">Password<input name="password" type="password" [(ngModel)]="registerForm.password" required minlength="8" placeholder="At least 8 characters, with a letter and number"></label>
+          <ng-container *ngIf="needsApproval">
+            <div class="form-divider wide"><span>Organisation details</span></div>
+            <label class="wide">Organisation name<input name="organizationName" [(ngModel)]="registerForm.organizationName" required placeholder="Legal organisation name"></label>
+            <label>Registration number<input name="registrationNumber" [(ngModel)]="registerForm.registrationNumber" placeholder="Official registration ID"></label>
+            <label>Website<input name="website" [(ngModel)]="registerForm.website" placeholder="https://"></label>
+            <label>Country<input name="country" [(ngModel)]="registerForm.country" placeholder="Country"></label>
+            <label>City<input name="city" [(ngModel)]="registerForm.city" placeholder="City"></label>
+            <label class="wide">Accreditation / licence reference<input name="licenseReference" [(ngModel)]="registerForm.licenseReference" placeholder="Relevant licence or accreditation"></label>
+          </ng-container>
+        </div>
+        <p class="error" *ngIf="error">{{error}}</p>
+        <button class="primary submit" [disabled]="loading || registerNgForm.invalid">{{loading ? 'Creating account…' : 'Create account →'}}</button>
+        <p class="form-switch">Already registered? <button type="button" (click)="navigate('login')">Sign in</button></p>
+      </form>
+      <form *ngIf="screen === 'login'" (ngSubmit)="login()" #loginNgForm="ngForm">
+        <span class="form-step">SECURE SIGN IN</span><h2>Sign in to your portal</h2><p>Use the email and password used during registration.</p>
+        <p class="success" *ngIf="notice">{{notice}}</p>
+        <label>Email address<input name="loginEmail" type="email" [(ngModel)]="loginForm.email" required placeholder="you@example.com"></label>
+        <label>Password<input name="loginPassword" type="password" [(ngModel)]="loginForm.password" required placeholder="Your password"></label>
+        <label class="check"><input name="remember" type="checkbox" [(ngModel)]="loginForm.remember"> Keep me signed in</label>
+        <p class="error" *ngIf="error">{{error}}</p>
+        <button class="primary submit" [disabled]="loading || loginNgForm.invalid">{{loading ? 'Signing in…' : 'Sign in securely →'}}</button>
+        <p class="form-switch">New to SuperOffer? <button type="button" (click)="beginRegistration()">Create an account</button></p>
+      </form>
+    </section>
+  </main>
 
-<ng-container *ngIf="!['landing','register','status','login','plans','student-login','student-portal'].includes(screen)">
-  <div class="portal-shell">
-    <aside class="portal-sidebar" [class.open]="menuOpen">
-      <button class="brand light" (click)="go('dashboard')"><span class="brand-symbol"><i></i><i></i></span><strong>Super<span>Offer</span></strong></button>
-      <div class="org-chip"><span>N</span><div><strong>Northbridge University</strong><small>Growth plan</small></div><b>⌄</b></div>
-      <nav><span>WORKSPACE</span><button *ngFor="let step of steps" [class.active]="screen === step.key || (step.key === 'students' && screen === 'profile') || (step.key === 'offers' && screen === 'offer')" (click)="go(step.key)"><i>{{step.key === 'dashboard' ? '⌂' : step.key === 'campaign' ? '▤' : step.key === 'criteria' ? '⌁' : step.key === 'students' ? '✦' : step.key === 'shortlist' ? '☆' : '↗'}}</i>{{step.label}}<b *ngIf="step.key === 'shortlist'">{{shortlistedStudents.length}}</b></button><span>MANAGE</span><button><i>◇</i>Subscription</button><button><i>⚙</i>Settings</button></nav>
-      <div class="sidebar-user"><span>MC</span><div><strong>Maya Chen</strong><small>Admissions Director</small></div><button>•••</button></div>
+  <main *ngIf="screen === 'status'" class="status-page">
+    <section class="status-card">
+      <div class="status-icon" [class.approved]="approvalStatus === 'APPROVED'" [class.rejected]="approvalStatus === 'REJECTED'">{{approvalStatus === 'PENDING' ? '⌛' : approvalStatus === 'APPROVED' ? '✓' : '!'}}</div>
+      <span class="eyebrow">Registration status</span>
+      <h1 *ngIf="approvalStatus === 'PENDING'">Your application is under review.</h1>
+      <h1 *ngIf="approvalStatus === 'APPROVED'">Your account has been approved.</h1>
+      <h1 *ngIf="approvalStatus === 'REJECTED'">We could not approve this application.</h1>
+      <p *ngIf="approvalStatus === 'PENDING'">Our admin team is verifying your {{audience.label.toLowerCase()}} details. You can sign in after approval.</p>
+      <p *ngIf="approvalStatus === 'APPROVED'">Your verification is complete. Sign in with your registered email and password.</p>
+      <p *ngIf="approvalStatus === 'REJECTED'">{{rejectionReason || 'Please contact the SuperOffer team for more information.'}}</p>
+      <div class="status-reference" *ngIf="userId"><span>Application reference</span><code>{{userId}}</code></div>
+      <p class="error" *ngIf="error">{{error}}</p>
+      <div class="status-actions">
+        <button class="primary" *ngIf="approvalStatus === 'APPROVED'" (click)="navigate('login')">Continue to sign in →</button>
+        <button class="primary" *ngIf="approvalStatus === 'PENDING'" [disabled]="loading" (click)="refreshStatus()">{{loading ? 'Checking…' : 'Check status again'}}</button>
+        <button class="text-button" (click)="navigate('landing')">Return home</button>
+      </div>
+    </section>
+  </main>
+
+  <main *ngIf="screen === 'portal'" class="portal-page">
+    <aside><div class="brand portal-brand"><span class="brand-mark">S</span><span>SuperOffer</span></div>
+      <nav><button class="active">Overview</button><button disabled>Profile</button><button disabled>Opportunities</button><button disabled>Messages</button></nav>
+      <button class="logout" (click)="logout()">Sign out</button>
     </aside>
-    <div class="portal-main">
-      <header class="portal-header"><button class="mobile-menu" (click)="menuOpen=!menuOpen">☰</button><div class="breadcrumbs"><span>Northbridge University</span><b>/</b><strong>{{screen === 'students' ? 'Eligible students' : screen === 'offer' ? 'Send offer' : screen | titlecase}}</strong></div><div class="header-actions"><span class="api-state" [class.connected]="apiStatus === 'connected'" [class.offline]="apiStatus === 'offline'"><i></i>{{apiStatus === 'connected' ? 'API connected' : apiStatus === 'offline' ? 'API offline' : 'API ready'}}</span><button aria-label="Search">⌕</button><button aria-label="Notifications">♢<i></i></button><span class="verified">✓ Verified</span></div></header>
+    <section class="portal-content">
+      <div class="portal-top"><div><span class="eyebrow">{{audience.label}} portal</span><h1>Welcome to SuperOffer.</h1></div><span class="live-pill">Account active</span></div>
+      <ng-container *ngIf="audienceKey === 'student'">
+        <div class="welcome-card"><div><small>YOUR JOURNEY</small><h2>{{studentProfile?.name || registerForm.fullName || 'Student'}}, your opportunities start here.</h2><p>Your student portal is connected and ready for the next modules.</p></div><div class="progress-ring">{{studentProfile?.completion_percent || 0}}%<small>profile</small></div></div>
+        <div class="portal-grid">
+          <article><span>Profile</span><h3>{{studentProfile?.program || 'Complete your academic profile'}}</h3><p>{{studentProfile?.location || 'Add your goals and preferences next.'}}</p></article>
+          <article><span>Offers</span><h3>{{studentOffers.length}} available</h3><p>Your offer workflow is connected to the backend.</p></article>
+          <article><span>Next step</span><h3>Build your profile</h3><p>Additional student portal features will be developed in the next module.</p></article>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="audienceKey !== 'student'">
+        <div class="welcome-card"><div><small>VERIFIED ACCESS</small><h2>Your {{audience.label.toLowerCase()}} workspace is ready.</h2><p>Registration, admin approval, and secure login are complete. Portal features will be built in the next module.</p></div><div class="approval-seal">✓<small>Approved</small></div></div>
+        <div class="coming-next"><span>Authentication module complete</span><h2>Portal development comes next.</h2><p>We have intentionally stopped here, as requested, after confirming access to the correct role-based portal.</p></div>
+      </ng-container>
+    </section>
+  </main>
 
-      <main class="portal-content" *ngIf="screen === 'dashboard'">
-        <section class="welcome-row"><div><span class="eyebrow">SUNDAY, 26 JULY</span><h1>Good afternoon, Maya.</h1><p>Here’s what’s happening across your admissions workspace.</p></div><button class="primary" (click)="go('campaign')">＋ Create admission campaign</button></section>
-        <section class="metric-grid"><article><span class="metric-icon purple-bg">✦</span><small>ELIGIBLE MATCHES</small><strong>1,284</strong><p><b>↑ 18%</b> vs last month</p></article><article><span class="metric-icon orange-bg">☆</span><small>SHORTLISTED</small><strong>42</strong><p><b>↑ 7</b> this week</p></article><article><span class="metric-icon blue-bg">↗</span><small>OFFERS SENT</small><strong>86</strong><p><b>72%</b> viewed by students</p></article><article><span class="metric-icon green-bg">✓</span><small>ACCEPTED</small><strong>23</strong><p><b>26.7%</b> conversion rate</p></article></section>
-        <section class="dashboard-grid"><article class="active-campaign"><header><div><span class="eyebrow">ACTIVE CAMPAIGN</span><h2>Fall 2027 — Data & AI Graduate Intake</h2><p>MSc Data Science · MSc Artificial Intelligence</p></div><span class="live-dot">● Live</span></header><div class="campaign-pipeline"><div><span>1,284</span><small>Matched</small></div><i></i><div><span>168</span><small>Reviewed</small></div><i></i><div><span>42</span><small>Shortlisted</small></div><i></i><div><span>23</span><small>Accepted</small></div></div><footer><span>Campaign ends 15 Feb 2027 · 203 days left</span><button (click)="go('students')">View matches →</button></footer></article>
-          <article class="activity"><header><h2>Recent activity</h2><button>View all</button></header><div><span class="activity-icon green-bg">✓</span><p><strong>Mei Lin accepted your offer</strong><small>MSc Data Science · 12 min ago</small></p></div><div><span class="activity-icon blue-bg">◉</span><p><strong>Sara Khan viewed your offer</strong><small>MSc Data Science · 1 hr ago</small></p></div><div><span class="activity-icon orange-bg">✦</span><p><strong>34 new students matched</strong><small>Fall 2027 campaign · 3 hrs ago</small></p></div></article></section>
-        <section class="next-step"><span>✦</span><div><small>RECOMMENDED NEXT STEP</small><h3>Create a focused campaign for your Spring 2028 intake</h3><p>Universities that start early receive 2.4× more qualified student responses.</p></div><button class="secondary" (click)="go('campaign')">Create campaign →</button></section>
-      </main>
-
-      <main class="portal-content narrow" *ngIf="screen === 'campaign'">
-        <div class="page-title"><div><button class="back-link" (click)="go('dashboard')">← Dashboard</button><h1>Create admission campaign</h1><p>Define the intake and programs you want to recruit for.</p></div><span class="step-pill">STEP 1 OF 2</span></div>
-        <section class="workspace-card"><div class="card-section-head"><span>01</span><div><h2>Campaign basics</h2><p>Give your team a clear internal reference.</p></div></div><div class="field-grid"><label class="wide">Campaign name<input [(ngModel)]="campaign.name"></label><label>Academic intake<select [(ngModel)]="campaign.intake"><option>Fall 2027</option><option>Spring 2028</option></select></label><label>Application deadline<input [(ngModel)]="campaign.deadline" type="date"></label></div><div class="card-section-head"><span>02</span><div><h2>Program & capacity</h2><p>Select the main program and target seat count.</p></div></div><div class="field-grid"><label>Program<select [(ngModel)]="campaign.program"><option>MSc Data Science</option><option>MSc Artificial Intelligence</option><option>MBA Analytics</option></select></label><label>Available seats<input [(ngModel)]="campaign.seats" type="number"></label><label class="wide">Recruitment markets<div class="tag-input"><span>India ×</span><span>Pakistan ×</span><span>Nigeria ×</span><span>China ×</span><button>＋ Add market</button></div></label></div><footer class="form-footer"><button class="secondary" (click)="go('dashboard')">Save as draft</button><button class="primary" (click)="go('criteria')">Continue to admission criteria →</button></footer></section>
-      </main>
-
-      <main class="portal-content narrow" *ngIf="screen === 'criteria'">
-        <div class="page-title"><div><button class="back-link" (click)="go('campaign')">← Campaign details</button><h1>Set admission criteria</h1><p>Configure the signals our matching engine should prioritize.</p></div><span class="step-pill">STEP 2 OF 2</span></div>
-        <section class="criteria-layout"><aside><strong>Criteria sections</strong><button class="active">🎓 Academic profile <b>✓</b></button><button>▤ Exam scores <b>✓</b></button><button>⌖ Study preferences <b>✓</b></button><button>✦ Skills & experience <b>✓</b></button><button>◇ Financial fit <b>✓</b></button><div><span>Campaign strength</span><strong>Excellent fit</strong><i><b style="width:92%"></b></i><small>Clear criteria helps the AI find stronger matches.</small></div></aside><article class="workspace-card criteria-card"><div class="card-section-head"><span>🎓</span><div><h2>Academic profile</h2><p>Set the minimum educational requirements.</p></div></div><div class="field-grid"><label>Minimum qualification<select><option>Bachelor’s degree</option></select></label><label>Relevant field<select><option>Computer Science & related</option></select></label><label>Minimum GPA<select><option>3.2 / 4.0 or equivalent</option></select></label><label>Graduation year<select><option>2024 or later</option></select></label></div><hr><div class="card-section-head"><span>▤</span><div><h2>Exam scores</h2><p>Set accepted language and aptitude tests.</p></div></div><div class="score-fields"><div><label class="check"><input type="checkbox" checked> IELTS</label><input value="7.0"><span>minimum overall</span></div><div><label class="check"><input type="checkbox" checked> TOEFL iBT</label><input value="95"><span>minimum score</span></div><div><label class="check"><input type="checkbox"> GRE</label><input placeholder="Optional"><span>minimum score</span></div></div><hr><div class="card-section-head"><span>✦</span><div><h2>Skills & financial fit</h2><p>Add signals that improve ranking quality.</p></div></div><label>Preferred skills<div class="tag-input"><span>Python ×</span><span>Machine Learning ×</span><span>SQL ×</span><button>＋ Add skill</button></div></label><div class="field-grid compact"><label>Annual tuition budget<select><option>$20,000 – $35,000 USD</option></select></label><label>Scholarship required<select><option>Preferred, not required</option></select></label></div><footer class="form-footer"><button class="secondary" (click)="go('campaign')">Back</button><button class="primary" (click)="beginMatching()">Save & find eligible students ✦</button></footer></article></section>
-      </main>
-
-      <main class="matching-page" *ngIf="screen === 'matching'">
-        <section class="matching-card"><div class="ai-orbit"><span>✦</span><i></i><i></i><i></i></div><span class="eyebrow">SUPERoffer AI MATCHING ENGINE</span><h1>Finding your best-fit students</h1><p>We’re comparing verified student profiles against your academic, exam, skill, and financial criteria.</p><div class="matching-bar"><i [style.width.%]="matchingProgress"></i></div><strong>{{matchingProgress}}% complete</strong><ul><li [class.done]="matchingProgress > 20"><b>{{matchingProgress > 20 ? '✓' : '•'}}</b> Academic profile compatibility</li><li [class.done]="matchingProgress > 45"><b>{{matchingProgress > 45 ? '✓' : '•'}}</b> Exam score validation</li><li [class.done]="matchingProgress > 70"><b>{{matchingProgress > 70 ? '✓' : '•'}}</b> Skills and study intent analysis</li><li [class.done]="matchingProgress >= 100"><b>{{matchingProgress >= 100 ? '✓' : '•'}}</b> Final match ranking</li></ul><button class="primary" [disabled]="matchingProgress < 100" (click)="go('students')">{{matchingProgress < 100 ? 'Analyzing student profiles…' : 'View 1,284 eligible students →'}}</button><small>No student contact details are shared until you send an offer.</small></section>
-      </main>
-
-      <main class="portal-content" *ngIf="screen === 'students'">
-        <div class="page-title students-title"><div><button class="back-link" (click)="go('criteria')">← Admission criteria</button><h1>Eligible students</h1><p><strong>1,284 students</strong> match your Fall 2027 Data & AI campaign.</p></div><div class="match-quality"><span>Average match quality</span><strong>91%</strong><i><b style="width:91%"></b></i></div></div>
-        <section class="filter-bar"><label class="search-box">⌕<input [(ngModel)]="studentSearch" placeholder="Search students, skills, or programs"></label><select [(ngModel)]="studentFilter"><option>All countries</option><option>India</option><option>Pakistan</option><option>Nigeria</option><option>China</option></select><button>All filters <b>3</b></button><span></span><small>Sort by</small><select [(ngModel)]="sortBy"><option>Match score</option><option>Name</option></select></section>
-        <section class="student-table"><div class="table-head"><span>STUDENT</span><span>ACADEMIC PROFILE</span><span>KEY SKILLS</span><span>MATCH</span><span></span></div><article *ngFor="let student of filteredStudents"><div class="student-name"><span [style.background]="student.color">{{student.initials}}</span><div><strong>{{student.name}}</strong><small>{{student.location}}</small></div></div><div><strong>{{student.education}}</strong><small>GPA {{student.gpa}} · {{student.exam}}</small></div><div class="skills"><span *ngFor="let skill of student.skills.slice(0,2)">{{skill}}</span><b>+{{student.skills.length - 2}}</b></div><div class="match-score"><strong>{{student.score}}%</strong><i><b [style.width.%]="student.score"></b></i><small>Excellent match</small></div><div class="row-actions"><button [class.saved]="student.shortlisted" (click)="toggleShortlist(student)" [attr.aria-label]="'Shortlist ' + student.name">{{student.shortlisted ? '★' : '☆'}}</button><button class="secondary" (click)="openProfile(student.id)">View profile</button></div></article></section>
-        <div class="pagination"><span>Showing 1–5 of 1,284 students</span><div><button disabled>←</button><button class="active">1</button><button>2</button><button>3</button><span>…</span><button>257</button><button>→</button></div></div>
-      </main>
-
-      <main class="portal-content profile-page" *ngIf="screen === 'profile'">
-        <button class="back-link" (click)="go('students')">← Back to eligible students</button>
-        <section class="profile-hero"><div class="profile-person"><span [style.background]="selectedStudent.color">{{selectedStudent.initials}}</span><div><small>VERIFIED STUDENT</small><h1>{{selectedStudent.name}}</h1><p>{{selectedStudent.location}} · Seeking {{selectedStudent.program}}</p><div class="profile-tags"><span>Available for Fall 2027</span><span>Open to offers</span></div></div></div><div class="profile-match"><small>OVERALL MATCH</small><strong>{{selectedStudent.score}}%</strong><span>Excellent fit</span></div><div class="profile-actions"><button class="secondary" (click)="toggleShortlist(selectedStudent)">{{selectedStudent.shortlisted ? '★ Shortlisted' : '☆ Add to shortlist'}}</button><button class="primary" (click)="go('offer')">Send admission offer →</button></div></section>
-        <section class="profile-layout"><article><div class="profile-section"><div class="section-heading"><span>◎</span><div><h2>About {{selectedStudent.name.split(' ')[0]}}</h2><p>A motivated computer science graduate focused on using data and AI to solve meaningful problems.</p></div></div><blockquote>“I want to deepen my applied machine learning skills in an international research environment and build technology that improves access to education.”</blockquote></div><div class="profile-section"><div class="section-heading"><span>🎓</span><div><h2>Academic background</h2><p>Verified education history and performance.</p></div></div><div class="education-card"><span>2021—2025</span><div><h3>{{selectedStudent.education}}</h3><p>National Institute of Technology</p><small>GPA {{selectedStudent.gpa}} · First class with distinction</small></div></div></div><div class="profile-section"><div class="section-heading"><span>✦</span><div><h2>Skills & experience</h2><p>Self-reported and evidence-backed capabilities.</p></div></div><div class="large-skills"><span *ngFor="let skill of selectedStudent.skills">{{skill}} <b>Advanced</b></span><span>Data Visualization <b>Intermediate</b></span></div></div></article><aside><section class="fit-card"><span class="eyebrow">WHY THIS STUDENT MATCHES</span><div><label>Academic fit <b>98%</b></label><i><b style="width:98%"></b></i></div><div><label>Exam fit <b>96%</b></label><i><b style="width:96%"></b></i></div><div><label>Skills fit <b>94%</b></label><i><b style="width:94%"></b></i></div><div><label>Financial fit <b>91%</b></label><i><b style="width:91%"></b></i></div><p>Strong academic performance and direct alignment with your campaign’s preferred technical skills.</p></section><section class="quick-facts"><h3>Quick facts</h3><dl><div><dt>Target intake</dt><dd>Fall 2027</dd></div><div><dt>English proficiency</dt><dd>{{selectedStudent.exam}}</dd></div><div><dt>Budget</dt><dd>$25k–$35k / year</dd></div><div><dt>Scholarship</dt><dd>Preferred</dd></div><div><dt>Profile completed</dt><dd>100%</dd></div></dl></section></aside></section>
-      </main>
-
-      <main class="portal-content" *ngIf="screen === 'shortlist'">
-        <div class="page-title"><div><span class="eyebrow">TALENT PIPELINE</span><h1>Shortlisted students</h1><p>Review and manage high-potential students before sending an offer.</p></div><button class="primary" [disabled]="!shortlistedStudents.length" (click)="selectedStudentId=shortlistedStudents[0].id; go('offer')">Send admission offer →</button></div>
-        <section class="shortlist-summary"><article><small>SHORTLISTED</small><strong>{{shortlistedStudents.length}}</strong><span>Across 2 programs</span></article><article><small>AVG. MATCH SCORE</small><strong>91%</strong><span>Excellent cohort fit</span></article><article><small>READY FOR OFFER</small><strong>{{shortlistedStudents.length}}</strong><span>Profiles fully verified</span></article></section>
-        <section class="student-table shortlist-table"><div class="table-head"><span>STUDENT</span><span>PROGRAM</span><span>MATCH</span><span>ADDED</span><span></span></div><article *ngFor="let student of shortlistedStudents"><div class="student-name"><span [style.background]="student.color">{{student.initials}}</span><div><strong>{{student.name}}</strong><small>{{student.location}}</small></div></div><div><strong>{{student.program}}</strong><small>Fall 2027</small></div><div class="match-score"><strong>{{student.score}}%</strong><small>Excellent match</small></div><div><strong>Today</strong><small>by Maya Chen</small></div><div class="row-actions"><button (click)="toggleShortlist(student)">Remove</button><button class="secondary" (click)="openProfile(student.id)">Profile</button><button class="primary small" (click)="selectedStudentId=student.id; go('offer')">Send offer</button></div></article><div class="empty-shortlist" *ngIf="!shortlistedStudents.length"><span>☆</span><h3>No students shortlisted yet</h3><button class="primary" (click)="go('students')">Browse eligible students</button></div></section>
-      </main>
-
-      <main class="portal-content narrow" *ngIf="screen === 'offer'">
-        <div class="page-title"><div><button class="back-link" (click)="go('profile')">← Student profile</button><h1>Send admission offer</h1><p>Create a clear, personalized offer for {{selectedStudent.name}}.</p></div><span class="step-pill">DRAFT</span></div>
-        <section class="offer-layout"><form class="workspace-card offer-form" (ngSubmit)="sendOffer()"><div class="recipient-card"><span [style.background]="selectedStudent.color">{{selectedStudent.initials}}</span><div><small>OFFER RECIPIENT</small><strong>{{selectedStudent.name}}</strong><p>{{selectedStudent.program}} · {{selectedStudent.score}}% match</p></div><b>✓ Verified</b></div><div class="field-grid"><label class="wide">Program offered<select><option>MSc Data Science — Fall 2027</option></select></label><label>Offer type<select><option>Conditional admission</option><option>Unconditional admission</option></select></label><label>Response deadline<input type="date" value="2026-08-15"></label><label>Tuition fee<input value="$31,500 USD / year"></label><label>Scholarship award<select><option>30% Global Excellence Scholarship</option><option>20% Merit Scholarship</option></select></label><label class="wide">Personal message<textarea>Hi {{selectedStudent.name.split(' ')[0]}}, your academic record and experience in machine learning stood out to our admissions team. We believe you would be an excellent fit for our MSc Data Science cohort at Northbridge University.</textarea><small class="counter">286 / 1,000 characters</small></label></div><div class="attachment"><span>▤</span><div><strong>Admission_Offer_Northbridge_2027.pdf</strong><small>Offer letter · 1.8 MB</small></div><button type="button">Replace</button></div><label class="check consent"><input type="checkbox" checked> I confirm this offer is accurate and approved for release by Northbridge University.</label><footer class="form-footer"><button type="button" class="secondary" (click)="notify('Offer saved as draft')">Save draft</button><button class="primary" [disabled]="offerSent" type="submit">{{offerSent ? 'Offer sent ✓' : 'Review & send offer →'}}</button></footer></form><aside class="offer-preview"><span class="eyebrow">STUDENT PREVIEW</span><div class="preview-logo">N</div><h2>You have an offer from Northbridge University</h2><p>MSc Data Science · Fall 2027</p><div><span>Scholarship</span><strong>30% tuition award</strong></div><div><span>Response by</span><strong>15 August 2026</strong></div><small>This preview shows how the offer will appear in the student’s SuperOffer account.</small></aside></section>
-      </main>
-
-      <main class="portal-content" *ngIf="screen === 'offers'">
-        <div class="page-title"><div><span class="eyebrow">ADMISSIONS OUTREACH</span><h1>Offers sent</h1><p>Track every offer and student response in one place.</p></div><button class="primary" (click)="go('students')">＋ Send new offer</button></div>
-        <section class="offer-metrics"><article><span>↗</span><div><small>TOTAL SENT</small><strong>86</strong><p>12 this month</p></div></article><article><span>◉</span><div><small>VIEWED</small><strong>62</strong><p>72% view rate</p></div></article><article><span>✓</span><div><small>ACCEPTED</small><strong>23</strong><p>26.7% conversion</p></div></article><article><span>◷</span><div><small>AWAITING RESPONSE</small><strong>31</strong><p>8 due this week</p></div></article></section>
-        <section class="filter-bar"><label class="search-box">⌕<input placeholder="Search by student or program"></label><button class="active-filter">All offers <b>86</b></button><button>Pending <b>31</b></button><button>Accepted <b>23</b></button><span></span><button>Export ↗</button></section>
-        <section class="offers-table"><div class="offer-table-head"><span>STUDENT</span><span>PROGRAM & OFFER</span><span>SENT</span><span>STATUS</span><span></span></div><article *ngIf="offerSent"><div class="student-name"><span [style.background]="selectedStudent.color">{{selectedStudent.initials}}</span><div><strong>{{selectedStudent.name}}</strong><small>{{selectedStudent.location}}</small></div></div><div><strong>MSc Data Science</strong><small>30% Global Excellence Scholarship</small></div><span>Just now</span><b class="status-badge pending">Pending</b><button>•••</button></article><article *ngFor="let item of sentOffers"><div class="student-name"><span [style.background]="item.color">{{item.initials}}</span><div><strong>{{item.student}}</strong><small>International applicant</small></div></div><div><strong>{{item.program}}</strong><small>{{item.award}}</small></div><span>{{item.sent}}</span><b class="status-badge" [class.accepted]="item.status==='Accepted'" [class.viewed]="item.status==='Viewed'">{{item.status}}</b><button>•••</button></article></section>
-        <section class="completion-banner"><span>✓</span><div><small>WORKFLOW COMPLETE</small><h3>Your admission outreach is underway</h3><p>We’ll notify you when students view, respond to, or accept an offer.</p></div><button class="secondary" (click)="go('dashboard')">Return to dashboard</button></section>
-      </main>
-    </div>
-  </div>
-</ng-container>
-
-<div class="toast" *ngIf="toast"><span>✓</span>{{toast}}</div>
+  <footer *ngIf="screen === 'landing' || screen === 'audience'">
+    <div class="brand"><span class="brand-mark">S</span><span>SuperOffer</span></div>
+    <p>Connecting education opportunities with the people who make them possible.</p>
+    <span>© 2026 SuperOffer</span>
+  </footer>
+</div>

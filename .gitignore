@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.angular/
+root-artifacts/
+.vercel/
+.cache/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
