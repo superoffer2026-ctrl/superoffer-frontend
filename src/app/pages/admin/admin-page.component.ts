@@ -5,96 +5,44 @@ import { RouterLink } from '@angular/router';
 import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
-  selector: 'app-admin-page',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
-    <main class="admin-page">
-      <header>
-        <a class="brand" routerLink="/"><span>S</span>SuperOffer</a>
-        <div><span class="eyebrow">SUPER ADMIN</span><h1>Institution approvals</h1>
-          <p>Review university, lender, and consultancy registrations before marketplace access is granted.</p></div>
-        <button *ngIf="authenticated" class="button secondary" (click)="signOut()">Sign out</button>
-      </header>
-
-      <section class="admin-key-card" *ngIf="!authenticated">
-        <h2>Admin access</h2>
-        <p>Enter the approval key configured on the backend.</p>
-        <form (ngSubmit)="connect()">
-          <label>Admin approval key<input type="password" name="adminKey" [(ngModel)]="adminKey" required></label>
-          <p class="form-message error" *ngIf="error">{{error}}</p>
-          <button type="submit" class="button primary" [disabled]="loading || !adminKey">{{loading ? 'Connecting…' : 'Open approval queue'}}</button>
-        </form>
+  selector:'app-admin-page', standalone:true, imports:[CommonModule,FormsModule,RouterLink],
+  styles:[`
+    :host{--navy:#0d2d42;--green:#087a50;--muted:#6b7b73;--line:#dce5e0;display:block;min-height:100vh;background:#f3f6f4;color:#17221c;font-family:"DM Sans",sans-serif}.admin-shell{min-height:100vh}.topbar{height:72px;padding:0 clamp(20px,4vw,58px);display:flex;align-items:center;border-bottom:1px solid var(--line);background:#fff}.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900}.brand span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--navy);color:#6ad1b4}.topbar>small{margin-left:18px;padding-left:18px;border-left:1px solid var(--line);color:var(--muted)}.topbar button{margin-left:auto;border:0;background:transparent;font-weight:800;color:#65736c;cursor:pointer}
+    .admin-login{width:min(520px,calc(100% - 40px));margin:10vh auto;padding:38px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 25px 70px #17332312}.admin-login h1{font-size:34px;margin:8px 0}.admin-login p{color:var(--muted)}label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:800}input,textarea{border:1px solid #cbd8d1;border-radius:9px;padding:12px;font:inherit}.primary,.secondary,.danger{border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer}.primary{border:1px solid var(--green);background:var(--green);color:#fff}.secondary{border:1px solid #cbd8d1;background:#fff}.danger{border:1px solid #dfb4ae;background:#fff2f0;color:#a33d31}.wide{width:100%;margin-top:18px}
+    .admin-main{max-width:1480px;margin:auto;padding:34px 28px 70px}.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:25px}.page-head h1{font-size:40px;letter-spacing:-.04em;margin:5px 0}.page-head p{color:var(--muted);margin:0}.page-tabs{display:flex;gap:6px}.page-tabs button,.filters button{border:0;border-radius:8px;background:transparent;padding:9px 12px;font-weight:800;color:#6d7972;cursor:pointer}.page-tabs button.active,.filters button.active{background:var(--navy);color:#fff}
+    .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}.metric{padding:18px;background:#fff;border:1px solid var(--line);border-radius:12px}.metric small,.metric strong{display:block}.metric small{color:var(--muted);font-size:10px}.metric strong{font-size:26px;margin-top:5px}.metric.pending strong{color:#b47312}.metric.approved strong{color:var(--green)}.filters{display:flex;align-items:center;gap:5px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:11px;margin-bottom:14px}.filters .separator{width:1px;height:25px;background:var(--line);margin:0 8px}.filters .refresh{margin-left:auto;color:var(--green)}
+    .queue-layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:16px}.queue{display:grid;gap:10px}.request{width:100%;display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;cursor:pointer}.request.selected{border-color:#7db99d;box-shadow:0 0 0 2px #dff1e7}.org-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:11px;background:#e8f5ef;color:var(--green);font-weight:900}.request small,.request strong,.request span{display:block}.request small{font-size:9px;color:var(--green);font-weight:900}.request strong{font-size:15px;margin:3px 0}.request span{font-size:10px;color:var(--muted)}.status{padding:6px 9px!important;border-radius:99px;background:#fff0d9;color:#93600f!important;font-size:9px!important;font-weight:900}.status.approved{background:#e5f5ed;color:var(--green)!important}.status.rejected{background:#ffebe8;color:#a43b2e!important}
+    .detail{position:sticky;top:20px;align-self:start;padding:23px;background:#fff;border:1px solid var(--line);border-radius:13px}.detail-head{display:flex;gap:12px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}.detail-head h2{font-size:19px;margin:3px 0}.detail-head p{font-size:11px;color:var(--muted);margin:0}.detail dl{display:grid;gap:0;margin:15px 0}.detail dl div{display:flex;justify-content:space-between;gap:15px;padding:11px 0;border-bottom:1px solid #edf1ef}.detail dt{font-size:10px;color:var(--muted)}.detail dd{font-size:11px;font-weight:800;text-align:right;margin:0;overflow-wrap:anywhere}.evidence{padding:13px;border-radius:9px;background:#f3f7f5}.evidence strong{font-size:11px}.evidence p{font-size:10px;color:var(--muted);margin:5px 0 0}.review-actions{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:17px}.review-form{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.review-form textarea{width:100%;min-height:90px;margin-top:7px}.review-form footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}.message{padding:11px;border-radius:8px;margin:10px 0}.error{background:#fff0ee;color:#a33d31}.empty{padding:60px;text-align:center;background:#fff;border:1px dashed #cbd7d0;border-radius:12px;color:var(--muted)}
+    .audit-table{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.audit-row{display:grid;grid-template-columns:180px 190px 1fr 160px;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:11px}.audit-row.header{background:#edf3f0;font-size:9px;color:var(--muted);font-weight:900}.audit-row b{color:var(--green)}.audit-row small{color:var(--muted)}
+    @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.queue-layout{grid-template-columns:1fr}.detail{position:static}}@media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column;gap:15px}.filters{overflow:auto}.queue-layout{display:block}.request{grid-template-columns:45px 1fr}.request>.status{grid-column:2}.audit-row{grid-template-columns:1fr}.audit-row.header{display:none}}
+  `],
+  template:`
+    <main class="admin-shell"><header class="topbar"><a class="brand" routerLink="/"><span>S</span>SuperOffer</a><small>Platform administration</small><button *ngIf="authenticated" (click)="signOut()">Sign out</button></header>
+      <section class="admin-login" *ngIf="!authenticated"><span class="eyebrow">RESTRICTED ACCESS</span><h1>Super Admin panel</h1><p>Connect using the protected approval key configured for platform operations.</p><form (ngSubmit)="connect()"><label>Admin approval key<input type="password" name="key" [(ngModel)]="adminKey" required></label><p class="message error" *ngIf="error">{{error}}</p><button class="primary wide" [disabled]="loading">{{loading?'Connecting…':'Open verification queue'}}</button></form></section>
+      <section class="admin-main" *ngIf="authenticated"><header class="page-head"><div><span class="eyebrow">TRUST & VERIFICATION</span><h1>Institution registrations</h1><p>Review universities, education lenders, and consultancies before unlocking login.</p></div><nav class="page-tabs"><button [class.active]="view==='queue'" (click)="view='queue'">Verification queue</button><button [class.active]="view==='audit'" (click)="openAudit()">Audit log</button></nav></header>
+        <ng-container *ngIf="view==='queue'"><section class="metrics"><article class="metric pending"><small>Pending review</small><strong>{{summary.pending||0}}</strong></article><article class="metric approved"><small>Approved</small><strong>{{summary.approved||0}}</strong></article><article class="metric"><small>Rejected</small><strong>{{summary.rejected||0}}</strong></article><article class="metric"><small>Universities waiting</small><strong>{{summary.universities||0}}</strong></article><article class="metric"><small>Banks waiting</small><strong>{{summary.banks||0}}</strong></article><article class="metric"><small>Consultancies waiting</small><strong>{{summary.consultancies||0}}</strong></article></section>
+          <nav class="filters"><button *ngFor="let item of statuses" [class.active]="status===item" (click)="setStatus(item)">{{item}}</button><span class="separator"></span><button *ngFor="let item of types" [class.active]="orgType===item.value" (click)="setType(item.value)">{{item.label}}</button><button class="refresh" (click)="load()">↻ Refresh</button></nav><p class="message error" *ngIf="error">{{error}}</p>
+          <div class="queue-layout"><section class="queue"><div class="empty" *ngIf="!loading&&!registrations.length">No matching registration requests.</div><button class="request" *ngFor="let item of registrations" [class.selected]="selected?.user_id===item.user_id" (click)="selected=item;decision=''"><span class="org-icon">{{orgInitial(item)}}</span><div><small>{{roleLabel(item.role)}}</small><strong>{{item.organization?.name||item.full_name}}</strong><span>{{item.full_name}} · {{item.email}} · Submitted {{item.submitted_at|date:'mediumDate'}}</span></div><span class="status" [class.approved]="item.approval_status==='APPROVED'" [class.rejected]="item.approval_status==='REJECTED'">{{item.approval_status}}</span></button></section>
+            <aside class="detail" *ngIf="selected"><header class="detail-head"><span class="org-icon">{{orgInitial(selected)}}</span><div><small>{{roleLabel(selected.role)}}</small><h2>{{selected.organization?.name}}</h2><p>{{selected.full_name}} · {{selected.email}}</p></div></header><dl><div><dt>Organisation type</dt><dd>{{selected.organization?.organizationType||roleLabel(selected.role)}}</dd></div><div><dt>Registration number</dt><dd>{{selected.organization?.registrationNumber||'Not provided'}}</dd></div><div><dt>Accreditation / licence</dt><dd>{{selected.organization?.licenseReference||'Not provided'}}</dd></div><div><dt>Website</dt><dd>{{selected.organization?.website||'Not provided'}}</dd></div><div><dt>Location</dt><dd>{{location(selected)}}</dd></div><div><dt>Phone</dt><dd>{{selected.phone||'Not provided'}}</dd></div><div><dt>Submitted</dt><dd>{{selected.submitted_at|date:'medium'}}</dd></div></dl><section class="evidence"><strong>Verification evidence</strong><p>Confirm registration and accreditation/licence references against the appropriate official authority before approval.</p></section>
+              <ng-container *ngIf="selected.approval_status==='PENDING'"><div class="review-actions"><button class="danger" (click)="decision='reject'">Reject</button><button class="primary" (click)="decision='approve'">Approve & unlock login</button></div><form class="review-form" *ngIf="decision" (ngSubmit)="submitReview()"><label>{{decision==='reject'?'Rejection reason (required)':'Internal approval note (optional)'}}<textarea name="reason" [(ngModel)]="reviewReason" [required]="decision==='reject'"></textarea></label><footer><button type="button" class="secondary" (click)="decision=''">Cancel</button><button [class]="decision==='reject'?'danger':'primary'" [disabled]="reviewing||decision==='reject'&&!reviewReason.trim()">{{reviewing?'Saving…':decision==='reject'?'Confirm rejection':'Confirm approval'}}</button></footer></form></ng-container>
+              <p class="message" *ngIf="selected.approval_status!=='PENDING'">Reviewed {{selected.reviewed_at|date:'medium'}}<br>{{selected.rejection_reason||'Organisation approved and login unlocked.'}}</p>
+            </aside></div></ng-container>
+        <section class="audit-table" *ngIf="view==='audit'"><div class="audit-row header"><span>Occurred</span><span>Action</span><span>Organisation</span><span>Actor</span></div><div class="audit-row" *ngFor="let entry of auditEntries"><small>{{entry.occurredAt|date:'medium'}}</small><b>{{entry.action}}</b><span>{{entry.organizationName||entry.entityId}}<small *ngIf="entry.reason"> · {{entry.reason}}</small></span><span>{{entry.actorUserId}}</span></div><div class="empty" *ngIf="!auditEntries.length">No verification actions recorded yet.</div></section>
       </section>
-
-      <section *ngIf="authenticated">
-        <nav class="admin-filters">
-          <button *ngFor="let item of statuses" [class.active]="status === item" (click)="setStatus(item)">{{item}}</button>
-          <button class="refresh" (click)="load()">Refresh</button>
-        </nav>
-        <p class="form-message error" *ngIf="error">{{error}}</p>
-        <div class="admin-summary"><strong>{{registrations.length}}</strong><span>{{status.toLowerCase()}} registrations</span></div>
-        <div class="empty-admin" *ngIf="!loading && registrations.length === 0">No {{status.toLowerCase()}} institution registrations.</div>
-        <div class="approval-list">
-          <article *ngFor="let item of registrations">
-            <div class="approval-heading"><span>{{initials(item.full_name)}}</span><div><small>{{roleLabel(item.role)}}</small>
-              <h2>{{item.organization?.name || item.full_name}}</h2><p>{{item.full_name}} · {{item.email}}</p></div>
-              <b [class]="item.approval_status.toLowerCase()">{{item.approval_status}}</b>
-            </div>
-            <dl>
-              <div><dt>Registration number</dt><dd>{{item.organization?.registrationNumber || 'Not provided'}}</dd></div>
-              <div><dt>Accreditation / licence</dt><dd>{{item.organization?.licenseReference || 'Not provided'}}</dd></div>
-              <div><dt>Phone</dt><dd>{{item.phone || 'Not provided'}}</dd></div>
-              <div><dt>Submitted</dt><dd>{{item.submitted_at | date:'medium'}}</dd></div>
-            </dl>
-            <footer *ngIf="item.approval_status === 'PENDING'">
-              <button class="button reject" [disabled]="reviewing === item.user_id" (click)="review(item, 'REJECTED')">Reject</button>
-              <button class="button approve" [disabled]="reviewing === item.user_id" (click)="review(item, 'APPROVED')">{{reviewing === item.user_id ? 'Saving…' : 'Approve institution'}}</button>
-            </footer>
-          </article>
-        </div>
-      </section>
-    </main>
-  `
+    </main>`
 })
 export class AdminPageComponent implements OnInit {
-  adminKey = ''; authenticated = false; loading = false; error = ''; reviewing = '';
-  status = 'PENDING'; statuses = ['PENDING', 'APPROVED', 'REJECTED']; registrations: any[] = [];
-  constructor(private api: AuthApiService, private cdr: ChangeDetectorRef) {}
-  ngOnInit() {
-    this.adminKey = sessionStorage.getItem('superoffer_admin_key') || '';
-    if (this.adminKey) this.connect();
-  }
-  async connect() {
-    this.loading = true; this.error = '';
-    try {
-      await this.load();
-      this.authenticated = true;
-      sessionStorage.setItem('superoffer_admin_key', this.adminKey);
-    } catch (error) {
-      this.authenticated = false;
-      this.error = error instanceof Error ? error.message : 'Admin access failed.';
-    } finally { this.loading = false; this.cdr.detectChanges(); }
-  }
-  async load() {
-    const result = await this.api.adminRegistrations(this.adminKey, this.status);
-    this.registrations = result.registrations || [];
-    this.cdr.detectChanges();
-  }
-  async setStatus(status: string) {
-    this.status = status; this.loading = true; this.error = '';
-    try { await this.load(); } catch (error) { this.error = error instanceof Error ? error.message : 'Could not load registrations.'; }
-    finally { this.loading = false; this.cdr.detectChanges(); }
-  }
-  async review(item: any, approvalStatus: 'APPROVED' | 'REJECTED') {
-    const reason = approvalStatus === 'REJECTED' ? window.prompt('Reason for rejection:', 'The submitted organization details could not be verified') : '';
-    if (approvalStatus === 'REJECTED' && reason === null) return;
-    this.reviewing = item.user_id; this.error = '';
-    try { await this.api.reviewRegistration(this.adminKey, item.user_id, approvalStatus, reason || ''); await this.load(); }
-    catch (error) { this.error = error instanceof Error ? error.message : 'Could not update this registration.'; }
-    finally { this.reviewing = ''; this.cdr.detectChanges(); }
-  }
-  signOut() { sessionStorage.removeItem('superoffer_admin_key'); this.adminKey = ''; this.authenticated = false; this.registrations = []; }
-  initials(name: string) { return String(name || '?').split(/\\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase(); }
-  roleLabel(role: string) { return String(role || '').replaceAll('_', ' '); }
+  adminKey='';authenticated=false;loading=false;error='';reviewing=false;view:'queue'|'audit'='queue';status='PENDING';orgType='ALL';registrations:any[]=[];selected:any=null;summary:any={};decision:''|'approve'|'reject'='';reviewReason='';auditEntries:any[]=[];
+  statuses=['PENDING','APPROVED','REJECTED','ALL'];types=[{label:'All organisations',value:'ALL'},{label:'Universities',value:'UNIVERSITY'},{label:'Banks',value:'BANK'},{label:'Consultancies',value:'CONSULTANCY'}];
+  constructor(private api:AuthApiService,private cdr:ChangeDetectorRef){}
+  ngOnInit(){this.adminKey=sessionStorage.getItem('superoffer_admin_key')||'';if(this.adminKey)this.connect();}
+  async connect(){this.loading=true;this.error='';try{await this.load();this.authenticated=true;sessionStorage.setItem('superoffer_admin_key',this.adminKey);}catch(e){this.error=e instanceof Error?e.message:'Admin access failed.';this.authenticated=false;}finally{this.loading=false;this.cdr.detectChanges();}}
+  async load(){const result=await this.api.adminRegistrations(this.adminKey,this.status,this.orgType);this.registrations=result.registrations||[];this.summary=result.summary||{};if(this.selected)this.selected=this.registrations.find(x=>x.user_id===this.selected.user_id)||null;this.cdr.detectChanges();}
+  async setStatus(value:string){this.status=value;this.selected=null;await this.refresh();} async setType(value:string){this.orgType=value;this.selected=null;await this.refresh();}
+  async refresh(){this.loading=true;this.error='';try{await this.load();}catch(e){this.error=e instanceof Error?e.message:'Could not load registrations.';}finally{this.loading=false;this.cdr.detectChanges();}}
+  async submitReview(){if(!this.selected)return;this.reviewing=true;this.error='';try{const rejected=this.decision==='reject';await this.api.reviewRegistration(this.adminKey,this.selected.user_id,rejected?'REJECTED':'APPROVED',rejected?this.reviewReason:'',rejected?'':this.reviewReason);this.decision='';this.reviewReason='';await this.load();}catch(e){this.error=e instanceof Error?e.message:'Review could not be saved.';}finally{this.reviewing=false;this.cdr.detectChanges();}}
+  async openAudit(){this.view='audit';this.error='';try{const result=await this.api.adminAuditLog(this.adminKey);this.auditEntries=result.entries||[];}catch(e){this.error=e instanceof Error?e.message:'Could not load audit log.';}this.cdr.detectChanges();}
+  signOut(){sessionStorage.removeItem('superoffer_admin_key');this.adminKey='';this.authenticated=false;this.registrations=[];this.selected=null;}
+  roleLabel(role:string){return role==='UNIVERSITY_OFFICER'?'University':role==='LOAN_OFFICER'?'Education lender':'Study abroad consultancy';}
+  orgInitial(item:any){return String(item.organization?.name||item.full_name||'?')[0].toUpperCase();} location(item:any){return [item.organization?.city,item.organization?.country].filter(Boolean).join(', ')||'Not provided';}
 }

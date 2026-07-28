@@ -66,18 +66,22 @@ export class AuthApiService {
     return this.request('/students/me/offers', { headers: { authorization: `Bearer ${token}` } });
   }
 
-  async adminRegistrations(adminKey: string, status = 'PENDING'): Promise<any> {
-    return this.request(`/admin/registrations?status=${encodeURIComponent(status)}`, {
+  async adminRegistrations(adminKey: string, status = 'PENDING', orgType = 'ALL'): Promise<any> {
+    return this.request(`/admin/registrations?status=${encodeURIComponent(status)}&org_type=${encodeURIComponent(orgType)}`, {
       headers: { 'x-admin-key': adminKey }
     });
   }
 
-  async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = ''): Promise<any> {
+  async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = '', approvalNote = ''): Promise<any> {
     return this.request(`/admin/users/${encodeURIComponent(userId)}/approval`, {
       method: 'PATCH',
       headers: { 'x-admin-key': adminKey },
-      body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason })
+      body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason, approval_note: approvalNote })
     });
+  }
+
+  async adminAuditLog(adminKey: string): Promise<any> {
+    return this.request('/admin/audit-log?limit=100', { headers:{ 'x-admin-key':adminKey } });
   }
 
   private async request(path: string, options: RequestInit = {}, json = true): Promise<any> {
