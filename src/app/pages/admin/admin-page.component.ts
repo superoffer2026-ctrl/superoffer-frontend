@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthApiService } from '../../core/auth-api.service';
@@ -31,18 +31,22 @@ import { AuthApiService } from '../../core/auth-api.service';
       </section>
     </main>`
 })
-export class AdminPageComponent implements OnInit {
+export class AdminPageComponent implements OnInit, OnDestroy {
+  private refreshTimer?: number;
   adminKey='';authenticated=false;loading=false;error='';reviewing=false;view:'queue'|'audit'='queue';status='PENDING';orgType='ALL';registrations:any[]=[];selected:any=null;summary:any={};decision:''|'approve'|'reject'='';reviewReason='';auditEntries:any[]=[];
   statuses=['PENDING','APPROVED','REJECTED','ALL'];types=[{label:'All organisations',value:'ALL'},{label:'Universities',value:'UNIVERSITY'},{label:'Banks',value:'BANK'},{label:'Consultancies',value:'CONSULTANCY'}];
   constructor(private api:AuthApiService,private cdr:ChangeDetectorRef){}
   ngOnInit(){this.adminKey=sessionStorage.getItem('superoffer_admin_key')||'';if(this.adminKey)this.connect();}
-  async connect(){this.loading=true;this.error='';try{await this.load();this.authenticated=true;sessionStorage.setItem('superoffer_admin_key',this.adminKey);}catch(e){this.error=e instanceof Error?e.message:'Admin access failed.';this.authenticated=false;}finally{this.loading=false;this.cdr.detectChanges();}}
+  ngOnDestroy(){this.stopAutoRefresh();}
+  async connect(){this.loading=true;this.error='';try{await this.load();this.authenticated=true;sessionStorage.setItem('superoffer_admin_key',this.adminKey);this.startAutoRefresh();}catch(e){this.error=e instanceof Error?e.message:'Admin access failed.';this.authenticated=false;}finally{this.loading=false;this.cdr.detectChanges();}}
+  private startAutoRefresh(){this.stopAutoRefresh();this.refreshTimer=window.setInterval(()=>{if(this.authenticated&&this.view==='queue'&&!this.reviewing)this.load().catch(()=>{});},15000);}
+  private stopAutoRefresh(){if(this.refreshTimer){window.clearInterval(this.refreshTimer);this.refreshTimer=undefined;}}
   async load(){const result=await this.api.adminRegistrations(this.adminKey,this.status,this.orgType);this.registrations=result.registrations||[];this.summary=result.summary||{};if(this.selected)this.selected=this.registrations.find(x=>x.user_id===this.selected.user_id)||null;this.cdr.detectChanges();}
   async setStatus(value:string){this.status=value;this.selected=null;await this.refresh();} async setType(value:string){this.orgType=value;this.selected=null;await this.refresh();}
   async refresh(){this.loading=true;this.error='';try{await this.load();}catch(e){this.error=e instanceof Error?e.message:'Could not load registrations.';}finally{this.loading=false;this.cdr.detectChanges();}}
   async submitReview(){if(!this.selected)return;this.reviewing=true;this.error='';try{const rejected=this.decision==='reject';await this.api.reviewRegistration(this.adminKey,this.selected.user_id,rejected?'REJECTED':'APPROVED',rejected?this.reviewReason:'',rejected?'':this.reviewReason);this.decision='';this.reviewReason='';await this.load();}catch(e){this.error=e instanceof Error?e.message:'Review could not be saved.';}finally{this.reviewing=false;this.cdr.detectChanges();}}
   async openAudit(){this.view='audit';this.error='';try{const result=await this.api.adminAuditLog(this.adminKey);this.auditEntries=result.entries||[];}catch(e){this.error=e instanceof Error?e.message:'Could not load audit log.';}this.cdr.detectChanges();}
-  signOut(){sessionStorage.removeItem('superoffer_admin_key');this.adminKey='';this.authenticated=false;this.registrations=[];this.selected=null;}
+  signOut(){this.stopAutoRefresh();sessionStorage.removeItem('superoffer_admin_key');this.adminKey='';this.authenticated=false;this.registrations=[];this.selected=null;}
   roleLabel(role:string){return role==='UNIVERSITY_OFFICER'?'University':role==='LOAN_OFFICER'?'Education lender':'Study abroad consultancy';}
   orgInitial(item:any){return String(item.organization?.name||item.full_name||'?')[0].toUpperCase();} location(item:any){return [item.organization?.city,item.organization?.country].filter(Boolean).join(', ')||'Not provided';}
 }
