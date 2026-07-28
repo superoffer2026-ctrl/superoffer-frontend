@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthApiService, PortalKey } from '../../core/auth-api.service';
@@ -39,7 +39,7 @@ import { AuthApiService, PortalKey } from '../../core/auth-api.service';
             <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="form.remember"> Keep me signed in</label>
           </div>
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
-          <button class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : mode === 'login' ? 'Log in securely' : 'Create account'}}</button>
+          <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : mode === 'login' ? 'Log in securely' : 'Create account'}}</button>
           <p class="switch">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
             <a [routerLink]="['/auth', mode === 'login' ? 'register' : 'login', portal]">{{mode === 'login' ? 'Create an account' : 'Log in'}}</a></p>
         </form>
@@ -50,7 +50,7 @@ import { AuthApiService, PortalKey } from '../../core/auth-api.service';
 export class AuthPageComponent implements OnInit {
   portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',remember:true};
-  constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService){}
+  constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService,private cdr:ChangeDetectorRef){}
   ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';});}
   get portalLabel(){return this.portal[0].toUpperCase()+this.portal.slice(1);}
   get authTitle(){return this.portal==='student'?'Build your opportunity profile.':`Register your ${this.portal} securely.`;}
@@ -87,6 +87,6 @@ export class AuthPageComponent implements OnInit {
       }else{
         this.error=e instanceof Error?e.message:'The request could not be completed.';
       }
-    }finally{this.loading=false;}
+    }finally{this.loading=false;this.cdr.detectChanges();}
   }
 }

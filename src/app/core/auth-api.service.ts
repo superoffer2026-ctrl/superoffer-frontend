@@ -4,6 +4,7 @@ export type PortalKey = 'student' | 'university' | 'bank' | 'consultancy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
+  private readonly requestTimeoutMs = 15_000;
   private readonly baseUrl =
     (window as Window & { SUPER_OFFER_API_URL?: string }).SUPER_OFFER_API_URL || '/api/v1';
 
@@ -34,23 +35,49 @@ export class AuthApiService {
     return this.request('/students/me/offers', { headers: { authorization: `Bearer ${token}` } });
   }
 
-  private async request(path: string, options: RequestInit = {}): Promise<any> {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+  async adminRegistrations(adminKey: string, status = 'PENDING'): Promise<any> {
+    return this.request(`/admin/registrations?status=${encodeURIComponent(status)}`, {
+      headers: { 'x-admin-key': adminKey }
     });
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = new Error(body?.message || 'The request could not be completed.') as Error & {
-        body?: any;
-        status?: number;
-        code?: string;
-      };
-      error.body = body;
-      error.status = response.status;
-      error.code = body?.code;
+  }
+
+  async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = ''): Promise<any> {
+    return this.request(`/admin/users/${encodeURIComponent(userId)}/approval`, {
+      method: 'PATCH',
+      headers: { 'x-admin-key': adminKey },
+      body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason })
+    });
+  }
+
+  private async request(path: string, options: RequestInit = {}): Promise<any> {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), this.requestTimeoutMs);
+    try {
+      const response = await fetch(`${this.baseUrl}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        const error = new Error(body?.message || 'The request could not be completed.') as Error & {
+          body?: any;
+          status?: number;
+          code?: string;
+        };
+        error.body = body;
+        error.status = response.status;
+        error.code = body?.code;
+        throw error;
+      }
+      return body;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(`Could not connect to the SuperOffer API at ${this.baseUrl}. Please try again.`);
+      }
       throw error;
+    } finally {
+      window.clearTimeout(timeout);
     }
-    return body;
   }
 }

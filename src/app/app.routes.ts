@@ -6,6 +6,7 @@ import { BankPageComponent } from './pages/bank/bank-page.component';
 import { ConsultancyPageComponent } from './pages/consultancy/consultancy-page.component';
 import { AuthPageComponent } from './pages/auth/auth-page.component';
 import { PortalPageComponent } from './pages/portal/portal-page.component';
+import { AdminPageComponent } from './pages/admin/admin-page.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
@@ -15,5 +16,6 @@ export const appRoutes: Routes = [
   { path: 'consultancy', component: ConsultancyPageComponent, title: 'Consultancies | SuperOffer' },
   { path: 'auth/:mode/:portal', component: AuthPageComponent, title: 'Account | SuperOffer' },
   { path: 'portal/:portal', component: PortalPageComponent, title: 'Portal | SuperOffer' },
+  { path: 'admin', component: AdminPageComponent, title: 'Institution approvals | SuperOffer' },
   { path: '**', redirectTo: '' }
 ];
