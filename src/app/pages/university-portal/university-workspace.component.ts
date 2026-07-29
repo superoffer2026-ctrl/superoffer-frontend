@@ -26,7 +26,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
       <main class="uni-main">
         <header class="uni-topbar">
           <div><span class="uni-mobile-brand">SuperOffer University</span><small>2026–27 recruitment cycle</small></div>
-          <div><button type="button" aria-label="Notifications">◌<b>3</b></button><button type="button" (click)="view='settings'">⚙</button></div>
+          <div><button class="uni-plan-trigger" type="button" (click)="showPlans=true">Upgrade access</button><button type="button" aria-label="Notifications" (click)="notify('Notifications opened')">◌<b>3</b></button><button type="button" (click)="view='settings'">⚙</button></div>
         </header>
 
         <section class="uni-view" *ngIf="view==='dashboard'">
@@ -67,7 +67,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
         <section class="uni-view" *ngIf="view==='search'">
           <header class="uni-page-title"><div><span>STUDENT DISCOVERY</span><h1>Find best-fit students</h1><p>Search visible profiles ranked by your programme criteria.</p></div><button class="uni-secondary" (click)="notify('Saved searches opened')">Saved searches</button></header>
           <div class="uni-search-box"><span>✦</span><input [(ngModel)]="query" placeholder="Try “Data Science students targeting Canada with IELTS 7+”"><button class="uni-primary" (click)="notify(query ? 'Search results updated' : 'Enter a search or use the filters')">Search</button></div>
-          <div class="uni-filter-row"><button *ngFor="let filter of filters" [class.active]="activeFilter===filter" (click)="activeFilter=filter">{{filter}}⌄</button><span></span><small>214 profile views remaining</small></div>
+          <div class="uni-filter-row"><button *ngFor="let filter of filters" [class.active]="activeFilter===filter" (click)="activeFilter=filter">{{filter}}⌄</button><span></span><small>286 profile views available · <button class="quota-link" (click)="showPlans=true">Get more</button></small></div>
           <div class="uni-results-head"><div><strong>143 matching students</strong><small>Contact details stay hidden until an offer is accepted.</small></div><select [(ngModel)]="sortOrder"><option>Best match</option><option>Most recent</option><option>Profile completion</option></select></div>
           <section class="uni-results">
             <article *ngFor="let student of students">
@@ -125,6 +125,17 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
       <div class="uni-toast" *ngIf="toast">{{toast}}</div>
       <div class="university-panel-backdrop" *ngIf="selectedStudent" (click)="selectedStudent=null"><section class="candidate-profile-panel" (click)="$event.stopPropagation()"><header><span>STUDENT PROFILE PREVIEW</span><button (click)="selectedStudent=null">×</button></header><div class="candidate-profile-hero"><span [style.background]="selectedStudent.color">{{selectedStudent.initials}}</span><div><small>{{selectedStudent.level}} · {{selectedStudent.intake}}</small><h1>{{selectedStudent.name}}</h1><p>{{selectedStudent.course}} · Targeting {{selectedStudent.country}}</p></div><strong>{{selectedStudent.score}}<small>match</small></strong></div><div class="match-factor-list"><h2>Why this student matches</h2><div><span>Academic fit</span><b><i style="width:92%"></i></b><strong>92</strong></div><div><span>Study intent</span><b><i style="width:88%"></i></b><strong>88</strong></div><div><span>Programme fit</span><b><i style="width:94%"></i></b><strong>94</strong></div><small>Contact details remain protected until an offer is accepted.</small></div><footer><button class="uni-secondary" (click)="toggleShortlist(selectedStudent.name)">{{isShortlisted(selectedStudent.name)?'Remove shortlist':'Shortlist'}}</button><button class="uni-primary" (click)="notify('Invitation composer opened for '+selectedStudent.name)">Send invitation</button></footer></section></div>
       <div class="university-panel-backdrop program-modal-backdrop" *ngIf="programDraft" (click)="programDraft=null"><form class="university-offer-composer" (ngSubmit)="saveProgram()" (click)="$event.stopPropagation()"><header><div><small>PROGRAMME CATALOG</small><h2>{{editingProgram ? 'Edit programme' : 'Add programme'}}</h2><p>Keep course details current for matching and offers.</p></div><button type="button" (click)="programDraft=null">×</button></header><div class="composer-grid"><label>Programme name<input name="programName" [(ngModel)]="programDraft.name" required></label><label>Code<input name="programCode" [(ngModel)]="programDraft.code" required></label><label>Degree level<select name="programLevel" [(ngModel)]="programDraft.level"><option>POSTGRADUATE</option><option>UNDERGRADUATE</option></select></label><label>Campus<input name="programCampus" [(ngModel)]="programDraft.campus"></label><label>Intake<input name="programIntake" [(ngModel)]="programDraft.intake"></label><label>Admission target<input name="programTarget" type="number" [(ngModel)]="programDraft.target"></label><label>Status<select name="programStatus" [(ngModel)]="programDraft.status"><option>Active</option><option>Draft</option></select></label></div><footer><button class="uni-secondary" type="button" (click)="programDraft=null">Cancel</button><button class="uni-primary" type="submit">Save programme</button></footer></form></div>
+      <div class="university-panel-backdrop subscription-backdrop" *ngIf="showPlans" (click)="showPlans=false">
+        <section class="subscription-modal" (click)="$event.stopPropagation()">
+          <header><div><span>SUBSCRIPTION & ACCESS</span><h2>Reach more qualified students</h2><p>Increase the number of student profiles your university can review and invite this cycle.</p></div><button type="button" (click)="showPlans=false">×</button></header>
+          <div class="current-usage"><div><span>CURRENT PLAN</span><strong>Growth</strong><small>214 of 500 student profiles viewed</small></div><div><b>43%</b><i><span></span></i><small>286 profile views available</small></div></div>
+          <div class="plan-options">
+            <article *ngFor="let plan of planOptions" [class.recommended]="plan.recommended"><span *ngIf="plan.recommended">RECOMMENDED</span><h3>{{plan.name}}</h3><strong>{{plan.profiles}}</strong><small>student profile views / cycle</small><ul><li *ngFor="let feature of plan.features">✓ {{feature}}</li></ul><button type="button" [class.uni-primary]="plan.recommended" [class.uni-secondary]="!plan.recommended" (click)="choosePlan(plan.name)">{{plan.name==='Growth'?'Current plan':'Choose '+plan.name}}</button></article>
+          </div>
+          <div class="profile-addon"><div><span>NEED A SMALLER TOP-UP?</span><h3>Add 100 student profile views</h3><p>One-time access pack for the current recruitment cycle.</p></div><button class="uni-secondary" type="button" (click)="choosePlan('100-profile add-on')">Add profile pack</button></div>
+          <footer><small>Plan changes are mock frontend interactions until subscription billing is connected.</small></footer>
+        </section>
+      </div>
     </div>
   `
 })
@@ -141,6 +152,7 @@ export class UniversityWorkspaceComponent {
   selectedStudent:any = null;
   editingProgram:any = null;
   programDraft:any = null;
+  showPlans = false;
   shortlistedNames = new Set(['Aarav Mehta', 'Sara Khan', 'Daniel Okafor']);
   navigation: Array<{id:UniversityView;label:string;icon:string;badge?:string}> = [
     {id:'dashboard',label:'Dashboard',icon:'▦'},
@@ -157,6 +169,11 @@ export class UniversityWorkspaceComponent {
   invitationStatuses = ['All 84','Sent 23','Viewed 29','Negotiating 3','Accepted 19','Closed 10'];
   programTabs = ['Programme catalog','Admission criteria','Offer templates'];
   settingTabs = ['Organisation profile','Team','Notifications','Subscription','Security'];
+  planOptions = [
+    {name:'Starter',profiles:'250',recommended:false,features:['Core student search','25 invitations per cycle','One active shortlist']},
+    {name:'Growth',profiles:'500',recommended:false,features:['Advanced student filters','200 invitations per cycle','Programme shortlists']},
+    {name:'Scale',profiles:'1,500',recommended:true,features:['AI match explanations','Unlimited shortlists','Team and funnel reports']}
+  ];
   filters = ['Country: Canada ','Degree: Masters ','Intake: Fall 2027 ','IELTS: 7+ ','More filters '];
   students = [
     {name:'Aarav Mehta',initials:'AM',course:'Data Science',country:'Canada',score:94,factor:'Strong academic fit',level:'Postgraduate',intake:'Fall 2027',tags:['IELTS 7.5','CGPA 8.7','Profile 92%'],color:'#0f6f54'},
@@ -222,6 +239,7 @@ export class UniversityWorkspaceComponent {
     const link=document.createElement('a');link.href=url;link.download='university-admissions-report.csv';link.click();URL.revokeObjectURL(url);
     this.notify('Report exported');
   }
+  choosePlan(name:string){this.showPlans=false;this.notify(`${name} selected for university review`);}
   constructor(private router:Router){
     try{
       const saved=JSON.parse(localStorage.getItem('superoffer_university_shortlist')||'null');
