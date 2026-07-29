@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { StudentProfileUiStore } from '../student-portal/student-profile-ui.store';
 
 type OfferState = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
 type OfferKind = 'University' | 'Bank';
@@ -30,29 +32,31 @@ interface StudentOffer {
 @Component({
   selector: 'app-student-offer-inbox',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   styleUrl: '../../offer-workspace.css',
   styles: [`
     :host{--line:#dfe6e1;--muted:#6d7972;--green:#087a50;display:block;min-height:100vh;background:#fff;color:#172019;font-family:"DM Sans",sans-serif}
-    button,input{font:inherit}.student-inbox-header{height:64px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:#fff}
-    .inbox-brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:18px}.inbox-brand span,.logo{display:grid;place-items:center;border-radius:10px;background:#102f45;color:#fff;font-weight:900}
-    .inbox-brand span{width:31px;height:31px;color:#67d0b2}.student-account{display:flex;align-items:center;gap:11px}.student-account div{text-align:right}.student-account strong,.student-account small{display:block}.student-account small{font-size:10px;color:var(--muted)}
-    .student-account>span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e7f4ed;color:var(--green);font-size:11px;font-weight:900}.sign-out{border:0;background:transparent;color:#66736c;font-size:11px;font-weight:800;cursor:pointer}
+    button,input{font:inherit}.logo{display:grid;place-items:center;border-radius:10px;background:#102f45;color:#fff;font-weight:900}
+    .inbox-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:#102f45;color:#67d0b2;text-decoration:none;font-size:17px;font-weight:900}
+    .offers-utility-rail{position:fixed;inset:0 auto 0 0;z-index:20;width:68px;display:flex;flex-direction:column;align-items:center;padding:16px 0;box-sizing:border-box;background:#f8faf9;border-right:1px solid #d7e0dc}
+    .offers-utility-rail .student-profile-link{margin-top:auto}
+    .student-profile-link{display:flex;align-items:center;gap:8px;padding:3px;border-radius:50%;color:#172019;text-decoration:none;transition:.18s}.student-profile-link:hover{background:#dce8ed}.student-profile-link>span{width:39px;height:39px;display:grid;place-items:center;overflow:hidden;border:2px solid #cbded5;border-radius:50%;background:#e7f4ed;color:var(--green);font-size:11px;font-weight:900}.student-profile-link img{width:100%;height:100%;object-fit:cover}
+    .conversation-options{border:0;background:transparent;color:#718078;font-size:20px;font-weight:800;letter-spacing:2px;cursor:pointer;padding:8px}
     .primary-btn,.secondary-btn{border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer}.primary-btn{border:1px solid var(--green);background:var(--green);color:#fff}.secondary-btn{border:1px solid #ccd8d1;background:#fff;color:#445149}
     .mailbox-error{margin:12px 18px;padding:12px;border-radius:8px;background:#fff0ee;color:#a93628}.institution-logo{flex:0 0 auto}.institution-logo.bank-logo{background:#fff2e8!important;color:#b55a24!important;border-color:#efd4c2}
-    @media(max-width:720px){.student-account div{display:none}.student-inbox-header{padding:0 14px}.offer-workspace-page{padding:0}.offer-conversation{min-height:520px}}
+    @media(max-width:720px){
+      .offers-utility-rail{position:relative;width:100%;height:58px;flex-direction:row;padding:0 14px;border-right:0;border-bottom:1px solid #d7e0dc}
+      .offers-utility-rail .student-profile-link{margin-top:0;margin-left:auto}
+      .offer-workspace-page{padding:0}.offer-conversation{min-height:520px}
+    }
   `],
   template: `
-    <header class="student-inbox-header">
-      <div class="inbox-brand"><span>S</span> SuperOffer <small>Student</small></div>
-      <div class="student-account">
-        <div><strong>{{user?.full_name || 'Student'}}</strong><small>Offer workspace</small></div>
-        <span>{{studentInitials}}</span>
-        <button class="sign-out" (click)="editProfile.emit()">Update profile</button>
-        <button class="sign-out" (click)="signedOut.emit()">Logout</button>
-      </div>
-    </header>
-
+    <nav class="offers-utility-rail" aria-label="Student workspace">
+      <a class="inbox-logo" routerLink="/student/profile" aria-label="Open student profile">S</a>
+      <a class="student-profile-link" routerLink="/student/profile" aria-label="Open complete student profile" title="View profile">
+        <span><img *ngIf="profileStore.photo" [src]="profileStore.photo" alt=""><ng-container *ngIf="!profileStore.photo">{{studentInitials}}</ng-container></span>
+      </a>
+    </nav>
     <p class="mailbox-error" *ngIf="error">{{error}}</p>
     <main class="offer-workspace-page">
       <section class="offer-workspace">
@@ -134,7 +138,7 @@ interface StudentOffer {
                 <span class="logo" [class.bank-logo]="selected.kind==='Bank'">{{selected.initial}}</span>
                 <div><h3>{{selected.contact}}</h3><p>{{selected.contactRole}}</p><small><i></i> Available to help</small></div>
               </div>
-              <button aria-label="Conversation options">•••</button>
+              <button class="conversation-options" type="button" aria-label="Conversation options">•••</button>
             </header>
             <div class="message-thread">
               <div *ngFor="let message of selected.messages" [class.student-message]="message.from==='student'">
@@ -171,6 +175,7 @@ export class StudentOfferInboxComponent {
   }
   filter: 'All' | OfferKind = 'All';
   draft = '';
+  constructor(public profileStore:StudentProfileUiStore){}
 
   offers: StudentOffer[] = [
     {
@@ -228,9 +233,10 @@ export class StudentOfferInboxComponent {
   }
 
   get studentInitials() {
-    const name = this.user?.full_name || 'Student';
+    const name = this.studentName;
     return name.split(/\s+/).slice(0, 2).map((part: string) => part[0]).join('').toUpperCase();
   }
+  get studentName(){return this.profileStore.values['fullName']||this.user?.full_name||'Student';}
 
   count(kind: OfferKind) { return this.offers.filter(offer => offer.kind === kind).length; }
   select(offer: StudentOffer) { this.selected = offer; }

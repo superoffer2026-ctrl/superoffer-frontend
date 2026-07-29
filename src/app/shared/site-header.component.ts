@@ -11,9 +11,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <a class="brand" routerLink="/"><span>S</span>SuperOffer</a>
       <button class="menu-toggle" (click)="open = !open" [attr.aria-expanded]="open">Menu</button>
       <nav [class.open]="open" aria-label="Primary navigation">
-        <a routerLink="/student" routerLinkActive="active">Student</a>
+        <a routerLink="/students" routerLinkActive="active">Student</a>
         <a routerLink="/university" routerLinkActive="active">University</a>
-        <a routerLink="/bank" routerLinkActive="active">Bank</a>
+        <a routerLink="/bank" routerLinkActive="active">Loans & Banks</a>
         <a routerLink="/consultancy" routerLinkActive="active">Consultancy</a>
       </nav>
       <div class="header-actions">

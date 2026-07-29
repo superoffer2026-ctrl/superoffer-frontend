@@ -10,38 +10,72 @@ import { SiteFooterComponent } from '../../shared/site-footer.component';
   imports: [CommonModule, RouterLink, SiteHeaderComponent, SiteFooterComponent],
   template: `
     <app-site-header />
-    <main>
-      <section class="home-hero">
-        <div><span class="eyebrow">The reverse education marketplace</span>
-          <h1>Real education offers should find the right student.</h1>
-          <p>SuperOffer gives students one verified profile, then helps trusted universities discover strong matches and send concrete, comparable opportunities.</p>
-          <div class="cta-row"><a class="button dark large" routerLink="/student">Explore as a student</a><a class="button ghost large" routerLink="/university">Partner as a university</a></div>
-          <div class="trust-list"><span>✓ Verified institutions</span><span>✓ Permission-based discovery</span><span>✓ Secure role access</span></div>
-        </div>
-        <div class="network-card"><span class="network-label">SUPEROffer network</span>
-          <div class="network-center"><b>S</b><small>Trusted matching</small></div>
-          <div class="network-node n1">Students</div><div class="network-node n2">Universities</div>
-          <div class="network-node n3">Banks</div><div class="network-node n4">Consultancies</div>
-        </div>
-      </section>
-      <section class="content-section centered"><span class="eyebrow">Choose your portal</span><h2>One platform. Four focused experiences.</h2>
-        <div class="role-grid">
-          <a *ngFor="let item of roles" [routerLink]="item.route"><span>{{item.number}}</span><h3>{{item.title}}</h3><p>{{item.text}}</p><b>Open portal →</b></a>
+    <main class="new-home">
+      <section class="guidance-hero">
+        <div class="guidance-copy">
+          <span class="home-kicker">Study abroad opportunities, in one place</span>
+          <h1>Your global education journey starts with one profile.</h1>
+          <p>Create your student profile once. Discover university, education-loan, and consultancy offers matched to your goals.</p>
+          <div class="cta-row centered-actions">
+            <a class="button green large" routerLink="/auth/register/student">Create student profile</a>
+            <a class="button home-login large" routerLink="/auth/login/student">Log in</a>
+          </div>
+          <div class="hero-proof">
+            <span><strong>One</strong> reusable profile</span>
+            <span><strong>3</strong> offer categories</span>
+            <span><strong>100%</strong> student controlled</span>
+          </div>
         </div>
       </section>
-      <section class="split-section"><div><span class="eyebrow">How SuperOffer works</span><h2>Less searching. More relevant opportunity.</h2></div>
-        <ol><li><span>01</span><b>Students create a structured, verifiable profile</b></li><li><span>02</span><b>Verified universities discover suitable candidates</b></li><li><span>03</span><b>Students compare invitations and concrete offers</b></li><li><span>04</span><b>Every action remains permissioned and auditable</b></li></ol>
+
+      <section class="interest-section">
+        <div class="section-heading">
+          <span class="home-kicker">Start with what you need</span>
+          <h2>Everything around your study-abroad decision.</h2>
+          <p>Move from uncertainty to a clear next step without repeating the same information across different services.</p>
+        </div>
+        <div class="interest-grid">
+          <a class="interest-card university-card" routerLink="/students">
+            <span class="card-number">01</span><small>ADMISSIONS</small>
+            <h3>University offers</h3>
+            <p>Explore relevant programmes, scholarships, intakes, and admission opportunities.</p>
+            <b>Explore student services →</b>
+          </a>
+          <a class="interest-card loan-card" routerLink="/bank">
+            <span class="card-number">02</span><small>EDUCATION FINANCE</small>
+            <h3>Loan offers</h3>
+            <p>Review clear funding options built around your education plans and eligibility.</p>
+            <b>Understand funding →</b>
+          </a>
+          <a class="interest-card guidance-card" routerLink="/consultancy">
+            <span class="card-number">03</span><small>EXPERT SUPPORT</small>
+            <h3>Consultancy guidance</h3>
+            <p>Connect with verified advisers for applications, documents, visas, and next steps.</p>
+            <b>Find guidance →</b>
+          </a>
+        </div>
       </section>
-      <section class="page-cta"><span class="eyebrow light">Build your next chapter</span><h2>Start with the portal designed for you.</h2><a class="button white large" routerLink="/student">Get started →</a></section>
+
+      <section class="home-story">
+        <div class="story-copy">
+          <span class="home-kicker">A simpler model</span>
+          <h2>Stop rebuilding your story for every opportunity.</h2>
+          <p>SuperOffer keeps your academics, interests, test scores, achievements, and documents together. You decide what to complete and when to share it.</p>
+          <a routerLink="/auth/register/student">Build your profile →</a>
+        </div>
+        <ol class="journey-list">
+          <li><span>01</span><div><strong>Create one student profile</strong><p>Add the information that universities genuinely use to understand your background and goals.</p></div></li>
+          <li><span>02</span><div><strong>Receive relevant opportunities</strong><p>View university, bank, and consultancy offers in one organised workspace.</p></div></li>
+          <li><span>03</span><div><strong>Compare and decide confidently</strong><p>Review terms, ask questions, upload missing documents, and choose your next step.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="home-final-cta">
+        <div><span class="home-kicker">Your profile. Your choice.</span><h2>Ready to bring the right offers closer?</h2></div>
+        <a class="button cream large" routerLink="/auth/register/student">Create your free profile →</a>
+      </section>
     </main>
     <app-site-footer />
   `
 })
-export class LandingPageComponent {
-  roles = [
-    { number: '01', title: 'Student', route: '/student', text: 'Build one profile, receive invitations, compare offers, and choose your best path.' },
-    { number: '02', title: 'University', route: '/university', text: 'Find qualified students, manage programmes, shortlists, scholarships, and admission offers.' },
-    { number: '03', title: 'Bank', route: '/bank', text: 'Find creditworthy students and present clear, responsible education finance offers.' },
-    { number: '04', title: 'Consultancy', route: '/consultancy', text: 'Connect with students who intend to study abroad and guide their education journey.' }
-  ];
-}
+export class LandingPageComponent {}

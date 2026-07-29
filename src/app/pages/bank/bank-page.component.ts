@@ -4,7 +4,7 @@ import { PortalLandingComponent, PortalContent } from '../../shared/portal-landi
 @Component({selector:'app-bank-page',standalone:true,imports:[PortalLandingComponent],template:'<app-portal-landing [content]="content" />'})
 export class BankPageComponent {
   content:PortalContent={
-    key:'bank',eyebrow:'SuperOffer for education lenders',title:'Connect responsible education finance with students who need it.',
+    key:'bank',eyebrow:'SuperOffer for education lenders',title:'Fund promising students with confidence.',
     intro:'Discover students with genuine education plans, evaluate suitable profiles, and present clear indicative loan terms through a verified lender workspace.',
     primary:'Register bank',secondary:'Explore lending tools',
     stats:[{value:'AI',label:'finance-fit matching'},{value:'100%',label:'verified lender access'},{value:'Clear',label:'indicative loan terms'}],
