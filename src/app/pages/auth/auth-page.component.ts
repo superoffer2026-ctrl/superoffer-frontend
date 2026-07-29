@@ -60,10 +60,12 @@ export class AuthPageComponent implements OnInit {
   private async openPortal(session:any){
     const expected=this.role();
     if(session.role!==expected)throw new Error('This account belongs to a different SuperOffer portal.');
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
     (this.form.remember?localStorage:sessionStorage).setItem('superoffer_access_token',session.access_token);
     sessionStorage.setItem('superoffer_role',session.role);
     sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email,organization:session.organization}));
-    await this.router.navigate(['/portal',this.portal]);
+    await this.router.navigate(this.portal==='student'?['/student/dashboard']:['/portal',this.portal]);
   }
   async submit(){
     this.loading=true;this.error='';this.message='';

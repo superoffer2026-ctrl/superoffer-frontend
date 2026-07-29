@@ -20,7 +20,6 @@ import { CompleteProfileComponent } from './pages/student-portal/complete-profil
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
 import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.component';
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
-import { StudentHelpComponent } from './pages/student-portal/student-help.component';
 import { StudentSettingsComponent } from './pages/student-portal/student-settings.component';
 
 export const appRoutes: Routes = [
@@ -31,7 +30,7 @@ export const appRoutes: Routes = [
     component: StudentPortalShellComponent,
     title: 'Student Profile | SuperOffer',
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'personal-information' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'personal-information', component: PersonalInformationComponent },
       { path: 'academic-information', component: AcademicInformationComponent },
       { path: 'study-preferences', component: StudyPreferencesComponent },
@@ -45,14 +44,14 @@ export const appRoutes: Routes = [
       { path: 'profile', component: StudentFullProfileComponent },
       { path: 'dashboard', component: StudentDashboardComponent },
       { path: 'settings', component: StudentSettingsComponent },
-      { path: 'help', component: StudentHelpComponent }
+      { path: 'help', redirectTo: 'settings', pathMatch: 'full' }
     ]
   },
   { path: 'university', component: UniversityPageComponent, title: 'Universities | SuperOffer' },
   { path: 'bank', component: BankPageComponent, title: 'Banks | SuperOffer' },
   { path: 'consultancy', component: ConsultancyPageComponent, title: 'Consultancies | SuperOffer' },
   { path: 'auth/:mode/:portal', component: AuthPageComponent, title: 'Account | SuperOffer' },
-  { path: 'portal/student', pathMatch: 'full', redirectTo: 'student/personal-information' },
+  { path: 'portal/student', pathMatch: 'full', redirectTo: 'student/dashboard' },
   { path: 'portal/:portal', component: PortalPageComponent, title: 'Portal | SuperOffer' },
   { path: 'admin', component: AdminPageComponent, title: 'Institution approvals | SuperOffer' },
   { path: '**', redirectTo: '' }
