@@ -1,44 +1,67 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
+import { StudentProfileUiStore } from './student-profile-ui.store';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, StudentWorkspaceRailComponent],
+  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent],
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
     <section class="dashboard-page">
-      <div class="student-summary">
-        <div class="student-avatar" aria-label="Profile photo placeholder">ST</div>
-        <div>
-          <span>STUDENT PROFILE</span>
-          <h1>Student Name</h1>
-          <p>Student ID: SO-STUDENT-0001</p>
-        </div>
-        <strong>Profile Complete</strong>
-      </div>
+      <header class="dashboard-welcome">
+        <div><span>STUDENT DASHBOARD</span><h1>Welcome back, {{firstName}}</h1><p>Your next study-abroad opportunity is taking shape.</p></div>
+        <a routerLink="/student/profile">View profile →</a>
+      </header>
 
-      <div class="welcome-card">
-        <span aria-hidden="true">✓</span>
-        <div><h2>Welcome to SuperOffer</h2><p>Your profile has been created successfully.</p></div>
-      </div>
-
-      <div class="dashboard-cards">
-        <article *ngFor="let card of cards">
-          <span aria-hidden="true">{{card.icon}}</span>
-          <h2>{{card.title}}</h2>
-          <p>Coming Soon</p>
+      <div class="dashboard-overview">
+        <article class="momentum-card">
+          <div class="momentum-copy"><span>PROFILE MOMENTUM</span><h2>Your profile is ready to be discovered.</h2><p>Keep your documents current to receive more relevant university and funding offers.</p></div>
+          <div class="progress-ring"><strong>82%</strong><small>complete</small></div>
+          <a routerLink="/student/documents">Complete missing documents →</a>
+        </article>
+        <article class="offer-snapshot">
+          <span>NEW THIS WEEK</span><strong>4</strong><h2>Matched opportunities</h2><p>Two university offers and two education finance options are waiting.</p>
+          <a routerLink="/student/offers">Open my offers →</a>
         </article>
       </div>
+
+      <div class="dashboard-main-grid">
+        <section class="dashboard-section next-actions">
+          <header><div><span>NEXT ACTIONS</span><h2>Keep moving forward</h2></div><small>3 tasks</small></header>
+          <label *ngFor="let task of tasks">
+            <input type="checkbox">
+            <span><strong>{{task.title}}</strong><small>{{task.description}}</small></span>
+            <b>{{task.time}}</b>
+          </label>
+        </section>
+
+        <section class="dashboard-section recommended">
+          <header><div><span>RECOMMENDED FOR YOU</span><h2>Opportunity spotlight</h2></div></header>
+          <div class="recommended-offer"><span>UNIVERSITY OFFER</span><h3>Northbridge University</h3><p>MSc Data Science</p><strong>40% Global Excellence Scholarship</strong></div>
+          <a routerLink="/student/offers">Review opportunity →</a>
+        </section>
+      </div>
+
+      <section class="quick-actions">
+        <a *ngFor="let action of actions" [routerLink]="action.route"><span>{{action.icon}}</span><div><strong>{{action.title}}</strong><small>{{action.description}}</small></div><b>→</b></a>
+      </section>
     </section>
   `
 })
 export class StudentDashboardComponent {
-  cards = [
-    { title: 'University Offers', icon: 'U' },
-    { title: 'Loan Offers', icon: 'L' },
-    { title: 'Consultancy Offers', icon: 'C' },
-    { title: 'Notifications', icon: 'N' }
+  tasks = [
+    {title:'Upload your academic transcript',description:'Strengthen your university offer profile.',time:'5 min'},
+    {title:'Review your study preferences',description:'Confirm destinations and preferred intake.',time:'3 min'},
+    {title:'Respond to Northbridge University',description:'Scholarship response due 15 August.',time:'Soon'}
   ];
+  actions = [
+    {title:'Explore offers',description:'Compare all matched opportunities',icon:'◇',route:'/student/offers'},
+    {title:'Update profile',description:'Keep academics and interests current',icon:'○',route:'/student/profile'},
+    {title:'Manage documents',description:'Upload missing supporting files',icon:'▤',route:'/student/documents'}
+  ];
+  constructor(public store:StudentProfileUiStore){}
+  get firstName(){return (this.store.values['fullName']||'Student').split(/\s+/)[0];}
 }
