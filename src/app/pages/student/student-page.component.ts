@@ -4,7 +4,7 @@ import { PortalLandingComponent, PortalContent } from '../../shared/portal-landi
 @Component({ selector: 'app-student-page', standalone: true, imports: [PortalLandingComponent], template: '<app-portal-landing [content]="content" />' })
 export class StudentPageComponent {
   content: PortalContent = {
-    key:'student', eyebrow:'Your opportunities, organised', title:'Build one profile. Let the right offers come to you.',
+    key:'student', eyebrow:'Your opportunities, organised', title:'Build one profile. Receive the right offers.',
     intro:'Stop repeating the same search across hundreds of sites. Keep academics, test scores, preferences, and verified documents together, then review university opportunities from one private workspace.',
     primary:'Create student account', secondary:'See student services',
     stats:[{value:'One',label:'verified student profile'},{value:'3',label:'offer categories to compare'},{value:'14 days',label:'standard invitation window'}],

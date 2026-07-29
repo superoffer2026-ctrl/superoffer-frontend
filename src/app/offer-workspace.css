@@ -24,6 +24,18 @@
   .offer-conversation{min-height:330px;margin-top:12px;padding:16px 18px;background:#eef3f7;border-color:#d8e2e9}.message-thread{height:205px;min-height:205px;padding-top:14px}.message-thread>div>div{box-shadow:0 1px 2px rgba(24,43,55,.04)}.message-thread>div.student-message>div{background:#dff1e7}.message-composer{border-color:#c8d6df;box-shadow:0 5px 17px rgba(37,57,70,.07)}
 }
 
+/* Larger, calmer typography for the student offer workspace. */
+.mailbox-toolbar strong{font-size:17px!important}.mailbox-toolbar small{font-size:10px!important}.compact-offer-filters button{font-size:10px!important}
+.mail-offer-main small,.mail-offer-main time{font-size:9px!important}.mail-offer-main>strong{font-size:14px!important}.mail-offer-main p{font-size:12px!important}.mail-offer-main b{font-size:11px!important;line-height:1.4}
+.offer-mail-item{padding-top:20px!important;padding-bottom:20px!important}.student-inbox-header{background:#fff}.inbox-brand small{font-size:12px;color:#172019}
+@media(min-width:900px){
+  .offer-details-column .reading-institution h2{font-size:18px!important}.offer-details-column .reading-course{font-size:12px!important}
+  .offer-details-column .offer-detail-hero>h1{font-size:23px!important}.offer-details-column .offer-key-terms strong{font-size:13px}
+  .offer-details-column .offer-conditions p,.offer-details-column .offer-next-steps li{font-size:12px!important}
+  .offer-reading-pane>.offer-conversation .conversation-head h3{font-size:14px!important}
+  .offer-reading-pane>.offer-conversation .message-thread p{font-size:12px!important}
+}
+
 /* Offer decision filters and actions */
 .all-offers-reset{border:0;background:transparent;padding:0;text-align:left;cursor:pointer}.all-offers-reset strong,.all-offers-reset small{display:block}.offer-state-filters{position:sticky;top:112px;z-index:2;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px;background:#f5f2ed;border-bottom:1px solid #e1ddd6}.offer-state-filters button{min-width:0;border:1px solid #ddd9d2;background:#fff;border-radius:8px;padding:8px 5px;color:#626b65;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap}.offer-state-filters button span{margin-right:3px}.offer-state-filters button b{display:inline-block;min-width:16px;margin-left:3px;padding:2px 4px;border-radius:999px;background:#eef1ef;font-size:8px}.offer-state-filters button:hover,.offer-state-filters button.active{border-color:#91bea8;background:#e4f2ea;color:#087a50}.offer-state-filters button:nth-child(3).active{border-color:#e1aaa4;background:#fff0ee;color:#a84036}.empty-offer-filter{padding:55px 25px;text-align:center}.empty-offer-filter>span{width:42px;height:42px;margin:auto;display:grid;place-items:center;border-radius:50%;background:#ebe7e0;color:#7e837f}.empty-offer-filter strong,.empty-offer-filter p{display:block}.empty-offer-filter strong{font-size:12px;margin-top:12px}.empty-offer-filter p{font-size:9px!important;color:var(--muted);line-height:1.45}.empty-offer-filter button{border:0;background:none;color:#087a50;font-weight:700;cursor:pointer}.reading-actions .shortlist-action.chosen{border-color:#d7a85e;background:#fff7e8;color:#9a6414}.reading-actions .reject-action{color:#a84036}.reading-actions .reject-action.chosen{border-color:#e2aaa5;background:#fff0ee}.reading-actions{flex-wrap:wrap}
 .compact-offer-filters{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-wrap:wrap}.compact-offer-filters button{border:0;background:transparent;border-radius:999px;padding:4px 6px;color:#737b76;font-size:8px!important;font-weight:700;cursor:pointer;white-space:nowrap}.compact-offer-filters button b{display:inline-grid;place-items:center;min-width:14px;height:14px;margin-left:2px;padding:0 3px;border-radius:999px;background:#e2e6e3;font-size:7px}.compact-offer-filters button:hover,.compact-offer-filters button.active{background:#dfeee6;color:#087a50}.compact-offer-filters button:last-child.active{background:#f8e4e1;color:#a84036}
@@ -213,4 +225,36 @@
   .mailbox-toolbar,
   .offer-details-column .reading-pane-header,
   .offer-reading-pane>.offer-conversation .conversation-head{border-bottom-color:#d7e0dc!important}
+}
+
+/* Minimal headerless workspace, larger type, and flatter content hierarchy. */
+.offer-workspace-page{margin-left:68px;background:#fff!important}
+.mailbox-toolbar{gap:14px!important;align-items:center!important}.mailbox-toolbar .all-offers-reset{flex:1}.compact-offer-filters{flex:0 0 auto}
+.mailbox-toolbar strong{font-size:18px!important}.mailbox-toolbar small{font-size:11px!important}
+.compact-offer-filters button{font-size:10px!important}
+.mail-offer-main small,.mail-offer-main time{font-size:10px!important}.mail-offer-main>strong{font-size:15px!important}.mail-offer-main p{font-size:13px!important}.mail-offer-main b{font-size:12px!important;line-height:1.45}
+.offer-mail-item{padding-top:21px!important;padding-bottom:21px!important}
+@media(min-width:900px){
+  .offer-workspace-page{height:100vh!important;max-height:100vh!important;padding:0!important}
+  .offer-workspace{height:100vh!important}
+  .offer-mailbox{height:100vh!important;overflow-y:scroll!important;overscroll-behavior:contain;scrollbar-gutter:stable}
+  .mailbox-toolbar{position:sticky!important;top:0;z-index:5;height:96px!important;min-height:96px!important;max-height:96px!important;padding:15px 18px!important}
+  .offer-details-column .reading-pane-header,.offer-reading-pane>.offer-conversation .conversation-head{height:96px!important;min-height:96px!important;max-height:96px!important}
+  .offer-details-column .reading-institution h2{font-size:19px!important}.offer-details-column .reading-course{font-size:13px!important}
+  .offer-details-column .offer-detail-hero{border:0!important;border-radius:0!important;background:transparent!important}
+  .offer-details-column .offer-detail-hero>h1{font-size:25px!important;line-height:1.22}
+  .offer-details-column .offer-key-terms{gap:0!important;border-top:1px solid #dbe5df!important;border-bottom:1px solid #dbe5df!important}
+  .offer-details-column .offer-key-terms>div,.offer-details-column .offer-key-terms>div:first-child{min-height:64px!important;padding:13px 10px!important;border-radius:0!important;background:transparent!important}
+  .offer-details-column .offer-key-terms>div:nth-child(odd){border-right:1px solid #dbe5df!important}
+  .offer-details-column .offer-key-terms small{font-size:10px!important}.offer-details-column .offer-key-terms strong{font-size:14px!important}
+  .offer-details-column .offer-conditions{border:0!important;border-radius:0!important;background:transparent!important;padding:2px 0 16px!important;border-bottom:1px solid #dbe5df!important}
+  .offer-details-column .offer-conditions h3{font-size:17px!important}.offer-details-column .offer-conditions p{font-size:13px!important;line-height:1.6}
+  .offer-details-column .offer-next-steps{border:0!important;border-radius:0!important;background:transparent!important;padding:0!important}
+  .offer-details-column .offer-next-steps strong{font-size:14px!important}.offer-details-column .offer-next-steps li{font-size:13px!important}
+  .offer-reading-pane>.offer-conversation .conversation-head h3{font-size:16px!important}.offer-reading-pane>.offer-conversation .conversation-head p{font-size:11px!important}
+  .offer-reading-pane>.offer-conversation .message-thread strong{font-size:11px!important}.offer-reading-pane>.offer-conversation .message-thread p{font-size:14px!important;line-height:1.55}.offer-reading-pane>.offer-conversation .message-thread small{font-size:10px!important}
+  .message-composer input{font-size:13px!important}
+}
+@media(max-width:720px){
+  .offer-workspace-page{margin-left:0!important}
 }

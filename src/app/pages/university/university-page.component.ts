@@ -4,7 +4,7 @@ import { PortalLandingComponent, PortalContent } from '../../shared/portal-landi
 @Component({ selector: 'app-university-page', standalone: true, imports: [PortalLandingComponent], template: '<app-portal-landing [content]="content" />' })
 export class UniversityPageComponent {
   content: PortalContent = {
-    key:'university', eyebrow:'SuperOffer for universities', title:'Partner with SuperOffer and digitise your admissions ecosystem.',
+    key:'university', eyebrow:'SuperOffer for universities', title:'Find and enrol the right students.',
     intro:'Discover qualified, likely-to-enrol students, manage programmes and shortlists, and send transparent admission offers from a verified university workspace.',
     primary:'Register university', secondary:'Learn more',
     stats:[{value:'AI',label:'student matching'},{value:'100%',label:'verified organisation access'},{value:'One',label:'admissions funnel dashboard'}],
