@@ -7,7 +7,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <header class="site-header">
+    <header class="site-header" [class.overlay]="variant === 'overlay'">
       <a class="brand" routerLink="/"><span>S</span>SuperOffer</a>
       <button class="menu-toggle" (click)="open = !open" [attr.aria-expanded]="open">Menu</button>
       <nav [class.open]="open" aria-label="Primary navigation">
@@ -25,5 +25,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class SiteHeaderComponent {
   @Input() context: 'student' | 'university' | 'bank' | 'consultancy' = 'student';
+  @Input() variant: 'default' | 'overlay' = 'default';
   open = false;
 }

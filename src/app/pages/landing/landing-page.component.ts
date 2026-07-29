@@ -9,16 +9,16 @@ import { SiteHeaderComponent } from '../../shared/site-header.component';
   standalone: true,
   imports: [CommonModule, RouterLink, SiteHeaderComponent, SiteFooterComponent],
   template: `
-    <app-site-header />
+    <app-site-header variant="overlay" />
     <main class="premium-home">
       <section class="premium-hero">
         <div class="premium-hero-copy">
-          <span class="premium-pill"><i></i> Built for ambitious students</span>
-          <h1>The right offer can change <em>everything.</em></h1>
-          <p>Create one verified education profile and let relevant universities, education lenders, and advisers come to you.</p>
+          <span class="premium-pill"><i></i> Your future, brought closer</span>
+          <h1>THE RIGHT<br><em>OFFER</em><br>CHANGES<br>EVERYTHING.</h1>
+          <p>/ One profile. University, funding, and guidance opportunities matched around you. /</p>
           <div class="premium-actions">
-            <a class="premium-button primary" routerLink="/auth/register/student">Create your free profile <b>→</b></a>
-            <a class="premium-button quiet" routerLink="/auth/login/student">I already have an account</a>
+            <a class="premium-button primary" routerLink="/auth/register/student">START <b>→</b></a>
+            <a class="premium-button quiet" href="#how-it-works">EXPLORE HOW IT WORKS</a>
           </div>
           <div class="premium-assurance">
             <span *ngFor="let item of assurances">✓ {{item}}</span>
