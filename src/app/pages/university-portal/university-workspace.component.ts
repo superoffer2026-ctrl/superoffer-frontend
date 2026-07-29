@@ -24,11 +24,6 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
       </aside>
 
       <main class="uni-main">
-        <header class="uni-topbar">
-          <div class="uni-header-identity"><span class="uni-mobile-brand">SuperOffer University</span><strong>{{currentViewLabel}}</strong><small>Northbridge University <i></i> 2026–27 recruitment cycle</small></div>
-          <div><span class="verified-header">✓ Verified</span><button type="button" aria-label="Notifications" (click)="notify('Notifications opened')">◌<b>3</b></button></div>
-        </header>
-
         <section class="uni-view" *ngIf="view==='dashboard'">
           <header class="uni-page-title"><div><span>ADMISSIONS WORKSPACE</span><h1>Good afternoon, Aisha</h1><p>Here’s how your student recruitment pipeline is moving.</p></div><button class="uni-primary" (click)="view='search'">Find students</button></header>
           <section class="uni-priority">
@@ -205,9 +200,6 @@ export class UniversityWorkspaceComponent {
   orgCampus='Toronto, Canada';
   orgDescription='Internationally focused university offering career-led postgraduate programmes.';
   get shortlistStudents(){return this.students.filter(student=>this.shortlistedNames.has(student.name));}
-  get currentViewLabel(){
-    return ({dashboard:'Admissions overview',search:'Student discovery',shortlists:'Programme shortlists',invitations:'Offers & invitations',programs:'Programme catalog',reports:'Admissions reports',settings:'Organisation settings'} as Record<UniversityView,string>)[this.view];
-  }
   get filteredInvitations(){
     const status=this.invitationFilter.split(' ')[0];
     return status==='All'||status==='Closed'?this.invitations:this.invitations.filter(invite=>invite.status===status);

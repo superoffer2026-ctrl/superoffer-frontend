@@ -84,3 +84,7 @@ button,input,select,textarea{font:inherit;box-sizing:border-box}.uni-shell{min-h
 .university-invitations small{font-size:9px}.university-invitations strong{font-size:12px}
 .program-name h2{font-size:17px}.program-name p,.program-catalog article small{font-size:11px}
 @media(max-width:720px){.uni-topbar{height:62px}.uni-mobile-brand{display:none}.uni-header-identity>strong{font-size:12px}.verified-header{display:none}}
+
+/* Headerless university workspace */
+.uni-view{padding-top:28px}
+@media(max-width:720px){.uni-view{padding-top:22px}}
