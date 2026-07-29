@@ -6,7 +6,7 @@ import { PROFILE_STEP_FIELDS } from './student-portal.models';
   standalone: true,
   imports: [StudentStepPlaceholderComponent],
   template: `<app-student-step-placeholder [stepNumber]="9" title="Complete Profile"
-    description="The profile UI journey is complete. Continue to preview the student offers workspace."
-    icon="OK" [fields]="fields" previousRoute="/student/review" nextRoute="/student/offers" nextLabel="View Offers" />`
+    description="Your profile is complete. Continue to your student dashboard."
+    icon="OK" [fields]="fields" previousRoute="/student/review" nextRoute="/student/dashboard" nextLabel="Go to Dashboard" />`
 })
 export class CompleteProfileComponent { fields=PROFILE_STEP_FIELDS['completion']; }

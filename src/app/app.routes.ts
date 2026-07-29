@@ -31,7 +31,7 @@ export const appRoutes: Routes = [
     component: StudentPortalShellComponent,
     title: 'Student Profile | SuperOffer',
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'personal-information' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'personal-information', component: PersonalInformationComponent },
       { path: 'academic-information', component: AcademicInformationComponent },
       { path: 'study-preferences', component: StudyPreferencesComponent },
@@ -52,7 +52,7 @@ export const appRoutes: Routes = [
   { path: 'bank', component: BankPageComponent, title: 'Banks | SuperOffer' },
   { path: 'consultancy', component: ConsultancyPageComponent, title: 'Consultancies | SuperOffer' },
   { path: 'auth/:mode/:portal', component: AuthPageComponent, title: 'Account | SuperOffer' },
-  { path: 'portal/student', pathMatch: 'full', redirectTo: 'student/personal-information' },
+  { path: 'portal/student', pathMatch: 'full', redirectTo: 'student/dashboard' },
   { path: 'portal/:portal', component: PortalPageComponent, title: 'Portal | SuperOffer' },
   { path: 'admin', component: AdminPageComponent, title: 'Institution approvals | SuperOffer' },
   { path: '**', redirectTo: '' }

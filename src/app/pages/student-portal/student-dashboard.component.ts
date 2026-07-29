@@ -18,9 +18,9 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
 
       <div class="dashboard-overview">
         <article class="momentum-card">
-          <div class="momentum-copy"><span>PROFILE MOMENTUM</span><h2>Your profile is ready to be discovered.</h2><p>Keep your documents current to receive more relevant university and funding offers.</p></div>
+          <div class="momentum-copy"><span>PROFILE MOMENTUM</span><h2>Complete your profile to get discovered.</h2><p>Add your academic details, study preferences, and documents to receive relevant university and funding offers.</p></div>
           <div class="progress-ring"><strong>82%</strong><small>complete</small></div>
-          <a routerLink="/student/documents">Complete missing documents →</a>
+          <a routerLink="/student/personal-information">Complete your profile →</a>
         </article>
         <article class="offer-snapshot">
           <span>NEW THIS WEEK</span><strong>4</strong><h2>Matched opportunities</h2><p>Two university offers and two education finance options are waiting.</p>
