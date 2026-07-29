@@ -21,6 +21,7 @@ import { StudentDashboardComponent } from './pages/student-portal/student-dashbo
 import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.component';
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
 import { StudentSettingsComponent } from './pages/student-portal/student-settings.component';
+import { UniversityWorkspaceComponent } from './pages/university-portal/university-workspace.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
@@ -52,6 +53,7 @@ export const appRoutes: Routes = [
   { path: 'consultancy', component: ConsultancyPageComponent, title: 'Consultancies | SuperOffer' },
   { path: 'auth/:mode/:portal', component: AuthPageComponent, title: 'Account | SuperOffer' },
   { path: 'portal/student', pathMatch: 'full', redirectTo: 'student/dashboard' },
+  { path: 'portal/university', component: UniversityWorkspaceComponent, title: 'University Workspace | SuperOffer' },
   { path: 'portal/:portal', component: PortalPageComponent, title: 'Portal | SuperOffer' },
   { path: 'admin', component: AdminPageComponent, title: 'Institution approvals | SuperOffer' },
   { path: '**', redirectTo: '' }
