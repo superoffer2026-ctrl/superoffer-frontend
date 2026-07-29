@@ -4,89 +4,94 @@ import { RouterLink } from '@angular/router';
 import { SiteFooterComponent } from '../../shared/site-footer.component';
 import { SiteHeaderComponent } from '../../shared/site-header.component';
 
-type OpportunityPath = {
-  index: string;
-  eyebrow: string;
-  title: string;
-  copy: string;
-  link: string;
-  action: string;
-  tone: string;
-};
-
 @Component({
   selector: 'app-landing-page',
   standalone: true,
   imports: [CommonModule, RouterLink, SiteHeaderComponent, SiteFooterComponent],
   template: `
     <app-site-header />
-    <main class="discovery-home">
-      <section class="discovery-hero">
-        <div class="hero-orbit orbit-a"></div><div class="hero-orbit orbit-b"></div>
-        <div class="discovery-copy">
-          <span class="discovery-kicker">THE OPPORTUNITY NETWORK FOR GLOBAL EDUCATION</span>
-          <h1>One profile.<br><em>Better possibilities.</em></h1>
-          <p>Tell your education story once, then discover relevant university admissions, funding, and expert guidance in one private workspace.</p>
-          <div class="discovery-actions">
-            <a class="discovery-button primary" routerLink="/auth/register/student">Create your profile <span>↗</span></a>
-            <a class="discovery-button text" href="#how-it-works">See how it works ↓</a>
+    <main class="premium-home">
+      <section class="premium-hero">
+        <div class="premium-hero-copy">
+          <span class="premium-pill"><i></i> Built for ambitious students</span>
+          <h1>The right offer can change <em>everything.</em></h1>
+          <p>Create one verified education profile and let relevant universities, education lenders, and advisers come to you.</p>
+          <div class="premium-actions">
+            <a class="premium-button primary" routerLink="/auth/register/student">Create your free profile <b>→</b></a>
+            <a class="premium-button quiet" routerLink="/auth/login/student">I already have an account</a>
           </div>
-          <div class="trust-note"><span>✓ Free for students</span><span>✓ You control visibility</span><span>✓ Verified organisations</span></div>
+          <div class="premium-assurance">
+            <span *ngFor="let item of assurances">✓ {{item}}</span>
+          </div>
         </div>
-        <aside class="opportunity-preview" aria-label="Example matched opportunities">
-          <div class="preview-head"><span>YOUR OPPORTUNITY SPACE</span><b>LIVE</b></div>
-          <article *ngFor="let item of previewCards; let i=index" [style.--delay]="i">
-            <span class="preview-mark">{{item.mark}}</span>
-            <div><small>{{item.type}}</small><strong>{{item.title}}</strong><p>{{item.detail}}</p></div>
-            <b>{{item.match}}</b>
+
+        <div class="product-stage" aria-label="SuperOffer student workspace preview">
+          <div class="stage-glow"></div>
+          <section class="student-product">
+            <header><div><span class="mini-logo">S</span><strong>My opportunities</strong></div><span class="live-dot">LIVE</span></header>
+            <div class="student-product-body">
+              <aside><span class="active"></span><span></span><span></span><span></span></aside>
+              <div class="product-content">
+                <div class="product-greeting"><div><small>YOUR BEST MATCHES</small><strong>Opportunities selected for you</strong></div><span>{{profileStrength}}%<small>profile</small></span></div>
+                <article *ngFor="let offer of offers">
+                  <span class="offer-logo" [class]="offer.tone">{{offer.initial}}</span>
+                  <div><small>{{offer.kind}}</small><strong>{{offer.title}}</strong><p>{{offer.detail}}</p></div>
+                  <b>{{offer.match}}<small>match</small></b>
+                </article>
+              </div>
+            </div>
+          </section>
+          <div class="stage-card scholarship"><small>SCHOLARSHIP</small><strong>40%</strong><span>Global Excellence Award</span></div>
+          <div class="stage-card privacy"><b>✓</b><div><strong>You stay in control</strong><span>Contact details protected</span></div></div>
+        </div>
+      </section>
+
+      <section class="premium-proof">
+        <span>ONE PROFILE CONNECTS YOU TO</span>
+        <div><strong *ngFor="let item of network">{{item}}</strong></div>
+      </section>
+
+      <section class="premium-intro">
+        <header>
+          <span>THE OLD WAY IS FRAGMENTED</span>
+          <h2>Your education journey deserves one clear place.</h2>
+          <p>SuperOffer brings admissions, education finance, and trusted guidance into a single student-owned workspace.</p>
+        </header>
+        <div class="value-bento">
+          <article class="bento-main">
+            <span>01 · ONE PROFILE</span>
+            <h3>Build your story once.</h3>
+            <p>Keep academics, preferences, tests, achievements, and documents consistent across every opportunity.</p>
+            <div class="profile-completion">
+              <header><span>Profile strength</span><strong>{{profileStrength}}%</strong></header>
+              <div *ngFor="let section of profileSections"><span>{{section.label}}</span><i><b [style.width.%]="section.value"></b></i><small>{{section.value}}%</small></div>
+            </div>
           </article>
-          <div class="preview-foot"><span>Profile strength</span><i><b [style.width.%]="profileStrength"></b></i><strong>{{profileStrength}}%</strong></div>
-        </aside>
+          <article class="bento-card" *ngFor="let value of values">
+            <span>{{value.index}} · {{value.eyebrow}}</span><div class="bento-icon">{{value.icon}}</div><h3>{{value.title}}</h3><p>{{value.copy}}</p>
+          </article>
+        </div>
       </section>
 
-      <section class="proof-ribbon" aria-label="Platform highlights">
-        <article *ngFor="let proof of proofPoints"><strong>{{proof.value}}</strong><span>{{proof.label}}</span></article>
+      <section class="premium-journey" id="how-it-works">
+        <div class="journey-copy"><span>HOW SUPEROFFER WORKS</span><h2>From profile to possibility.</h2><p>No endless searching. No repeated forms. Just a clearer path from where you are to where you want to study.</p><a routerLink="/auth/register/student">Start your journey →</a></div>
+        <ol>
+          <li *ngFor="let step of steps"><span>{{step.index}}</span><div><small>{{step.eyebrow}}</small><strong>{{step.title}}</strong><p>{{step.copy}}</p></div></li>
+        </ol>
       </section>
 
-      <section class="path-section" id="opportunities">
-        <header class="editorial-heading"><span>START WITH YOUR GOAL</span><h2>Every part of your decision,<br>connected.</h2><p>One organised space replaces repeated forms, disconnected conversations, and unclear next steps.</p></header>
-        <div class="path-grid-v2">
-          <a *ngFor="let path of opportunityPaths" class="path-card-v2" [class]="path.tone" [routerLink]="path.link">
-            <div><span>{{path.index}}</span><small>{{path.eyebrow}}</small></div>
-            <h3>{{path.title}}</h3><p>{{path.copy}}</p><b>{{path.action}} <i>↗</i></b>
+      <section class="premium-paths">
+        <header><span>ONE NETWORK. THREE WAYS FORWARD.</span><h2>Everything your next decision needs.</h2></header>
+        <div>
+          <a *ngFor="let path of paths" [routerLink]="path.link">
+            <span>{{path.index}}</span><div><small>{{path.eyebrow}}</small><h3>{{path.title}}</h3><p>{{path.copy}}</p></div><b>↗</b>
           </a>
         </div>
       </section>
 
-      <section class="profile-story" id="how-it-works">
-        <div class="profile-visual">
-          <span class="visual-label">YOUR REUSABLE PROFILE</span>
-          <div class="profile-sheet">
-            <header><span>AM</span><div><strong>Complete education profile</strong><small>Visible only when you choose</small></div><b>{{profileStrength}}%</b></header>
-            <div *ngFor="let section of profileSections"><span>{{section.icon}}</span><strong>{{section.label}}</strong><i><b [style.width.%]="section.progress"></b></i><small>{{section.progress}}%</small></div>
-          </div>
-          <aside>Information stays consistent across every opportunity.</aside>
-        </div>
-        <div class="story-editorial">
-          <span class="discovery-kicker">ONE PROFILE, MANY PATHS</span>
-          <h2>Stop rebuilding your story.</h2>
-          <p>Your academics, ambitions, tests, achievements, and documents belong together. Complete them at your pace and decide when organisations can discover you.</p>
-          <ol>
-            <li *ngFor="let step of journeySteps"><span>{{step.index}}</span><div><strong>{{step.title}}</strong><p>{{step.copy}}</p></div></li>
-          </ol>
-        </div>
-      </section>
-
-      <section class="control-section">
-        <header><span>BUILT AROUND THE STUDENT</span><h2>Clear choices.<br>No hidden pressure.</h2></header>
-        <div><article *ngFor="let value of controlValues"><span>{{value.icon}}</span><h3>{{value.title}}</h3><p>{{value.copy}}</p></article></div>
-      </section>
-
-      <section class="discovery-final">
-        <span>YOUR NEXT STEP CAN START HERE</span>
-        <h2>Bring the right education opportunities closer.</h2>
-        <p>Create your free profile and shape what comes next.</p>
-        <a class="discovery-button light" routerLink="/auth/register/student">Start your profile <b>↗</b></a>
+      <section class="premium-cta">
+        <div><span>FREE FOR STUDENTS</span><h2>Make your profile work for your future.</h2><p>Join SuperOffer and bring better-fit education opportunities into one private workspace.</p></div>
+        <a class="premium-button light" routerLink="/auth/register/student">Create your profile <b>→</b></a>
       </section>
     </main>
     <app-site-footer />
@@ -94,36 +99,29 @@ type OpportunityPath = {
 })
 export class LandingPageComponent {
   readonly profileStrength = 82;
-  readonly previewCards = [
-    { mark:'N', type:'UNIVERSITY', title:'MSc Data Science', detail:'40% scholarship · Toronto', match:'94%' },
-    { mark:'F', type:'EDUCATION FINANCE', title:'Global study loan', detail:'Flexible collateral options', match:'89%' },
-    { mark:'V', type:'EXPERT GUIDANCE', title:'Application review', detail:'Verified admissions adviser', match:'87%' }
-  ];
-  readonly proofPoints = [
-    { value:'1', label:'student-owned profile' },
-    { value:'3', label:'connected opportunity paths' },
-    { value:'24/7', label:'private access controls' },
-    { value:'100%', label:'free for students' }
-  ];
-  readonly opportunityPaths: OpportunityPath[] = [
-    { index:'01', eyebrow:'ADMISSIONS', title:'University opportunities', copy:'Discover relevant programmes, scholarships, intakes, and direct admission invitations.', link:'/students', action:'Explore admissions', tone:'path-mint' },
-    { index:'02', eyebrow:'EDUCATION FINANCE', title:'Funding that fits', copy:'Compare clear education-loan options shaped around your course, destination, and eligibility.', link:'/bank', action:'Understand funding', tone:'path-blue' },
-    { index:'03', eyebrow:'EXPERT GUIDANCE', title:'Support when needed', copy:'Connect with verified advisers for applications, documentation, visas, and important decisions.', link:'/consultancy', action:'Find guidance', tone:'path-sand' }
+  readonly assurances = ['Free for students', 'Private by default', 'Verified organisations'];
+  readonly network = ['Universities', 'Education finance', 'Expert guidance'];
+  readonly offers = [
+    { initial:'N', kind:'UNIVERSITY OFFER', title:'MSc Data Science', detail:'Toronto · 40% scholarship', match:'94%', tone:'mint' },
+    { initial:'F', kind:'EDUCATION FINANCE', title:'Global Study Loan', detail:'Flexible collateral options', match:'89%', tone:'blue' },
+    { initial:'V', kind:'EXPERT GUIDANCE', title:'Application Review', detail:'Verified admissions adviser', match:'87%', tone:'sand' }
   ];
   readonly profileSections = [
-    { icon:'01', label:'Academics', progress:100 },
-    { icon:'02', label:'Study preferences', progress:90 },
-    { icon:'03', label:'Tests & skills', progress:76 },
-    { icon:'04', label:'Documents', progress:62 }
+    { label:'Academics', value:100 }, { label:'Study preferences', value:92 },
+    { label:'Tests & skills', value:78 }, { label:'Documents', value:61 }
   ];
-  readonly journeySteps = [
-    { index:'01', title:'Build once', copy:'Add the information organisations genuinely need to understand your background and goals.' },
-    { index:'02', title:'Be matched thoughtfully', copy:'Receive opportunities connected to your intent—not a noisy list of unrelated promotions.' },
-    { index:'03', title:'Compare with confidence', copy:'Review terms, ask questions, and make your decision from one organised workspace.' }
+  readonly values = [
+    { index:'02', eyebrow:'RELEVANCE', icon:'◇', title:'Better-fit opportunities.', copy:'Structured matching focuses attention on programmes and services aligned with your goals.' },
+    { index:'03', eyebrow:'CONTROL', icon:'◌', title:'Your privacy, your choice.', copy:'You decide what to complete, what to share, and when an organisation can contact you.' }
   ];
-  readonly controlValues = [
-    { icon:'◌', title:'Private by default', copy:'Your contact details stay protected until you decide to move forward.' },
-    { icon:'◇', title:'Relevant, not random', copy:'Structured matching keeps the focus on opportunities that suit your goals.' },
-    { icon:'✓', title:'Verified participants', copy:'Universities, lenders, and advisers are reviewed before joining the network.' }
+  readonly steps = [
+    { index:'01', eyebrow:'TELL YOUR STORY', title:'Create one verified profile', copy:'Add the education details that institutions genuinely need.' },
+    { index:'02', eyebrow:'DISCOVER', title:'Receive relevant opportunities', copy:'See admissions, funding, and guidance selected around your plans.' },
+    { index:'03', eyebrow:'DECIDE', title:'Compare with confidence', copy:'Review details, respond, and take the next step from one workspace.' }
+  ];
+  readonly paths = [
+    { index:'01', eyebrow:'ADMISSIONS', title:'University offers', copy:'Programmes, scholarships, and direct invitations.', link:'/students' },
+    { index:'02', eyebrow:'FUNDING', title:'Education loans', copy:'Clear finance options shaped around your plans.', link:'/bank' },
+    { index:'03', eyebrow:'SUPPORT', title:'Expert guidance', copy:'Verified help for applications, documents, and visas.', link:'/consultancy' }
   ];
 }
