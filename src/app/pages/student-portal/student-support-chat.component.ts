@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 interface SupportMessage {
@@ -45,6 +45,8 @@ export class StudentSupportChatComponent {
   messages: SupportMessage[] = [
     {from:'support',text:'Hi! Welcome to SuperOffer Support. How can we help with your study-abroad journey today?',time:'Just now'}
   ];
+  @HostListener('window:open-student-support-chat')
+  showChat(){this.open=true;}
   send() {
     const text = this.draft.trim();
     if (!text) return;
