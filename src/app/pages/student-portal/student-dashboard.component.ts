@@ -10,57 +10,115 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
-    <section class="dashboard-page">
-      <header class="dashboard-welcome">
-        <div><span>STUDENT DASHBOARD</span><h1>Welcome back, {{firstName}}</h1><p>Your next study-abroad opportunity is taking shape.</p></div>
-        <a routerLink="/student/profile">View profile →</a>
+    <section class="student-home">
+      <header class="student-home-header">
+        <div>
+          <span class="student-kicker">MY STUDY JOURNEY</span>
+          <h1>Good afternoon, {{firstName}}</h1>
+          <p>Here’s what needs your attention today.</p>
+        </div>
+        <div class="student-header-actions">
+          <a class="header-secondary" routerLink="/student/profile">View profile</a>
+          <a class="header-primary" routerLink="/student/offers">My offers <b>4</b></a>
+        </div>
       </header>
 
-      <div class="dashboard-overview">
-        <article class="momentum-card">
-          <div class="momentum-copy"><span>PROFILE MOMENTUM</span><h2>Complete your profile to get discovered.</h2><p>Add your academic details, study preferences, and documents to receive relevant university and funding offers.</p></div>
-          <div class="progress-ring"><strong>82%</strong><small>complete</small></div>
-          <a routerLink="/student/personal-information">Complete your profile →</a>
-        </article>
-        <article class="offer-snapshot">
-          <span>NEW THIS WEEK</span><strong>4</strong><h2>Matched opportunities</h2><p>Two university offers and two education finance options are waiting.</p>
-          <a routerLink="/student/offers">Open my offers →</a>
-        </article>
-      </div>
+      <section class="journey-banner">
+        <div class="journey-main">
+          <div class="journey-icon">✓</div>
+          <div>
+            <span>YOUR NEXT STEP</span>
+            <h2>Finish your profile to improve your matches</h2>
+            <p>Add your academic transcript and confirm your study preferences. It takes about 8 minutes.</p>
+          </div>
+          <a routerLink="/student/personal-information">Continue profile <b>→</b></a>
+        </div>
+        <div class="journey-progress">
+          <div><span>Profile strength</span><strong>82%</strong></div>
+          <div class="journey-track"><i></i></div>
+          <small>Two sections need attention</small>
+        </div>
+      </section>
 
-      <div class="dashboard-main-grid">
-        <section class="dashboard-section next-actions">
-          <header><div><span>NEXT ACTIONS</span><h2>Keep moving forward</h2></div><small>3 tasks</small></header>
-          <label *ngFor="let task of tasks">
-            <input type="checkbox">
-            <span><strong>{{task.title}}</strong><small>{{task.description}}</small></span>
-            <b>{{task.time}}</b>
-          </label>
+      <section class="student-stage-row" aria-label="Your opportunity journey">
+        <article class="done"><span>1</span><div><strong>Profile created</strong><small>Your basic details are ready</small></div></article>
+        <i></i>
+        <article class="current"><span>2</span><div><strong>Get discovered</strong><small>Complete your profile</small></div></article>
+        <i></i>
+        <article><span>3</span><div><strong>Compare offers</strong><small>Review the best matches</small></div></article>
+        <i></i>
+        <article><span>4</span><div><strong>Choose your path</strong><small>Accept when you’re ready</small></div></article>
+      </section>
+
+      <div class="student-home-grid">
+        <section class="student-tasks">
+          <header>
+            <div><span>TO DO</span><h2>Your action list</h2></div>
+            <small>3 remaining</small>
+          </header>
+          <a *ngFor="let task of tasks" [routerLink]="task.route">
+            <span class="task-check"></span>
+            <div><strong>{{task.title}}</strong><small>{{task.description}}</small></div>
+            <time>{{task.time}}</time>
+            <b>→</b>
+          </a>
         </section>
 
-        <section class="dashboard-section recommended">
-          <header><div><span>RECOMMENDED FOR YOU</span><h2>Opportunity spotlight</h2></div></header>
-          <div class="recommended-offer"><span>UNIVERSITY OFFER</span><h3>Northbridge University</h3><p>MSc Data Science</p><strong>40% Global Excellence Scholarship</strong></div>
-          <a routerLink="/student/offers">Review opportunity →</a>
-        </section>
+        <aside class="student-upcoming">
+          <header><span>UPCOMING</span><h2>Dates to remember</h2></header>
+          <div class="upcoming-item urgent">
+            <time><b>15</b><small>AUG</small></time>
+            <div><span>OFFER DEADLINE</span><strong>Northbridge University</strong><small>Scholarship response due</small></div>
+          </div>
+          <div class="upcoming-item">
+            <time><b>20</b><small>AUG</small></time>
+            <div><span>DOCUMENT</span><strong>Upload final transcript</strong><small>For offer verification</small></div>
+          </div>
+          <a routerLink="/student/offers">View all deadlines →</a>
+        </aside>
       </div>
 
-      <section class="quick-actions">
-        <a *ngFor="let action of actions" [routerLink]="action.route"><span>{{action.icon}}</span><div><strong>{{action.title}}</strong><small>{{action.description}}</small></div><b>→</b></a>
+      <section class="student-opportunities">
+        <header>
+          <div><span>JUST FOR YOU</span><h2>Recent opportunities</h2><p>Matches based on your goals and academic profile.</p></div>
+          <a routerLink="/student/offers">See all offers →</a>
+        </header>
+        <div class="opportunity-row">
+          <article class="university-opportunity">
+            <div class="opportunity-logo">N</div>
+            <div class="opportunity-copy"><span>UNIVERSITY OFFER</span><h3>Northbridge University</h3><p>MSc Data Science · Toronto, Canada</p></div>
+            <div class="opportunity-award"><span>SCHOLARSHIP</span><strong>40% tuition</strong></div>
+            <a routerLink="/student/offers">Review offer</a>
+          </article>
+          <article class="funding-opportunity">
+            <div class="opportunity-logo">E</div>
+            <div class="opportunity-copy"><span>FUNDING MATCH</span><h3>EduFund Finance</h3><p>International Education Loan</p></div>
+            <div class="opportunity-award"><span>PRE-QUALIFIED</span><strong>Up to ₹35 lakh</strong></div>
+            <a routerLink="/student/offers">View funding</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="student-shortcuts">
+        <a *ngFor="let action of actions" [routerLink]="action.route">
+          <span>{{action.icon}}</span>
+          <div><strong>{{action.title}}</strong><small>{{action.description}}</small></div>
+          <b>→</b>
+        </a>
       </section>
     </section>
   `
 })
 export class StudentDashboardComponent {
   tasks = [
-    {title:'Upload your academic transcript',description:'Strengthen your university offer profile.',time:'5 min'},
-    {title:'Review your study preferences',description:'Confirm destinations and preferred intake.',time:'3 min'},
-    {title:'Respond to Northbridge University',description:'Scholarship response due 15 August.',time:'Soon'}
+    {title:'Upload your academic transcript',description:'Required to verify your academic history',time:'5 min',route:'/student/documents'},
+    {title:'Review your study preferences',description:'Confirm destinations, courses, and preferred intake',time:'3 min',route:'/student/study-preferences'},
+    {title:'Respond to Northbridge University',description:'Scholarship response due 15 August',time:'6 days',route:'/student/offers'}
   ];
   actions = [
-    {title:'Explore offers',description:'Compare all matched opportunities',icon:'◇',route:'/student/offers'},
-    {title:'Update profile',description:'Keep academics and interests current',icon:'○',route:'/student/profile'},
-    {title:'Manage documents',description:'Upload missing supporting files',icon:'▤',route:'/student/documents'}
+    {title:'Update preferences',description:'Countries, courses, and intake',icon:'◎',route:'/student/study-preferences'},
+    {title:'Manage documents',description:'View uploads and verification',icon:'▤',route:'/student/documents'},
+    {title:'Account settings',description:'Privacy and notifications',icon:'⚙',route:'/student/settings'}
   ];
   constructor(public store:StudentProfileUiStore){}
   get firstName(){return (this.store.values['fullName']||'Student').split(/\s+/)[0];}
