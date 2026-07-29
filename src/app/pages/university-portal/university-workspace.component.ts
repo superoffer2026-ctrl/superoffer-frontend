@@ -15,7 +15,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
         <button class="uni-brand" type="button" (click)="view='dashboard'"><span>S</span><strong>SuperOffer</strong></button>
         <div class="uni-org"><span>NU</span><div><strong>Northbridge University</strong><small>Verified organisation</small></div></div>
         <nav>
-          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="view=item.id">
+          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="view=item.id" [title]="item.label" [attr.aria-label]="item.label">
             <span>{{item.icon}}</span><strong>{{item.label}}</strong><small *ngIf="item.badge">{{item.badge}}</small>
           </button>
         </nav>
@@ -74,7 +74,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
               <span class="candidate-avatar large" [style.background]="student.color">{{student.initials}}</span>
               <div class="candidate-main"><span>{{student.level}} · {{student.intake}}</span><h2>{{student.name}}</h2><p>{{student.course}} · Targeting {{student.country}}</p><div><small *ngFor="let tag of student.tags">{{tag}}</small></div></div>
               <div class="match-score"><strong>{{student.score}}</strong><small>MATCH SCORE</small><span>{{student.factor}}</span></div>
-              <div class="result-actions"><button class="uni-secondary">Shortlist</button><button class="uni-primary">Review profile</button></div>
+              <div class="result-actions"><button class="uni-secondary shortlist-toggle" [class.chosen]="isShortlisted(student.name)" (click)="toggleShortlist(student.name)">{{isShortlisted(student.name) ? '✓ Shortlisted' : '+ Shortlist'}}</button><button class="uni-primary">Review profile</button></div>
             </article>
           </section>
         </section>
@@ -88,7 +88,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
           </div>
           <section class="shortlist-table">
             <div class="shortlist-table-head"><span>STUDENT</span><span>MATCH</span><span>FIT SIGNAL</span><span>ADDED</span><span>ACTIONS</span></div>
-            <article *ngFor="let student of students.slice(0,4)"><div><span class="candidate-avatar" [style.background]="student.color">{{student.initials}}</span><p><strong>{{student.name}}</strong><small>{{student.course}}</small></p></div><b>{{student.score}}</b><span>{{student.factor}}</span><span>24 Jul 2026</span><div><button>Profile</button><button class="primary-btn">Invite</button></div></article>
+            <article *ngFor="let student of shortlistStudents"><div><span class="candidate-avatar" [style.background]="student.color">{{student.initials}}</span><p><strong>{{student.name}}</strong><small>{{student.course}}</small></p></div><b>{{student.score}}</b><span>{{student.factor}}</span><span>24 Jul 2026</span><div><button (click)="toggleShortlist(student.name)">Remove</button><button class="primary-btn">Invite</button></div></article>
           </section>
         </section>
 
@@ -128,6 +128,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
 export class UniversityWorkspaceComponent {
   view: UniversityView = 'dashboard';
   query = '';
+  shortlistedNames = new Set(['Aarav Mehta', 'Sara Khan', 'Daniel Okafor']);
   navigation: Array<{id:UniversityView;label:string;icon:string;badge?:string}> = [
     {id:'dashboard',label:'Dashboard',icon:'▦'},
     {id:'search',label:'Search students',icon:'⌕'},
@@ -163,6 +164,13 @@ export class UniversityWorkspaceComponent {
     {code:'BA',level:'POSTGRADUATE',name:'MSc Business Analytics',campus:'Vancouver',intake:'Fall 2027',shortlisted:16,accepted:4,target:20,status:'Active',performance:21},
     {code:'IB',level:'POSTGRADUATE',name:'MBA International Business',campus:'Toronto',intake:'Spring 2027',shortlisted:9,accepted:2,target:15,status:'Draft',performance:15}
   ];
+  get shortlistStudents(){return this.students.filter(student=>this.shortlistedNames.has(student.name));}
+  isShortlisted(name:string){return this.shortlistedNames.has(name);}
+  toggleShortlist(name:string){
+    if(this.shortlistedNames.has(name)) this.shortlistedNames.delete(name);
+    else this.shortlistedNames.add(name);
+    this.shortlistedNames = new Set(this.shortlistedNames);
+  }
   constructor(private router:Router){}
   logout(){localStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_access_token');this.router.navigate(['/']);}
 }
