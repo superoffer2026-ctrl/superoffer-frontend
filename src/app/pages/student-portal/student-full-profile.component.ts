@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
+import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent],
   styleUrl: './student-full-profile.css',
   template: `
+    <app-student-workspace-rail />
     <main class="full-profile-page">
       <header class="profile-top">
         <a routerLink="/student/offers">← Back to offers</a>
@@ -32,24 +34,15 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
           </article>
         </section>
 
-        <div class="profile-side">
-          <aside class="documents-panel">
-            <span>DOCUMENT CHECKLIST</span><h2>Complete your documents</h2><p>Add any missing files while reviewing your profile.</p>
-            <label *ngFor="let doc of documents" [class.complete]="store.values[doc.key]">
-              <div><strong>{{doc.label}}</strong><small>{{store.values[doc.key] || 'Not uploaded'}}</small></div>
-              <b>{{store.values[doc.key]?'✓':'＋'}}</b>
-              <input type="file" (change)="chooseFile(doc.key,$event)">
-            </label>
-            <a routerLink="/student/documents">Open documents step</a>
-          </aside>
-          <aside class="account-panel" id="account-settings">
-            <span>ACCOUNT SETTINGS</span><h2>Manage your account</h2>
-            <div class="account-row"><div><strong>Email address</strong><small>{{store.values['email'] || 'aarav@example.com'}}</small></div><button type="button">Edit</button></div>
-            <div class="account-row"><div><strong>Password</strong><small>Keep your account secure</small></div><button type="button">Change</button></div>
-            <label class="account-toggle"><span><strong>Email notifications</strong><small>Receive offer and message updates</small></span><input type="checkbox" checked></label>
-            <div class="danger-zone"><strong>Delete account</strong><p>Permanently remove your student account and profile.</p><button type="button">Delete account</button></div>
-          </aside>
-        </div>
+        <aside class="documents-panel">
+          <span>DOCUMENT CHECKLIST</span><h2>Complete your documents</h2><p>Add any missing files while reviewing your profile.</p>
+          <label *ngFor="let doc of documents" [class.complete]="store.values[doc.key]">
+            <div><strong>{{doc.label}}</strong><small>{{store.values[doc.key] || 'Not uploaded'}}</small></div>
+            <b>{{store.values[doc.key]?'✓':'＋'}}</b>
+            <input type="file" (change)="chooseFile(doc.key,$event)">
+          </label>
+          <a routerLink="/student/documents">Open documents step</a>
+        </aside>
       </div>
     </main>
   `
