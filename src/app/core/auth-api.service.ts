@@ -84,6 +84,11 @@ export class AuthApiService {
     return this.request('/admin/audit-log?limit=100', { headers:{ 'x-admin-key':adminKey } });
   }
 
+  async adminAuthLogs(adminKey: string, outcome = 'ALL', role = 'ALL', search = ''): Promise<any> {
+    const query = new URLSearchParams({ limit:'200', outcome, role, search });
+    return this.request(`/admin/auth-logs?${query}`, { headers:{ 'x-admin-key':adminKey } });
+  }
+
   private async request(path: string, options: RequestInit = {}, json = true): Promise<any> {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), this.requestTimeoutMs);
