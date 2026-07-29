@@ -25,7 +25,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
 
       <main class="uni-main">
         <section class="uni-view" *ngIf="view==='dashboard'">
-          <header class="uni-page-title"><div><span>ADMISSIONS WORKSPACE</span><h1>Good afternoon, Aisha</h1><p>Here’s how your student recruitment pipeline is moving.</p></div><button class="uni-primary" (click)="view='search'">Find students</button></header>
+          <header class="uni-page-title"><div><span>ADMISSIONS WORKSPACE</span><h1>Admissions overview</h1><p>Track student discovery, invitations and offer progress for the current cycle.</p></div><button class="uni-primary" (click)="view='search'">Find students</button></header>
           <section class="uni-priority">
             <div><span>NEEDS ATTENTION</span><h2>3 student negotiations are waiting for your response</h2><p>The earliest offer expires in 4 days.</p></div>
             <button type="button" (click)="view='invitations'">Review negotiations →</button>
