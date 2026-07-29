@@ -274,6 +274,25 @@
 .offer-details-column .offer-conditions{position:relative!important;clear:both;flex:0 0 auto}
 .offer-details-column .offer-next-steps{position:relative!important;flex:0 0 auto}
 
+@media(min-width:900px){
+  .offer-workspace{overflow:hidden!important}
+  .offer-mailbox{
+    display:block!important;
+    min-height:0!important;
+    max-height:100vh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+    -webkit-overflow-scrolling:touch;
+  }
+  .offer-mailbox .mailbox-toolbar{
+    position:sticky!important;
+    top:0!important;
+    z-index:10!important;
+  }
+}
+
 @media(min-width:900px) and (max-width:1450px){
   .offer-workspace{grid-template-columns:minmax(300px,.95fr) minmax(360px,1.12fr) minmax(245px,.78fr)!important}
   .offer-mail-item{padding:17px 15px!important}
