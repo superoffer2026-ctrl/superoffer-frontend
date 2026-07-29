@@ -1,0 +1,193 @@
+<div class="app-shell">
+  <header class="navbar">
+    <button class="brand" (click)="navigate('landing')" aria-label="SuperOffer home">
+      <span class="brand-mark">S</span><span>SuperOffer</span>
+    </button>
+    <button class="menu-button" (click)="menuOpen = !menuOpen" aria-label="Toggle menu">Menu</button>
+    <nav [class.open]="menuOpen" aria-label="Main navigation">
+      <button *ngFor="let key of audienceKeys"
+        (click)="openAudience(key)">{{ audiences[key].label }}</button>
+    </nav>
+    <button class="nav-login" (click)="navigate('login')">Sign in <span>→</span></button>
+  </header>
+
+  <main *ngIf="screen === 'landing'">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Education opportunities, connected</span>
+        <h1>One trusted place for the decisions that shape a future.</h1>
+        <p>SuperOffer brings students, universities, finance partners, and education consultants into one clear and dependable journey.</p>
+        <div class="hero-actions">
+          <button class="primary" (click)="openAudience('student')">Start as a student <span>→</span></button>
+          <a href="#how-it-works">See how it works</a>
+        </div>
+        <div class="trust-line"><span>✓ Verified partners</span><span>✓ Transparent journeys</span><span>✓ Secure by design</span></div>
+      </div>
+      <div class="hero-visual" aria-label="SuperOffer connected education network">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="center-card"><span class="brand-mark">S</span><strong>One connected journey</strong><small>From ambition to opportunity</small></div>
+        <div class="float-card student-card"><b>Student</b><span>Build your future</span></div>
+        <div class="float-card university-card"><b>University</b><span>Find the right talent</span></div>
+        <div class="float-card bank-card"><b>Bank</b><span>Enable education</span></div>
+        <div class="float-card consultant-card"><b>Consultancy</b><span>Guide with confidence</span></div>
+      </div>
+    </section>
+
+    <section class="proof-strip">
+      <div><strong>4</strong><span>connected participant groups</span></div>
+      <div><strong>1</strong><span>trusted platform</span></div>
+      <div><strong>100%</strong><span>partner verification</span></div>
+      <div><strong>Clear</strong><span>status at every step</span></div>
+    </section>
+
+    <section class="section intro" id="how-it-works">
+      <span class="eyebrow">Built around real journeys</span>
+      <h2>Different goals. One place to move them forward.</h2>
+      <p>Choose your path to see how SuperOffer supports you from registration through secure access.</p>
+      <div class="path-grid">
+        <button class="path-card" *ngFor="let key of audienceKeys; let i=index" (click)="openAudience(key)">
+          <span class="path-number">0{{i + 1}}</span>
+          <h3>{{audiences[key].label}}</h3>
+          <p>{{audiences[key].description}}</p>
+          <b>Explore your path →</b>
+        </button>
+      </div>
+    </section>
+
+    <section class="section feature-band">
+      <div><span class="eyebrow light">Why SuperOffer</span><h2>Clarity creates better outcomes.</h2></div>
+      <div class="feature-list">
+        <article><span>01</span><div><h3>Relevant connections</h3><p>Bring the right people and opportunities together around genuine goals.</p></div></article>
+        <article><span>02</span><div><h3>Trust at every step</h3><p>Institutional partners are reviewed before entering the platform.</p></div></article>
+        <article><span>03</span><div><h3>A journey you can follow</h3><p>Know what comes next, from account creation through portal access.</p></div></article>
+      </div>
+    </section>
+
+    <section class="section final-cta">
+      <span class="eyebrow">Your next step starts here</span>
+      <h2>Find the SuperOffer path built for you.</h2>
+      <div class="audience-pills">
+        <button *ngFor="let key of audienceKeys" (click)="openAudience(key)">{{audiences[key].label}} →</button>
+      </div>
+    </section>
+  </main>
+
+  <main *ngIf="screen === 'audience'" class="audience-page">
+    <section class="audience-hero">
+      <button class="back-link" (click)="navigate('landing')">← Back to SuperOffer</button>
+      <div>
+        <span class="eyebrow">{{audience.eyebrow}}</span>
+        <h1>{{audience.headline}}</h1>
+        <p>{{audience.description}}</p>
+        <div class="hero-actions">
+          <button class="primary" (click)="beginRegistration()">Register as {{audience.label}} <span>→</span></button>
+          <button class="text-button" (click)="navigate('login')">Already registered? Sign in</button>
+        </div>
+      </div>
+      <div class="audience-badge"><small>SuperOffer for</small><strong>{{audience.label}}</strong><span>{{needsApproval ? 'Verified access' : 'Instant account access'}}</span></div>
+    </section>
+    <section class="section">
+      <span class="eyebrow">What you gain</span><h2>A more confident way forward.</h2>
+      <div class="benefit-grid"><article *ngFor="let benefit of audience.benefits"><span>✓</span><h3>{{benefit.title}}</h3><p>{{benefit.text}}</p></article></div>
+    </section>
+    <section class="section steps-section">
+      <div><span class="eyebrow">Simple by design</span><h2>From registration to your portal.</h2></div>
+      <ol><li *ngFor="let step of audience.steps; let i=index"><span>0{{i+1}}</span><p>{{step}}</p></li></ol>
+    </section>
+    <section class="section bottom-register">
+      <h2>Ready to join SuperOffer?</h2>
+      <p>{{needsApproval ? 'Create your account and submit your organisation for verification.' : 'Create your free account and continue directly to your student journey.'}}</p>
+      <button class="primary light-button" (click)="beginRegistration()">Register as {{audience.label}} →</button>
+    </section>
+  </main>
+
+  <main *ngIf="screen === 'register' || screen === 'login'" class="auth-page">
+    <section class="auth-story">
+      <button class="back-link light" (click)="openAudience(audienceKey)">← Back</button>
+      <div><span class="eyebrow light">SuperOffer for {{audience.label}}</span><h1>{{screen === 'register' ? 'Create your account.' : 'Welcome back.'}}</h1>
+      <p>{{needsApproval ? 'Organisation accounts are reviewed by our admin team to protect the quality of the SuperOffer network.' : 'Your student account gives you immediate access after registration.'}}</p></div>
+      <small>Secure registration • Clear status • Trusted access</small>
+    </section>
+    <section class="auth-form-wrap">
+      <form *ngIf="screen === 'register'" (ngSubmit)="register()" #registerNgForm="ngForm">
+        <span class="form-step">ACCOUNT REGISTRATION</span><h2>Register as {{audience.label}}</h2><p>Enter accurate details so we can set up your account correctly.</p>
+        <div class="field-grid">
+          <label>Full name<input name="fullName" [(ngModel)]="registerForm.fullName" required placeholder="Your full name"></label>
+          <label>Phone number<input name="phone" [(ngModel)]="registerForm.phone" placeholder="+91 00000 00000"></label>
+          <label class="wide">Email address<input name="email" type="email" [(ngModel)]="registerForm.email" required placeholder="you@example.com"></label>
+          <label class="wide">Password<input name="password" type="password" [(ngModel)]="registerForm.password" required minlength="8" placeholder="At least 8 characters, with a letter and number"></label>
+          <ng-container *ngIf="needsApproval">
+            <div class="form-divider wide"><span>Organisation details</span></div>
+            <label class="wide">Organisation name<input name="organizationName" [(ngModel)]="registerForm.organizationName" required placeholder="Legal organisation name"></label>
+            <label>Registration number<input name="registrationNumber" [(ngModel)]="registerForm.registrationNumber" placeholder="Official registration ID"></label>
+            <label>Website<input name="website" [(ngModel)]="registerForm.website" placeholder="https://"></label>
+            <label>Country<input name="country" [(ngModel)]="registerForm.country" placeholder="Country"></label>
+            <label>City<input name="city" [(ngModel)]="registerForm.city" placeholder="City"></label>
+            <label class="wide">Accreditation / licence reference<input name="licenseReference" [(ngModel)]="registerForm.licenseReference" placeholder="Relevant licence or accreditation"></label>
+          </ng-container>
+        </div>
+        <p class="error" *ngIf="error">{{error}}</p>
+        <button class="primary submit" [disabled]="loading || registerNgForm.invalid">{{loading ? 'Creating account…' : 'Create account →'}}</button>
+        <p class="form-switch">Already registered? <button type="button" (click)="navigate('login')">Sign in</button></p>
+      </form>
+      <form *ngIf="screen === 'login'" (ngSubmit)="login()" #loginNgForm="ngForm">
+        <span class="form-step">SECURE SIGN IN</span><h2>Sign in to your portal</h2><p>Use the email and password used during registration.</p>
+        <p class="success" *ngIf="notice">{{notice}}</p>
+        <label>Email address<input name="loginEmail" type="email" [(ngModel)]="loginForm.email" required placeholder="you@example.com"></label>
+        <label>Password<input name="loginPassword" type="password" [(ngModel)]="loginForm.password" required placeholder="Your password"></label>
+        <label class="check"><input name="remember" type="checkbox" [(ngModel)]="loginForm.remember"> Keep me signed in</label>
+        <p class="error" *ngIf="error">{{error}}</p>
+        <button class="primary submit" [disabled]="loading || loginNgForm.invalid">{{loading ? 'Signing in…' : 'Sign in securely →'}}</button>
+        <p class="form-switch">New to SuperOffer? <button type="button" (click)="beginRegistration()">Create an account</button></p>
+      </form>
+    </section>
+  </main>
+
+  <main *ngIf="screen === 'status'" class="status-page">
+    <section class="status-card">
+      <div class="status-icon" [class.approved]="approvalStatus === 'APPROVED'" [class.rejected]="approvalStatus === 'REJECTED'">{{approvalStatus === 'PENDING' ? '⌛' : approvalStatus === 'APPROVED' ? '✓' : '!'}}</div>
+      <span class="eyebrow">Registration status</span>
+      <h1 *ngIf="approvalStatus === 'PENDING'">Your application is under review.</h1>
+      <h1 *ngIf="approvalStatus === 'APPROVED'">Your account has been approved.</h1>
+      <h1 *ngIf="approvalStatus === 'REJECTED'">We could not approve this application.</h1>
+      <p *ngIf="approvalStatus === 'PENDING'">Our admin team is verifying your {{audience.label.toLowerCase()}} details. You can sign in after approval.</p>
+      <p *ngIf="approvalStatus === 'APPROVED'">Your verification is complete. Sign in with your registered email and password.</p>
+      <p *ngIf="approvalStatus === 'REJECTED'">{{rejectionReason || 'Please contact the SuperOffer team for more information.'}}</p>
+      <div class="status-reference" *ngIf="userId"><span>Application reference</span><code>{{userId}}</code></div>
+      <p class="error" *ngIf="error">{{error}}</p>
+      <div class="status-actions">
+        <button class="primary" *ngIf="approvalStatus === 'APPROVED'" (click)="navigate('login')">Continue to sign in →</button>
+        <button class="primary" *ngIf="approvalStatus === 'PENDING'" [disabled]="loading" (click)="refreshStatus()">{{loading ? 'Checking…' : 'Check status again'}}</button>
+        <button class="text-button" (click)="navigate('landing')">Return home</button>
+      </div>
+    </section>
+  </main>
+
+  <main *ngIf="screen === 'portal'" class="portal-page">
+    <aside><div class="brand portal-brand"><span class="brand-mark">S</span><span>SuperOffer</span></div>
+      <nav><button class="active">Overview</button><button disabled>Profile</button><button disabled>Opportunities</button><button disabled>Messages</button></nav>
+      <button class="logout" (click)="logout()">Sign out</button>
+    </aside>
+    <section class="portal-content">
+      <div class="portal-top"><div><span class="eyebrow">{{audience.label}} portal</span><h1>Welcome to SuperOffer.</h1></div><span class="live-pill">Account active</span></div>
+      <ng-container *ngIf="audienceKey === 'student'">
+        <div class="welcome-card"><div><small>YOUR JOURNEY</small><h2>{{studentProfile?.name || registerForm.fullName || 'Student'}}, your opportunities start here.</h2><p>Your student portal is connected and ready for the next modules.</p></div><div class="progress-ring">{{studentProfile?.completion_percent || 0}}%<small>profile</small></div></div>
+        <div class="portal-grid">
+          <article><span>Profile</span><h3>{{studentProfile?.program || 'Complete your academic profile'}}</h3><p>{{studentProfile?.location || 'Add your goals and preferences next.'}}</p></article>
+          <article><span>Offers</span><h3>{{studentOffers.length}} available</h3><p>Your offer workflow is connected to the backend.</p></article>
+          <article><span>Next step</span><h3>Build your profile</h3><p>Additional student portal features will be developed in the next module.</p></article>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="audienceKey !== 'student'">
+        <div class="welcome-card"><div><small>VERIFIED ACCESS</small><h2>Your {{audience.label.toLowerCase()}} workspace is ready.</h2><p>Registration, admin approval, and secure login are complete. Portal features will be built in the next module.</p></div><div class="approval-seal">✓<small>Approved</small></div></div>
+        <div class="coming-next"><span>Authentication module complete</span><h2>Portal development comes next.</h2><p>We have intentionally stopped here, as requested, after confirming access to the correct role-based portal.</p></div>
+      </ng-container>
+    </section>
+  </main>
+
+  <footer *ngIf="screen === 'landing' || screen === 'audience'">
+    <div class="brand"><span class="brand-mark">S</span><span>SuperOffer</span></div>
+    <p>Connecting education opportunities with the people who make them possible.</p>
+    <span>© 2026 SuperOffer</span>
+  </footer>
+</div>
