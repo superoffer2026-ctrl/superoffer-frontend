@@ -3,11 +3,10 @@ import { Component, HostListener } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { STUDENT_PROFILE_STEPS } from './student-portal.models';
-import { StudentSupportChatComponent } from './student-support-chat.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, StudentSupportChatComponent],
+  imports: [CommonModule, RouterLink, RouterOutlet],
   styleUrl: './student-portal.css',
   template: `
     <div class="student-portal" [class.sidebar-collapsed]="collapsed" [class.mobile-open]="mobileOpen" [class.offers-mode]="isOffers">
@@ -40,7 +39,6 @@ import { StudentSupportChatComponent } from './student-support-chat.component';
       </aside>
 
       <main class="student-content"><router-outlet /></main>
-      <app-student-support-chat />
     </div>
   `
 })

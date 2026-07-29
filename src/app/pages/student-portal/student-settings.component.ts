@@ -3,10 +3,11 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
+import { StudentSupportChatComponent } from './student-support-chat.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent],
+  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent, StudentSupportChatComponent],
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
@@ -34,6 +35,7 @@ import { StudentWorkspaceRailComponent } from './student-workspace-rail.componen
         </article>
       </section>
     </main>
+    <app-student-support-chat />
   `
 })
 export class StudentSettingsComponent {
