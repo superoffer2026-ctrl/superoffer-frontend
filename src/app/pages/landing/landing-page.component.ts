@@ -9,40 +9,39 @@ import { SiteHeaderComponent } from '../../shared/site-header.component';
   standalone: true,
   imports: [CommonModule, RouterLink, SiteHeaderComponent, SiteFooterComponent],
   template: `
-    <app-site-header variant="overlay" />
+    <app-site-header />
     <main class="premium-home">
       <section class="premium-hero">
         <div class="premium-hero-copy">
-          <span class="premium-pill"><i></i> Your future, brought closer</span>
-          <h1>THE RIGHT<br><em>OFFER</em><br>CHANGES<br>EVERYTHING.</h1>
-          <p>/ One profile. University, funding, and guidance opportunities matched around you. /</p>
+          <span class="premium-pill"><i></i> One profile. More possibilities.</span>
+          <h1>The right education opportunities, <em>in one place.</em></h1>
+          <p>Create one verified profile and discover university admissions, education finance, and expert guidance matched around your plans.</p>
           <div class="premium-actions">
-            <a class="premium-button primary" routerLink="/auth/register/student">START <b>→</b></a>
-            <a class="premium-button quiet" href="#how-it-works">EXPLORE HOW IT WORKS</a>
+            <a class="premium-button primary" routerLink="/auth/register/student">Create your free profile <b>→</b></a>
+            <a class="premium-button quiet" href="#how-it-works">See how it works</a>
           </div>
           <div class="premium-assurance">
             <span *ngFor="let item of assurances">✓ {{item}}</span>
           </div>
         </div>
 
-        <div class="product-stage" aria-label="SuperOffer student workspace preview">
-          <div class="stage-glow"></div>
-          <section class="student-product">
-            <header><div><span class="mini-logo">S</span><strong>My opportunities</strong></div><span class="live-dot">LIVE</span></header>
-            <div class="student-product-body">
-              <aside><span class="active"></span><span></span><span></span><span></span></aside>
-              <div class="product-content">
-                <div class="product-greeting"><div><small>YOUR BEST MATCHES</small><strong>Opportunities selected for you</strong></div><span>{{profileStrength}}%<small>profile</small></span></div>
-                <article *ngFor="let offer of offers">
-                  <span class="offer-logo" [class]="offer.tone">{{offer.initial}}</span>
-                  <div><small>{{offer.kind}}</small><strong>{{offer.title}}</strong><p>{{offer.detail}}</p></div>
-                  <b>{{offer.match}}<small>match</small></b>
-                </article>
+        <div class="laptop-showcase" aria-label="SuperOffer student workspace preview">
+          <div class="laptop-lid">
+            <section class="student-product">
+              <header><div><span class="mini-logo">S</span><strong>SuperOffer</strong></div><nav><span>Profile</span><span>Opportunities</span><span>Messages</span></nav><span class="live-dot">AM</span></header>
+              <div class="laptop-screen-content">
+                <div class="fan-cards">
+                  <article *ngFor="let offer of offers; let i=index" [class]="'fan-card fan-'+i">
+                    <span class="offer-logo" [class]="offer.tone">{{offer.initial}}</span>
+                    <small>{{offer.kind}}</small><strong>{{offer.title}}</strong><p>{{offer.detail}}</p><b>{{offer.match}} match</b>
+                  </article>
+                </div>
+                <div class="screen-copy"><small>YOUR OPPORTUNITY WORKSPACE</small><h2>Better-fit offers,<br><em>built around you.</em></h2><p>One profile connects every next step.</p></div>
               </div>
-            </div>
-          </section>
-          <div class="stage-card scholarship"><small>SCHOLARSHIP</small><strong>40%</strong><span>Global Excellence Award</span></div>
-          <div class="stage-card privacy"><b>✓</b><div><strong>You stay in control</strong><span>Contact details protected</span></div></div>
+            </section>
+          </div>
+          <div class="laptop-hinge"></div>
+          <div class="laptop-base"></div>
         </div>
       </section>
 
