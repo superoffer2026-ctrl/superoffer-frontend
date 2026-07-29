@@ -380,3 +380,11 @@
   .offer-details-column .offer-next-steps li{font-size:11px!important}
   .offer-reading-pane>.offer-conversation .message-thread p{font-size:12px!important}
 }
+
+@media(min-width:1700px){
+  .offer-workspace-page{margin-left:76px!important}
+  .offer-workspace{grid-template-columns:minmax(480px,1.03fr) minmax(520px,1.08fr) minmax(470px,.95fr)!important}
+  .offer-mail-item{padding-left:22px!important;padding-right:22px!important}
+  .offer-details-column .reading-pane-scroll{padding-left:24px!important;padding-right:24px!important}
+  .offer-reading-pane>.offer-conversation .message-thread{padding-left:22px!important;padding-right:22px!important}
+}

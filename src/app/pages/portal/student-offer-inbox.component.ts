@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from '../student-portal/student-profile-ui.store';
+import { StudentWorkspaceRailComponent } from '../student-portal/student-workspace-rail.component';
 
 type OfferState = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
 type OfferKind = 'University' | 'Bank';
@@ -32,7 +32,7 @@ interface StudentOffer {
 @Component({
   selector: 'app-student-offer-inbox',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent],
   styleUrl: '../../offer-workspace.css',
   styles: [`
     :host{--line:#dfe6e1;--muted:#6d7972;--green:#087a50;display:block;min-height:100vh;background:#fff;color:#172019;font-family:"DM Sans",sans-serif}
@@ -51,12 +51,7 @@ interface StudentOffer {
     }
   `],
   template: `
-    <nav class="offers-utility-rail" aria-label="Student workspace">
-      <a class="inbox-logo" routerLink="/student/profile" aria-label="Open student profile">S</a>
-      <a class="student-profile-link" routerLink="/student/profile" aria-label="Open complete student profile" title="View profile">
-        <span><img *ngIf="profileStore.photo" [src]="profileStore.photo" alt=""><ng-container *ngIf="!profileStore.photo">{{studentInitials}}</ng-container></span>
-      </a>
-    </nav>
+    <app-student-workspace-rail />
     <p class="mailbox-error" *ngIf="error">{{error}}</p>
     <main class="offer-workspace-page">
       <section class="offer-workspace">
