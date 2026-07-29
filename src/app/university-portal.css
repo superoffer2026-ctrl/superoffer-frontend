@@ -35,3 +35,17 @@ button,input,select,textarea{font:inherit;box-sizing:border-box}.uni-shell{min-h
 @media(max-width:1050px){.uni-sidebar{width:68px;padding:18px 8px}.uni-brand strong,.uni-org>div,.uni-sidebar nav button>strong,.uni-sidebar nav button>small,.uni-plan,.uni-user>div,.uni-user>b{display:none}.uni-brand{justify-content:center}.uni-brand>span{width:38px;height:38px}.uni-org{justify-content:center;padding:9px 0}.uni-org>span{width:34px}.uni-sidebar nav button{display:grid;place-items:center;padding:11px}.uni-main{margin-left:68px}.uni-dashboard-grid{grid-template-columns:1fr}.uni-recommended>article{grid-template-columns:auto 1fr 45px auto}.candidate-factor{display:none}.uni-results>article{grid-template-columns:auto 1fr 90px}.result-actions{grid-column:2/-1}.uni-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.uni-sidebar{position:static;width:100%;height:58px;display:flex;flex-direction:row;align-items:center;padding:0 13px}.uni-brand>span{width:34px;height:34px}.uni-org,.uni-sidebar nav,.uni-plan,.uni-user{display:none}.uni-main{margin-left:0}.uni-mobile-brand{display:block;font-size:11px;font-weight:900}.uni-topbar{padding:0 14px}.uni-view{padding:25px 15px 45px}.uni-page-title{align-items:flex-start;flex-direction:column}.uni-metrics,.uni-report-summary{grid-template-columns:1fr 1fr}.uni-priority{align-items:flex-start;flex-direction:column}.uni-recommended>article{grid-template-columns:auto 1fr 45px}.uni-recommended article>button{grid-column:2/-1;justify-self:start}.uni-results>article{grid-template-columns:auto 1fr}.match-score{grid-column:1}.result-actions{grid-column:2}.uni-filter-row{overflow-x:auto}.uni-filter-row small{display:none}.uni-results-head small{display:none}.uni-dashboard-grid{grid-template-columns:1fr}.uni-activity>div{grid-template-columns:auto 1fr auto}.uni-activity time{display:none}.shortlist-summary,.invitation-metrics{grid-template-columns:1fr}.settings-rail{margin-bottom:14px}}
 @media(max-width:480px){.uni-metrics,.uni-report-summary{grid-template-columns:1fr}.uni-search-box{grid-template-columns:auto 1fr}.uni-search-box button{grid-column:1/-1}.candidate-main>div{flex-wrap:wrap}.result-actions{flex-wrap:wrap}}
+
+/* Compact university navigation rail */
+@media(min-width:721px){
+  .uni-sidebar{width:76px;align-items:center;padding:14px 9px;background:#fff;color:#172019;border-right:1px solid #dce4df}
+  .uni-brand{justify-content:center}.uni-brand>span{width:48px;height:48px;border-radius:14px;background:#102f45;color:#67d0b2;font-size:20px}.uni-brand>strong{display:none}
+  .uni-org,.uni-plan{display:none}
+  .uni-sidebar nav{width:100%;gap:8px;margin-top:42px}
+  .uni-sidebar nav button{position:relative;width:100%;height:52px;display:grid;place-items:center;padding:0;border-radius:12px;color:#74837b}
+  .uni-sidebar nav button:hover{background:#f1f6f3;color:#087a50}.uni-sidebar nav button.active{background:#e3f2e9;color:#087a50}
+  .uni-sidebar nav button>span{font-size:18px}.uni-sidebar nav button>strong,.uni-sidebar nav button>small{display:none}
+  .uni-user{width:48px;display:grid;place-items:center;margin-top:auto;padding:0}.uni-user>span{width:42px;height:42px;border:2px solid #c9dfd4;background:#eaf5ef}.uni-user>div,.uni-user>b{display:none}
+  .uni-main{margin-left:76px}
+}
+.shortlist-toggle.chosen{border-color:#9ccbb5;background:#e7f5ed;color:#087a50}
