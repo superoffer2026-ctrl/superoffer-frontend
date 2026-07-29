@@ -3,10 +3,11 @@ import { Component, HostListener } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { STUDENT_PROFILE_STEPS } from './student-portal.models';
+import { StudentSupportChatComponent } from './student-support-chat.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterOutlet, StudentSupportChatComponent],
   styleUrl: './student-portal.css',
   template: `
     <div class="student-portal" [class.sidebar-collapsed]="collapsed" [class.mobile-open]="mobileOpen" [class.offers-mode]="isOffers">
@@ -39,6 +40,7 @@ import { STUDENT_PROFILE_STEPS } from './student-portal.models';
       </aside>
 
       <main class="student-content"><router-outlet /></main>
+      <app-student-support-chat />
     </div>
   `
 })
@@ -69,7 +71,7 @@ export class StudentPortalShellComponent {
 
   private syncRoute(url: string) {
     this.isDashboard = url.includes('/student/dashboard');
-    this.isOffers = url.includes('/student/offers') || url.includes('/student/profile') || url.includes('/student/dashboard') || url.includes('/student/settings') || url.includes('/student/help') || url.includes('/student/chat');
+    this.isOffers = url.includes('/student/offers') || url.includes('/student/profile') || url.includes('/student/dashboard') || url.includes('/student/settings') || url.includes('/student/help');
     const index = this.steps.findIndex(step => url.includes(`/student/${step.path}`));
     this.currentIndex = index >= 0 ? index : 0;
   }
