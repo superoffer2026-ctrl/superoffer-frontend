@@ -32,15 +32,24 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
           </article>
         </section>
 
-        <aside class="documents-panel">
-          <span>DOCUMENT CHECKLIST</span><h2>Complete your documents</h2><p>Add any missing files while reviewing your profile.</p>
-          <label *ngFor="let doc of documents" [class.complete]="store.values[doc.key]">
-            <div><strong>{{doc.label}}</strong><small>{{store.values[doc.key] || 'Not uploaded'}}</small></div>
-            <b>{{store.values[doc.key]?'✓':'＋'}}</b>
-            <input type="file" (change)="chooseFile(doc.key,$event)">
-          </label>
-          <a routerLink="/student/documents">Open documents step</a>
-        </aside>
+        <div class="profile-side">
+          <aside class="documents-panel">
+            <span>DOCUMENT CHECKLIST</span><h2>Complete your documents</h2><p>Add any missing files while reviewing your profile.</p>
+            <label *ngFor="let doc of documents" [class.complete]="store.values[doc.key]">
+              <div><strong>{{doc.label}}</strong><small>{{store.values[doc.key] || 'Not uploaded'}}</small></div>
+              <b>{{store.values[doc.key]?'✓':'＋'}}</b>
+              <input type="file" (change)="chooseFile(doc.key,$event)">
+            </label>
+            <a routerLink="/student/documents">Open documents step</a>
+          </aside>
+          <aside class="account-panel">
+            <span>ACCOUNT SETTINGS</span><h2>Manage your account</h2>
+            <div class="account-row"><div><strong>Email address</strong><small>{{store.values['email'] || 'aarav@example.com'}}</small></div><button type="button">Edit</button></div>
+            <div class="account-row"><div><strong>Password</strong><small>Keep your account secure</small></div><button type="button">Change</button></div>
+            <label class="account-toggle"><span><strong>Email notifications</strong><small>Receive offer and message updates</small></span><input type="checkbox" checked></label>
+            <div class="danger-zone"><strong>Delete account</strong><p>Permanently remove your student account and profile.</p><button type="button">Delete account</button></div>
+          </aside>
+        </div>
       </div>
     </main>
   `
