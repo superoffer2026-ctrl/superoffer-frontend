@@ -20,13 +20,13 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
           </button>
         </nav>
         <div class="uni-plan"><span>GROWTH PLAN</span><strong>214 of 500</strong><small>student profiles viewed</small><i><b></b></i></div>
-        <button class="uni-user" type="button" (click)="logout()"><span>AM</span><div><strong>Aisha Malik</strong><small>Admissions Officer</small></div><b>↗</b></button>
+        <button class="uni-user" type="button" (click)="view='settings'" title="Organisation settings" aria-label="Organisation settings"><span>AM</span><div><strong>Aisha Malik</strong><small>Admissions Officer</small></div><b>↗</b></button>
       </aside>
 
       <main class="uni-main">
         <header class="uni-topbar">
-          <div><span class="uni-mobile-brand">SuperOffer University</span><small>2026–27 recruitment cycle</small></div>
-          <div><button class="uni-plan-trigger" type="button" (click)="showPlans=true">Upgrade access</button><button type="button" aria-label="Notifications" (click)="notify('Notifications opened')">◌<b>3</b></button><button type="button" (click)="view='settings'">⚙</button></div>
+          <div class="uni-header-identity"><span class="uni-mobile-brand">SuperOffer University</span><strong>{{currentViewLabel}}</strong><small>Northbridge University <i></i> 2026–27 recruitment cycle</small></div>
+          <div><span class="verified-header">✓ Verified</span><button type="button" aria-label="Notifications" (click)="notify('Notifications opened')">◌<b>3</b></button></div>
         </header>
 
         <section class="uni-view" *ngIf="view==='dashboard'">
@@ -39,7 +39,7 @@ type UniversityView = 'dashboard' | 'search' | 'shortlists' | 'invitations' | 'p
             <article><span>ACTIVE SHORTLISTS</span><strong>6</strong><small>48 students across programmes</small></article>
             <article><span>INVITATIONS SENT</span><strong>84</strong><small><b>+12%</b> from last cycle</small></article>
             <article><span>ACCEPTED OFFERS</span><strong>19</strong><small><b>22.6%</b> conversion rate</small></article>
-            <article><span>INVITES REMAINING</span><strong>116</strong><small>Resets in 18 days</small></article>
+            <article class="access-metric"><span>PROFILE ACCESS</span><strong>286</strong><small>views available this cycle</small><button type="button" (click)="showPlans=true">Manage access →</button></article>
           </div>
           <div class="uni-dashboard-grid">
             <section class="uni-card uni-recommended">
@@ -205,6 +205,9 @@ export class UniversityWorkspaceComponent {
   orgCampus='Toronto, Canada';
   orgDescription='Internationally focused university offering career-led postgraduate programmes.';
   get shortlistStudents(){return this.students.filter(student=>this.shortlistedNames.has(student.name));}
+  get currentViewLabel(){
+    return ({dashboard:'Admissions overview',search:'Student discovery',shortlists:'Programme shortlists',invitations:'Offers & invitations',programs:'Programme catalog',reports:'Admissions reports',settings:'Organisation settings'} as Record<UniversityView,string>)[this.view];
+  }
   get filteredInvitations(){
     const status=this.invitationFilter.split(' ')[0];
     return status==='All'||status==='Closed'?this.invitations:this.invitations.filter(invite=>invite.status===status);
