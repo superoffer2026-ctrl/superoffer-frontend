@@ -335,3 +335,48 @@
   .compact-offer-filters button b{display:none}
   .offer-reading-pane>.offer-conversation .chat-contact>span{display:none}
 }
+
+/* Larger, readable offer typography without compromising compact layouts. */
+@media(min-width:1121px){
+  .mailbox-toolbar strong{font-size:20px!important}
+  .mailbox-toolbar small{font-size:12px!important}
+  .compact-offer-filters button{font-size:11px!important}
+  .mail-offer-main small,.mail-offer-main time{font-size:11px!important}
+  .mail-offer-main>strong{font-size:17px!important}
+  .mail-offer-main p{font-size:14px!important}
+  .mail-offer-main b{font-size:13px!important;line-height:1.5!important}
+
+  .offer-details-column .reading-institution h2{font-size:20px!important}
+  .offer-details-column .reading-course{font-size:14px!important}
+  .offer-details-column .offer-detail-hero>small{font-size:10px!important}
+  .offer-details-column .offer-detail-hero>h1{font-size:27px!important}
+  .offer-details-column .offer-key-terms small{font-size:11px!important}
+  .offer-details-column .offer-key-terms strong{font-size:15px!important}
+  .offer-details-column .offer-conditions h3{font-size:18px!important}
+  .offer-details-column .offer-conditions p{font-size:14px!important}
+  .offer-details-column .offer-conditions>button{font-size:12px!important}
+  .offer-details-column .offer-next-steps small{font-size:10px!important}
+  .offer-details-column .offer-next-steps strong{font-size:15px!important}
+  .offer-details-column .offer-next-steps li{font-size:14px!important}
+
+  .offer-reading-pane>.offer-conversation .conversation-head h3{font-size:17px!important}
+  .offer-reading-pane>.offer-conversation .conversation-head p,
+  .offer-reading-pane>.offer-conversation .conversation-head small{font-size:11px!important}
+  .offer-reading-pane>.offer-conversation .message-thread strong{font-size:12px!important}
+  .offer-reading-pane>.offer-conversation .message-thread p{font-size:15px!important;line-height:1.55!important}
+  .offer-reading-pane>.offer-conversation .message-thread small{font-size:10px!important}
+  .message-composer input{font-size:14px!important}
+}
+
+@media(min-width:900px) and (max-width:1120px){
+  .mailbox-toolbar strong{font-size:17px!important}
+  .mailbox-toolbar small{font-size:10px!important}
+  .mail-offer-main>strong{font-size:15px!important}
+  .mail-offer-main p{font-size:13px!important}
+  .mail-offer-main b{font-size:12px!important}
+  .offer-details-column .offer-detail-hero>h1{font-size:21px!important}
+  .offer-details-column .offer-key-terms strong{font-size:12px!important}
+  .offer-details-column .offer-conditions p,
+  .offer-details-column .offer-next-steps li{font-size:11px!important}
+  .offer-reading-pane>.offer-conversation .message-thread p{font-size:12px!important}
+}
