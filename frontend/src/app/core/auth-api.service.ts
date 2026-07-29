@@ -31,6 +31,14 @@ export class AuthApiService {
     return this.request('/students/me', { headers: { authorization: `Bearer ${token}` } });
   }
 
+  async updateStudentProfile(token: string, profile: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(profile)
+    });
+  }
+
   async studentOffers(token: string): Promise<any> {
     return this.request('/students/me/offers', { headers: { authorization: `Bearer ${token}` } });
   }

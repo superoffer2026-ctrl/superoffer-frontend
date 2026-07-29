@@ -8,6 +8,7 @@ RUN npm ci
 COPY . .
 RUN ./node_modules/.bin/ng build --configuration production
 
+
 FROM nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
