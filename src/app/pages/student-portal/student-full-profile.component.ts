@@ -42,7 +42,7 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
             </label>
             <a routerLink="/student/documents">Open documents step</a>
           </aside>
-          <aside class="account-panel">
+          <aside class="account-panel" id="account-settings">
             <span>ACCOUNT SETTINGS</span><h2>Manage your account</h2>
             <div class="account-row"><div><strong>Email address</strong><small>{{store.values['email'] || 'aarav@example.com'}}</small></div><button type="button">Edit</button></div>
             <div class="account-row"><div><strong>Password</strong><small>Keep your account secure</small></div><button type="button">Change</button></div>
