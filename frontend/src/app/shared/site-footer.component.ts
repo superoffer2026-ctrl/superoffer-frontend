@@ -10,61 +10,98 @@ import { CommonModule } from '@angular/common';
   template: `
     <footer class="footer-wrapper">
       <div class="footer-glass-card">
+        
+        <!-- Contact Banner Strip -->
+        <div class="contact-banner-strip">
+          <div class="contact-banner-item">
+            <span class="c-icon">✉️</span>
+            <div>
+              <small>Student & Verification Support</small>
+              <strong>support@superoffer.net</strong>
+            </div>
+          </div>
+
+          <div class="contact-banner-item">
+            <span class="c-icon">🏛️</span>
+            <div>
+              <small>Institutional Partnerships Desk</small>
+              <strong>admissions@superoffer.net</strong>
+            </div>
+          </div>
+
+          <div class="contact-banner-item">
+            <span class="c-icon">📍</span>
+            <div>
+              <small>Global Headquarters</small>
+              <strong>SuperOffer Operations Hub, Digital Park</strong>
+            </div>
+          </div>
+
+          <div class="contact-banner-item">
+            <span class="c-icon">🕒</span>
+            <div>
+              <small>Support Desk Hours</small>
+              <strong>Mon – Fri, 9:00 AM – 6:00 PM UTC</strong>
+            </div>
+          </div>
+        </div>
+
         <div class="footer-top-grid">
-          <!-- Column 1: Brand -->
+          <!-- Column 1: Brand & Overview -->
           <div class="footer-brand-col">
             <a class="brand-link" routerLink="/">
               <div class="logo-box">
-                <img src="/assets/superoffer-logo.svg" alt="SuperOffer" class="footer-logo" />
+                <img src="/assets/superoffer-logo.svg" alt="SuperOffer Logo" class="footer-logo" />
               </div>
               <span class="brand-text">Super<span class="highlight">Offer</span></span>
             </a>
             <p class="brand-desc">
-              The reverse education marketplace connecting verified students, universities, lenders, and consultancies with transparent, comparable offers.
+              SuperOffer is the world's leading reverse education marketplace. We invert traditional admissions by enabling accredited universities, lenders, and consultancies to deliver concrete, comparable offers directly to verified students.
             </p>
             <div class="sec-pill">
-              🔒 AES-256 Encrypted & SuperAdmin Verified
+              🔒 AES-256 Encrypted • SuperAdmin Verified Platform
             </div>
           </div>
 
-          <!-- Column 2: Portals -->
+          <!-- Column 2: Ecosystem Portals -->
           <div class="footer-nav-col">
             <h4>Ecosystem Portals</h4>
-            <a routerLink="/student">Student Workspace</a>
-            <a routerLink="/university">University Admissions</a>
-            <a routerLink="/bank">Banks & Lenders</a>
-            <a routerLink="/consultancy">Study Abroad Consultancies</a>
-            <a routerLink="/admin">SuperAdmin Control</a>
+            <a routerLink="/student">🎓 Student Workspace</a>
+            <a routerLink="/university">🏛️ University Admissions</a>
+            <a routerLink="/bank">💳 Banks & Education Lenders</a>
+            <a routerLink="/consultancy">💼 Study Abroad Consultancies</a>
+            <a routerLink="/admin">🛡️ SuperAdmin Control Panel</a>
           </div>
 
-          <!-- Column 3: Platform Resources -->
+          <!-- Column 3: Trust & Governance -->
           <div class="footer-nav-col">
-            <h4>Platform & Safety</h4>
-            <a href="#features">AI Matching Engine</a>
+            <h4>Platform & Governance</h4>
+            <a href="#features">AI Matching Architecture</a>
             <a href="#faq">Frequently Asked Questions</a>
-            <a href="mailto:support@superoffer.net">Verification Support</a>
-            <a routerLink="/auth/login/student">Sign In to Portal</a>
+            <a routerLink="/auth/login/student">Sign In to Dashboard</a>
+            <a routerLink="/auth/register/university">Register Institution</a>
+            <a href="mailto:support@superoffer.net">Report an Issue</a>
           </div>
 
-          <!-- Column 4: Newsletter -->
+          <!-- Column 4: Contact & Inquiries -->
           <div class="footer-newsletter-col">
-            <h4>Marketplace Updates</h4>
-            <p>Subscribe for scholarship announcements and new partner university onboarding alerts.</p>
+            <h4>Connect With Our Team</h4>
+            <p>Have an institutional inquiry or need help with profile verification? Send us a message directly.</p>
             <form (ngSubmit)="subscribe()" class="news-form">
-              <input type="email" [(ngModel)]="email" name="newsEmail" placeholder="Enter your email" required />
-              <button type="submit" class="news-btn">{{subscribed ? '✓ Subscribed' : 'Subscribe'}}</button>
+              <input type="email" [(ngModel)]="email" name="newsEmail" placeholder="Enter your official email" required />
+              <button type="submit" class="news-btn">{{subscribed ? '✓ Message Sent' : 'Send Inquiry'}}</button>
             </form>
           </div>
         </div>
 
         <div class="footer-bottom-bar">
-          <span>© 2026 SuperOffer (superoffer.net). All rights reserved. Privacy & Permission-based by design.</span>
+          <span>© 2026 SuperOffer Technologies (superoffer.net). All rights reserved. Permission & Privacy-First Architecture.</span>
           <div class="footer-legal-links">
-            <span>Role-Based Access</span>
+            <a href="mailto:support@superoffer.net">Privacy Policy</a>
             <span>•</span>
-            <span>GDPR Compliant</span>
+            <a href="mailto:support@superoffer.net">Terms of Service</a>
             <span>•</span>
-            <span>Terms of Marketplace</span>
+            <a href="mailto:support@superoffer.net">Security Compliance</a>
           </div>
         </div>
       </div>
@@ -78,19 +115,58 @@ import { CommonModule } from '@angular/common';
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .footer-glass-card {
-      background: rgba(10, 16, 30, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(10, 16, 30, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 24px;
-      padding: 48px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      padding: 40px 48px 36px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
     }
+
+    /* Contact Banner Strip */
+    .contact-banner-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .contact-banner-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 16px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .c-icon {
+      font-size: 24px;
+    }
+    .contact-banner-item small {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .contact-banner-item strong {
+      display: block;
+      font-size: 13px;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-top: 2px;
+      overflow-wrap: anywhere;
+    }
+
     .footer-top-grid {
       display: grid;
       grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
       gap: 40px;
-      padding-bottom: 40px;
+      padding-bottom: 36px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .brand-link {
@@ -132,9 +208,9 @@ import { CommonModule } from '@angular/common';
       font-weight: 700;
       color: #10b981;
       background: rgba(16, 185, 129, 0.1);
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(16, 185, 129, 0.25);
       display: inline-block;
     }
     .footer-nav-col h4, .footer-newsletter-col h4 {
@@ -203,15 +279,29 @@ import { CommonModule } from '@angular/common';
     }
     .footer-legal-links {
       display: flex;
-      gap: 10px;
+      gap: 12px;
+      align-items: center;
+    }
+    .footer-legal-links a {
+      color: #94a3b8;
+      text-decoration: none;
+    }
+    .footer-legal-links a:hover {
+      color: #38bdf8;
     }
 
     @media (max-width: 1024px) {
+      .contact-banner-strip {
+        grid-template-columns: 1fr 1fr;
+      }
       .footer-top-grid {
         grid-template-columns: 1fr 1fr;
       }
     }
     @media (max-width: 640px) {
+      .contact-banner-strip {
+        grid-template-columns: 1fr;
+      }
       .footer-top-grid {
         grid-template-columns: 1fr;
       }
