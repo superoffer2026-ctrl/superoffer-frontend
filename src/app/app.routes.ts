@@ -20,7 +20,6 @@ import { CompleteProfileComponent } from './pages/student-portal/complete-profil
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
 import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.component';
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
-import { StudentHelpComponent } from './pages/student-portal/student-help.component';
 import { StudentSettingsComponent } from './pages/student-portal/student-settings.component';
 
 export const appRoutes: Routes = [
@@ -45,7 +44,7 @@ export const appRoutes: Routes = [
       { path: 'profile', component: StudentFullProfileComponent },
       { path: 'dashboard', component: StudentDashboardComponent },
       { path: 'settings', component: StudentSettingsComponent },
-      { path: 'help', component: StudentHelpComponent }
+      { path: 'help', redirectTo: 'settings', pathMatch: 'full' }
     ]
   },
   { path: 'university', component: UniversityPageComponent, title: 'Universities | SuperOffer' },
