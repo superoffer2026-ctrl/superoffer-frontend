@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StudentWorkspaceRailComponent],
+  styleUrl: './student-workspace-pages.css',
   template: `
+    <app-student-workspace-rail />
     <section class="dashboard-page">
       <div class="student-summary">
         <div class="student-avatar" aria-label="Profile photo placeholder">ST</div>

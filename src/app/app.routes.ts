@@ -20,6 +20,7 @@ import { CompleteProfileComponent } from './pages/student-portal/complete-profil
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
 import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.component';
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
+import { StudentSettingsComponent } from './pages/student-portal/student-settings.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
@@ -41,7 +42,8 @@ export const appRoutes: Routes = [
       { path: 'completion', component: CompleteProfileComponent },
       { path: 'offers', component: StudentOfferInboxComponent },
       { path: 'profile', component: StudentFullProfileComponent },
-      { path: 'dashboard', component: StudentDashboardComponent }
+      { path: 'dashboard', component: StudentDashboardComponent },
+      { path: 'settings', component: StudentSettingsComponent }
     ]
   },
   { path: 'university', component: UniversityPageComponent, title: 'Universities | SuperOffer' },

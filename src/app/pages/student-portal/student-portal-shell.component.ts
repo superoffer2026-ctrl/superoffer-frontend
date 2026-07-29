@@ -69,7 +69,7 @@ export class StudentPortalShellComponent {
 
   private syncRoute(url: string) {
     this.isDashboard = url.includes('/student/dashboard');
-    this.isOffers = url.includes('/student/offers') || url.includes('/student/profile');
+    this.isOffers = url.includes('/student/offers') || url.includes('/student/profile') || url.includes('/student/dashboard') || url.includes('/student/settings');
     const index = this.steps.findIndex(step => url.includes(`/student/${step.path}`));
     this.currentIndex = index >= 0 ? index : 0;
   }
