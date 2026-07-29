@@ -14,7 +14,6 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
         <a routerLink="/student/dashboard" routerLinkActive="active" title="Dashboard" aria-label="Dashboard"><span>▦</span><small>Dashboard</small></a>
         <a routerLink="/student/offers" routerLinkActive="active" title="Offers" aria-label="Offers"><span>◇</span><small>Offers</small></a>
         <a routerLink="/student/settings" routerLinkActive="active" title="Settings" aria-label="Settings"><span>⚙</span><small>Settings</small></a>
-        <a routerLink="/student/help" routerLinkActive="active" title="Help and support" aria-label="Help and support"><span>?</span><small>Help</small></a>
       </div>
       <a class="workspace-avatar" routerLink="/student/profile" aria-label="Open complete student profile">
         <img *ngIf="store.photo" [src]="store.photo" alt="">

@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
 import { StudentSupportChatComponent } from './student-support-chat.component';
+import { StudentSettingsHelpComponent } from './student-settings-help.component';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent, StudentSupportChatComponent],
+  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent, StudentSupportChatComponent, StudentSettingsHelpComponent],
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
@@ -29,6 +30,7 @@ import { StudentSupportChatComponent } from './student-support-chat.component';
           <div><span>PRIVACY</span><h2>Profile visibility</h2><p>Decide whether verified opportunity providers can discover your profile.</p></div>
           <label><span><strong>Allow profile discovery</strong><small>Show my profile to matched, authorised providers</small></span><input type="checkbox" [(ngModel)]="discoverable"></label>
         </article>
+        <app-student-settings-help />
         <article class="delete-account-card">
           <div><span>DANGER ZONE</span><h2>Delete account</h2><p>Permanently remove your student account, profile, and saved information.</p></div>
           <button type="button">Delete my account</button>
