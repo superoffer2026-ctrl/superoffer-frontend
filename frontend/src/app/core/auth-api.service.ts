@@ -31,6 +31,12 @@ export class AuthApiService {
     return this.request('/students/me', { headers: { authorization: `Bearer ${token}` } });
   }
 
+  async studentFullProfile(token: string): Promise<any> {
+    const data = await this.studentProfile(token);
+    return { data };
+  }
+
+
   async updateStudentProfile(token: string, profile: Record<string, unknown>): Promise<any> {
     return this.request('/students/me', {
       method: 'PUT',
@@ -49,6 +55,38 @@ export class AuthApiService {
     });
   }
 
+  async adminAuthLogs(adminKey: string, queryParams: Record<string, string> = {}): Promise<any> {
+    const query = new URLSearchParams(queryParams).toString();
+    return this.request(`/admin/auth-logs${query ? '?' + query : ''}`, {
+      headers: { 'x-admin-key': adminKey }
+    });
+  }
+
+  async downloadAuthLogsCsv(adminKey: string, queryParams: Record<string, string> = {}): Promise<Blob> {
+    const query = new URLSearchParams({ ...queryParams, format: 'csv' }).toString();
+    const response = await fetch(`${this.baseUrl}/admin/auth-logs?${query}`, {
+      headers: { 'x-admin-key': adminKey }
+    });
+    if (!response.ok) throw new Error('Could not download authentication logs CSV.');
+    return response.blob();
+  }
+
+  async publicStats(): Promise<any> {
+    return this.request('/public/stats');
+  }
+
+  async publicUniversities(): Promise<any> {
+    return this.request('/public/universities');
+  }
+
+  async publicCategories(): Promise<any> {
+    return this.request('/public/categories');
+  }
+
+  async publicTestimonials(): Promise<any> {
+    return this.request('/public/testimonials');
+  }
+
   async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = ''): Promise<any> {
     return this.request(`/admin/users/${encodeURIComponent(userId)}/approval`, {
       method: 'PATCH',
@@ -56,6 +94,7 @@ export class AuthApiService {
       body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason })
     });
   }
+
 
   private async request(path: string, options: RequestInit = {}): Promise<any> {
     const controller = new AbortController();

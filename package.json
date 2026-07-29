@@ -1,13 +1,23 @@
 {
-  "name": "superoffer-frontend-deployment",
+  "name": "superoffer-monorepo",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "build": "./node_modules/.bin/node frontend/node_modules/@angular/cli/bin/ng.js build --configuration production",
-    "start": "sh ./start-frontend.sh"
+    "build": "npm run build --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "start": "sh ./start-frontend.sh",
+    "start:frontend": "npm run start --workspace=frontend",
+    "start:backend": "npm run start --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "test": "npm run test --workspace=backend"
   },
   "dependencies": {
     "node": "24.15.0",
     "serve": "^14.2.4"
   }
 }
+

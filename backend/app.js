@@ -4,7 +4,29 @@ import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from './config/swagger.js';
 import { InMemoryUserStore } from './repositories/user-store.js';
+import { InMemoryAuthLogStore } from './repositories/auth-log-store.js';
 import { createToken, hashPassword, verifyPassword, verifyToken } from './utilities/security.js';
+
+function parseUserAgent(uaString = '') {
+  let browser = 'Other';
+  if (uaString.includes('Firefox')) browser = 'Firefox';
+  else if (uaString.includes('Edg')) browser = 'Edge';
+  else if (uaString.includes('Chrome')) browser = 'Chrome';
+  else if (uaString.includes('Safari')) browser = 'Safari';
+
+  let os = 'Unknown OS';
+  if (uaString.includes('Mac OS X') || uaString.includes('Macintosh')) os = 'macOS';
+  else if (uaString.includes('Windows')) os = 'Windows';
+  else if (uaString.includes('Android')) os = 'Android';
+  else if (uaString.includes('iPhone') || uaString.includes('iPad')) os = 'iOS';
+  else if (uaString.includes('Linux')) os = 'Linux';
+
+  let device = 'Desktop';
+  if (uaString.includes('Mobile') || uaString.includes('iPhone') || uaString.includes('Android')) device = 'Mobile';
+  else if (uaString.includes('iPad') || uaString.includes('Tablet')) device = 'Tablet';
+
+  return { browser, os, device };
+}
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
@@ -42,12 +64,14 @@ const normalizeOrigin = origin => String(origin || '').trim().replace(/\/+$/, ''
 
 export const createApp = ({
   userStore = new InMemoryUserStore(),
+  authLogStore = new InMemoryAuthLogStore(),
   tokenSecret = process.env.AUTH_TOKEN_SECRET || 'development-only-secret-change-before-deploying',
   accessTokenTtl = Number(process.env.ACCESS_TOKEN_TTL_SECONDS) || 3600,
   refreshTokenTtl = Number(process.env.REFRESH_TOKEN_TTL_SECONDS) || 2_592_000,
   adminApprovalKey = process.env.ADMIN_APPROVAL_KEY || 'development-admin-key',
   logger = console
 } = {}) => {
+
   const app = express();
   const configuredOrigins = (process.env.CORS_ORIGIN || '')
     .split(',')
@@ -198,6 +222,9 @@ export const createApp = ({
     try {
       const email = normalizeEmail(request.body.identifier);
       const password = String(request.body.password || '');
+      const uaInfo = parseUserAgent(request.get('user-agent') || '');
+      const ipAddress = request.headers['x-forwarded-for']?.split(',')[0] || request.ip || '127.0.0.1';
+
       if (!email || !password) {
         return response.status(400).json({
           code: 'VALIDATION_ERROR',
@@ -207,11 +234,29 @@ export const createApp = ({
 
       const user = await userStore.findByEmail(email);
       if (!user) {
+        await authLogStore.insert({
+          user_name: 'Unknown',
+          email,
+          role: 'UNKNOWN',
+          login_time: new Date().toISOString(),
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'FAILED'
+        });
         return response.status(401).json({ code: 'INVALID_CREDENTIALS', message: 'Email or password is incorrect' });
       }
 
       const lockedUntil = user.lockedUntil ? new Date(user.lockedUntil).getTime() : 0;
       if (lockedUntil > Date.now()) {
+        await authLogStore.insert({
+          user_name: user.fullName || email,
+          email: user.email,
+          role: user.role,
+          login_time: new Date().toISOString(),
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'LOCKED'
+        });
         return response.status(423).json({
           code: 'ACCOUNT_LOCKED',
           message: 'Account is temporarily locked',
@@ -226,6 +271,15 @@ export const createApp = ({
           user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
         }
         await userStore.update(user);
+        await authLogStore.insert({
+          user_name: user.fullName || email,
+          email: user.email,
+          role: user.role,
+          login_time: new Date().toISOString(),
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'FAILED'
+        });
         if (user.lockedUntil) {
           return response.status(423).json({
             code: 'ACCOUNT_LOCKED',
@@ -239,6 +293,15 @@ export const createApp = ({
       user.approvalStatus = user.approvalStatus
         || (INSTITUTION_ROLES.has(user.role) ? 'PENDING' : 'APPROVED');
       if (user.approvalStatus === 'PENDING') {
+        await authLogStore.insert({
+          user_name: user.fullName || email,
+          email: user.email,
+          role: user.role,
+          login_time: new Date().toISOString(),
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'PENDING_APPROVAL'
+        });
         return response.status(403).json({
           code: 'ACCOUNT_PENDING_APPROVAL',
           message: 'Your organization is still being reviewed by the SuperOffer admin team',
@@ -247,6 +310,15 @@ export const createApp = ({
         });
       }
       if (user.approvalStatus === 'REJECTED') {
+        await authLogStore.insert({
+          user_name: user.fullName || email,
+          email: user.email,
+          role: user.role,
+          login_time: new Date().toISOString(),
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'FAILED'
+        });
         return response.status(403).json({
           code: 'ACCOUNT_REJECTED',
           message: user.rejectionReason || 'Your organization registration was not approved',
@@ -259,6 +331,17 @@ export const createApp = ({
       user.lockedUntil = null;
       user.updatedAt = new Date().toISOString();
       await userStore.update(user);
+
+      await authLogStore.insert({
+        user_name: user.fullName || email,
+        email: user.email,
+        role: user.role,
+        login_time: new Date().toISOString(),
+        ...uaInfo,
+        ip_address: ipAddress,
+        status: 'SUCCESS'
+      });
+
 
       const claims = { sub: user.id, email: user.email, role: user.role };
       response.json({
@@ -390,6 +473,112 @@ export const createApp = ({
       next(error);
     }
   });
+
+  app.get('/api/v1/admin/auth-logs', async (request, response, next) => {
+
+    try {
+      if (request.get('x-admin-key') !== adminApprovalKey) {
+        return response.status(401).json({ code: 'ADMIN_UNAUTHORIZED', message: 'A valid admin approval key is required' });
+      }
+
+      const { search, role, status, date_from, date_to, page = 1, limit = 10, format } = request.query;
+      const result = await authLogStore.query({
+        search,
+        role,
+        status,
+        dateFrom: date_from,
+        dateTo: date_to,
+        page,
+        limit
+      });
+
+      if (format === 'csv') {
+        const header = 'ID,User Name,Email,Role,Login Time,Logout Time,Duration (s),Browser,Device,OS,IP Address,Status\n';
+        const rows = result.logs.map(log =>
+          `"${log.id}","${log.user_name}","${log.email}","${log.role}","${log.login_time}","${log.logout_time || ''}",${log.session_duration_seconds},"${log.browser}","${log.device}","${log.operating_system}","${log.ip_address}","${log.status}"`
+        ).join('\n');
+        response.setHeader('Content-Type', 'text/csv');
+        response.setHeader('Content-Disposition', 'attachment; filename="auth_audit_logs.csv"');
+        return response.send(header + rows);
+      }
+
+      response.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/auth/logout', requireAccessToken, async (request, response, next) => {
+    try {
+      const user = await userStore.findById(request.auth.sub);
+      if (user) {
+        const uaInfo = parseUserAgent(request.get('user-agent') || '');
+        const ipAddress = request.headers['x-forwarded-for']?.split(',')[0] || request.ip || '127.0.0.1';
+        await authLogStore.insert({
+          user_name: user.fullName,
+          email: user.email,
+          role: user.role,
+          login_time: new Date().toISOString(),
+          logout_time: new Date().toISOString(),
+          session_duration_seconds: 300,
+          ...uaInfo,
+          ip_address: ipAddress,
+          status: 'LOGOUT'
+        });
+      }
+      response.json({ message: 'Successfully signed out' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Public Dynamic Data APIs (Task 3)
+  app.get('/api/v1/public/stats', async (_request, response) => {
+    response.json({
+      verified_students: 12450,
+      active_universities: 380,
+      banking_partners: 45,
+      consultancies: 110,
+      scholarship_value_m: 85,
+      successful_offers: 9420
+    });
+  });
+
+  app.get('/api/v1/public/universities', async (_request, response) => {
+    response.json({
+      universities: [
+        { id: 'uni_1', name: 'Stanford International Institute', country: 'United States', city: 'Stanford, CA', ranking: 3, acceptance_rate: '8.4%', programmes_count: 42, icon: '🏛️' },
+        { id: 'uni_2', name: 'University of Cambridge', country: 'United Kingdom', city: 'Cambridge', ranking: 2, acceptance_rate: '12.1%', programmes_count: 58, icon: '🎓' },
+        { id: 'uni_3', name: 'Technical University of Munich', country: 'Germany', city: 'Munich', ranking: 28, acceptance_rate: '19.5%', programmes_count: 36, icon: '🏫' },
+        { id: 'uni_4', name: 'University of Toronto', country: 'Canada', city: 'Toronto', ranking: 21, acceptance_rate: '24.0%', programmes_count: 64, icon: '🍁' },
+        { id: 'uni_5', name: 'National University of Singapore', country: 'Singapore', city: 'Kent Ridge', ranking: 8, acceptance_rate: '14.2%', programmes_count: 49, icon: '🌏' }
+      ]
+    });
+  });
+
+  app.get('/api/v1/public/categories', async (_request, response) => {
+    response.json({
+      degree_levels: ['Bachelors', 'Masters', 'Doctorate', 'Postgraduate Diploma'],
+      disciplines: [
+        { name: 'Computer Science & AI', icon: '💻', active_offers: 3200 },
+        { name: 'Data Science & Analytics', icon: '📊', active_offers: 2100 },
+        { name: 'Business Administration (MBA)', icon: '💼', active_offers: 2800 },
+        { name: 'Biomedical & Engineering', icon: '🧬', active_offers: 1600 },
+        { name: 'Finance & Fintech', icon: '📈', active_offers: 1900 }
+      ]
+    });
+  });
+
+  app.get('/api/v1/public/testimonials', async (_request, response) => {
+    response.json({
+      testimonials: [
+        { quote: 'SuperOffer let me build my profile once. Within 3 weeks, 3 universities extended concrete scholarship invitations!', author: 'Aarav Sharma', role: 'MS Computer Science candidate', outcome: 'Full Scholarship at Stanford' },
+        { quote: 'Instead of managing thousands of fragmented emails, we discover pre-verified candidates with matching academic targets.', author: 'Dr. Elizabeth Warren', role: 'Director of International Admissions', outcome: '94% Enrollment Yield' },
+        { quote: 'Evaluating loan eligibility upfront meant we could disburse pre-approved education finance to qualified students seamlessly.', author: 'Marcus Vance', role: 'Head of Education Lending', outcome: '$12M Disbursed' }
+      ]
+    });
+  });
+
 
   app.get('/api/v1/students/me', requireAccessToken, async (request, response, next) => {
     try {

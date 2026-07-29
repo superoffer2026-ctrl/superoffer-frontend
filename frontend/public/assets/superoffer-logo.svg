@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#1E3A8A" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Rounded Base Box -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#bgGrad)" filter="url(#shadow)"/>
+  
+  <!-- Graduation Cap -->
+  <path d="M256 128 L376 184 L256 240 L136 184 Z" fill="#FFFFFF"/>
+  <path d="M344 200 L344 248 C344 248 310 272 256 272 C202 272 168 248 168 248 L168 200" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="344" cy="208" r="7" fill="#FEF08A"/>
+  
+  <!-- Sparkle Star above Cap -->
+  <path d="M256 150 L260 162 L272 166 L260 170 L256 182 L252 170 L240 166 L252 162 Z" fill="#FEF08A"/>
+
+  <!-- Stylized Wing / Crest Layers -->
+  <path d="M160 288 C200 320 230 336 256 336 C282 336 312 320 352 288 C332 344 296 376 256 376 C216 376 180 344 160 288 Z" fill="#FFFFFF"/>
+  <path d="M184 352 C210 376 234 388 256 388 C278 388 302 376 328 352 C312 396 286 416 256 416 C226 416 200 396 184 352 Z" fill="rgba(255,255,255,0.85)"/>
+</svg>

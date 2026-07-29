@@ -292,13 +292,24 @@ export class UniversityDocumentUploadComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      this.dataService.documents[docKey] = {
-        file: file.name,
-        progress: 100,
-        uploaded: true,
-        size: (file.size / (1024 * 1024)).toFixed(1) + ' MB'
-      };
+      if (docKey === 'logo') {
+        this.dataService.documents.logo = {
+          file: file.name,
+          progress: 100,
+          uploaded: true,
+          size: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+          preview: URL.createObjectURL(file)
+        };
+      } else {
+        this.dataService.documents[docKey] = {
+          file: file.name,
+          progress: 100,
+          uploaded: true,
+          size: (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+        };
+      }
       this.dataService.saveState();
+
     }
   }
 

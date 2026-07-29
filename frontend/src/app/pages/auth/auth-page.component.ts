@@ -9,7 +9,7 @@ import { AuthApiService, PortalKey } from '../../core/auth-api.service';
   template:`
     <main class="auth-layout">
       <aside class="auth-aside">
-        <a class="brand light-brand" routerLink="/"><span>S</span>SuperOffer</a>
+        <a class="brand light-brand" routerLink="/"><img src="/assets/superoffer-logo.svg" alt="SuperOffer" style="height:36px;width:36px;object-fit:contain;" /><span>SuperOffer</span></a>
         <div><span class="eyebrow light">{{portalLabel}} account</span>
           <h1>{{mode === 'login' ? 'Welcome back to your workspace.' : authTitle}}</h1>
           <p>{{authCopy}}</p>
