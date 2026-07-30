@@ -12,7 +12,8 @@ RUN ./node_modules/.bin/ng build --configuration production
 FROM nginx:1.27-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/superoffer/browser /usr/share/nginx/html
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=build /app/dist/superoffer/browser/ /usr/share/nginx/html/
 COPY runtime-config.sh /docker-entrypoint.d/40-superoffer-config.sh
 RUN chmod +x /docker-entrypoint.d/40-superoffer-config.sh
 
