@@ -1,179 +1,29 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-site-footer',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  styles: [`
-    .footer-root {
-      background: #071f2e;
-      color: #fff;
-      padding: 72px clamp(24px, 7vw, 100px) 0;
-    }
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1.2fr;
-      gap: 56px;
-      padding-bottom: 56px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .footer-brand-col .footer-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: "Libre Franklin", sans-serif;
-      font-size: 20px;
-      font-weight: 900;
-      color: #fff;
-      text-decoration: none;
-      margin-bottom: 18px;
-    }
-    .footer-brand-mark {
-      width: 34px;
-      height: 34px;
-      display: grid;
-      place-items: center;
-      border-radius: 9px;
-      background: linear-gradient(135deg, #14527e 0%, #0ea16c 100%);
-      color: #fff;
-      font-weight: 900;
-      font-size: 15px;
-    }
-    .footer-tagline {
-      color: #7fa8bc;
-      font-size: 14px;
-      line-height: 1.7;
-      max-width: 290px;
-      margin: 0 0 28px;
-    }
-    .footer-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 8px 14px;
-      border-radius: 99px;
-      border: 1px solid rgba(255,255,255,0.12);
-      font-size: 12px;
-      font-weight: 700;
-      color: #6ad9c0;
-    }
-    .footer-badge span { width: 7px; height: 7px; border-radius: 50%; background: #6ad9c0; display: block; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-    .footer-col h4 {
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #5b8093;
-      margin: 0 0 18px;
-    }
-    .footer-col nav {
-      display: flex;
-      flex-direction: column;
-      gap: 11px;
-    }
-    .footer-col nav a {
-      font-size: 14px;
-      font-weight: 500;
-      color: #a8c4d1;
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-    .footer-col nav a:hover { color: #fff; }
-
-    .footer-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 22px 0;
-    }
-    .footer-copy {
-      font-size: 13px;
-      color: #5b8093;
-    }
-    .footer-legal {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .footer-legal a {
-      font-size: 12px;
-      color: #5b8093;
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-    .footer-legal a:hover { color: #a8c4d1; }
-
-    @media (max-width: 900px) {
-      .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
-      .footer-brand-col { grid-column: 1 / -1; }
-    }
-    @media (max-width: 520px) {
-      .footer-root { padding-top: 52px; }
-      .footer-grid { grid-template-columns: 1fr; gap: 30px; }
-      .footer-bottom { flex-direction: column; gap: 14px; align-items: flex-start; }
-    }
+  selector:'app-site-footer',
+  standalone:true,
+  imports:[RouterLink],
+  styles:[`
+    :host{display:block;font-family:Inter,system-ui,sans-serif}
+    footer{padding:82px clamp(22px,6vw,100px) 28px;color:#e9ded4;background:#201713}
+    .top{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:70px;max-width:1400px;margin:auto;padding-bottom:68px}
+    .brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none;font-size:24px;font-weight:850;letter-spacing:-.04em}.brand img{width:45px;height:45px;border-radius:12px}
+    .about p{max-width:360px;margin:22px 0;color:#a99b90;font-size:13px;line-height:1.8}.status{display:inline-flex;align-items:center;gap:9px;color:#c4b5aa;font-size:10px}.status i{width:7px;height:7px;border-radius:50%;background:#e96822;box-shadow:0 0 0 5px #e968221d}
+    h4{margin:7px 0 23px;color:#e96822;font-size:9px;font-weight:900;letter-spacing:.15em;text-transform:uppercase}nav{display:grid;gap:13px}nav a{color:#c6b8ad;text-decoration:none;font-size:12px;transition:.2s}nav a:hover{color:#fff;transform:translateX(3px)}
+    .bottom{display:flex;justify-content:space-between;gap:24px;max-width:1400px;margin:auto;padding-top:26px;border-top:1px solid #ffffff14;color:#8e8177;font-size:9px}.bottom div{display:flex;gap:24px}.bottom a{color:inherit;text-decoration:none}.bottom a:hover{color:#fff}
+    @media(max-width:850px){.top{grid-template-columns:1fr 1fr}.about{grid-column:1/-1}.bottom{flex-direction:column}}@media(max-width:520px){footer{padding-top:65px}.top{grid-template-columns:1fr;gap:42px}.about{grid-column:auto}.bottom div{flex-wrap:wrap}}
   `],
   template: `
-    <footer class="footer-root">
-      <div class="footer-grid">
-        <!-- Brand column -->
-        <div class="footer-brand-col">
-          <a class="footer-brand" routerLink="/">
-            <span class="footer-brand-mark">S</span>
-            SuperOffer
-          </a>
-          <p class="footer-tagline">
-            The AI-powered reverse admissions platform where universities discover talented students — not the other way around.
-          </p>
-          <span class="footer-badge"><span></span> Live on superoffer.net</span>
-        </div>
-
-        <!-- Portals -->
-        <div class="footer-col">
-          <h4>Students</h4>
-          <nav>
-            <a routerLink="/students">How it works</a>
-            <a routerLink="/auth/register/student">Create free profile</a>
-            <a routerLink="/auth/login/student">Sign in</a>
-            <a routerLink="/student/dashboard">Dashboard</a>
-          </nav>
-        </div>
-
-        <!-- Institutions -->
-        <div class="footer-col">
-          <h4>Institutions</h4>
-          <nav>
-            <a routerLink="/university">Universities</a>
-            <a routerLink="/bank">Education Lenders</a>
-            <a routerLink="/consultancy">Consultancies</a>
-            <a routerLink="/auth/register/university">Register institution</a>
-          </nav>
-        </div>
-
-        <!-- Support -->
-        <div class="footer-col">
-          <h4>Platform</h4>
-          <nav>
-            <a href="mailto:support@superoffer.net">Support</a>
-            <a href="mailto:partners@superoffer.net">Partner with us</a>
-            <a href="#faq">FAQ</a>
-            <a href="mailto:privacy@superoffer.net">Privacy</a>
-          </nav>
-        </div>
+    <footer>
+      <div class="top">
+        <div class="about"><a class="brand" routerLink="/"><img src="/superoffer-brand-mark.png" alt=""><span>SuperOffer</span></a><p>One verified profile connecting students with the right universities, education finance and trusted guidance.</p><span class="status"><i></i> Building a better education marketplace</span></div>
+        <div><h4>Explore</h4><nav><a routerLink="/students">For students</a><a routerLink="/university">For universities</a><a routerLink="/bank">Loans & banks</a><a routerLink="/consultancy">Consultancy</a></nav></div>
+        <div><h4>Company</h4><nav><a routerLink="/">About SuperOffer</a><a href="mailto:hello@superoffer.net">Contact us</a><a href="mailto:partners@superoffer.net">Partner with us</a><a routerLink="/auth/login/student">Log in</a></nav></div>
+        <div><h4>Get started</h4><nav><a routerLink="/auth/register/student">Create student profile</a><a routerLink="/auth/register/university">Join as a university</a><a routerLink="/auth/register/bank">Join as a lender</a><a routerLink="/auth/register/consultancy">Join as a consultant</a></nav></div>
       </div>
-
-      <div class="footer-bottom">
-        <span class="footer-copy">© 2026 SuperOffer. All rights reserved.</span>
-        <div class="footer-legal">
-          <a href="mailto:privacy@superoffer.net">Privacy Policy</a>
-          <a href="mailto:legal@superoffer.net">Terms of Service</a>
-          <a href="mailto:support@superoffer.net">Contact</a>
-        </div>
-      </div>
+      <div class="bottom"><span>© 2026 SuperOffer. All rights reserved.</span><div><a href="mailto:support@superoffer.net">Support</a><a routerLink="/">Privacy</a><a routerLink="/">Terms</a></div></div>
     </footer>
   `
 })

@@ -66,7 +66,8 @@ export class AuthPageComponent implements OnInit {
     (this.form.remember?localStorage:sessionStorage).setItem('superoffer_access_token',session.access_token);
     sessionStorage.setItem('superoffer_role',session.role);
     sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email,organization:session.organization}));
-    await this.router.navigate(this.portal==='student'?['/student/dashboard']:['/portal',this.portal]);
+    const studentDestination = this.mode === 'register' ? ['/student/onboarding'] : ['/student/dashboard'];
+    await this.router.navigate(this.portal==='student'?studentDestination:['/portal',this.portal]);
   }
   async submit(){
     this.loading=true;this.error='';this.message='';

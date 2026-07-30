@@ -22,10 +22,12 @@ import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.c
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
 import { StudentSettingsComponent } from './pages/student-portal/student-settings.component';
 import { UniversityWorkspaceComponent } from './pages/university-portal/university-workspace.component';
+import { StudentOnboardingComponent } from './pages/student-onboarding/student-onboarding.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
   { path: 'students', component: StudentPageComponent, title: 'Students | SuperOffer' },
+  { path: 'student/onboarding', component: StudentOnboardingComponent, title: 'Create your student profile | SuperOffer' },
   {
     path: 'student',
     component: StudentPortalShellComponent,
