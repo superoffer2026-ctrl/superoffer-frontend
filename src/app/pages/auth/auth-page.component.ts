@@ -37,6 +37,7 @@ import { AuthApiService, PortalKey } from '../../core/auth-api.service';
             <label>Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
             <label>Password<input name="password" type="password" [(ngModel)]="form.password" required placeholder="Enter your password"></label>
             <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="form.remember"> Keep me signed in</label>
+            <p class="form-message success" *ngIf="portal === 'university'">University demo: maya.chen&#64;northbridge.edu · password123</p>
           </div>
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
           <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : mode === 'login' ? 'Log in securely' : 'Create account'}}</button>
@@ -70,6 +71,12 @@ export class AuthPageComponent implements OnInit {
   async submit(){
     this.loading=true;this.error='';this.message='';
     try{
+      if(this.mode==='login'&&this.portal==='university'&&this.form.email.trim().toLowerCase()==='maya.chen@northbridge.edu'&&this.form.password==='password123'){
+        sessionStorage.setItem('superoffer_role','UNIVERSITY_OFFICER');
+        sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:'Maya Chen',email:'maya.chen@northbridge.edu',organization:{name:'Northbridge University'}}));
+        await this.router.navigate(['/portal/university']);
+        return;
+      }
       if(this.mode==='register'){
         const result=await this.api.register({full_name:this.form.fullName,email:this.form.email,phone:this.form.phone,password:this.form.password,role:this.role(),...(this.portal!=='student'?{organization:{name:this.form.organization,registration_number:this.form.registrationNumber,license_reference:this.form.license}}:{})});
         if(!result.can_login){sessionStorage.setItem('superoffer_pending_user',result.user_id);this.message='Registration submitted. Your university must be approved before login.';return;}
