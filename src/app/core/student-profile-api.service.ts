@@ -15,24 +15,23 @@ export class StudentProfileApiService {
   private token() { return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token') || ''; }
   private headers(json = true) { return { ...(json ? {'content-type':'application/json'} : {}), authorization:`Bearer ${this.token()}` }; }
 
-  getProfile(){ return this.request(''); }
-  updateProfile(payload: unknown){ return this.request('', {method:'PATCH',headers:this.headers(),body:JSON.stringify(payload)}); }
-  getCompletion(){ return this.request('/completion'); }
-  saveFinancial(payload: unknown){ return this.request('/financial',{method:'PUT',headers:this.headers(),body:JSON.stringify(payload)}); }
-  getFinancial(){ return this.request('/financial'); }
-  listDocuments(){ return this.request('/documents'); }
+  private profile: any = {};
+  getProfile(): Promise<any>{ return Promise.resolve(this.profile); }
+  updateProfile(payload: unknown): Promise<any>{ this.profile={...this.profile,...(payload as object)}; return Promise.resolve(this.profile); }
+  getCompletion(){ return Promise.resolve({completionPercent:72}); }
+  saveFinancial(payload: unknown){ this.profile={...this.profile,financial:payload}; return Promise.resolve(payload); }
+  getFinancial(){ return Promise.resolve(this.profile['financial']||{}); }
+  listDocuments(){ return Promise.resolve([]); }
   uploadDocument(documentType:string,file:File){
     const data=new FormData();data.append('documentType',documentType);data.append('file',file);
-    return this.request('/documents',{method:'POST',headers:this.headers(false),body:data});
+    return Promise.resolve({id:`demo-${Date.now()}`,documentType,fileName:file.name,mimeType:file.type,size:file.size,uploadedAt:new Date().toISOString()});
   }
-  replaceDocument(id:string,file:File){const data=new FormData();data.append('file',file);return this.request(`/documents/${encodeURIComponent(id)}`,{method:'PUT',headers:this.headers(false),body:data});}
-  deleteDocument(id:string){return this.request(`/documents/${encodeURIComponent(id)}`,{method:'DELETE',headers:this.headers(false)},false);}
+  replaceDocument(id:string,file:File):Promise<StudentDocument>{return Promise.resolve({id,documentType:'document',fileName:file.name,mimeType:file.type,size:file.size,uploadedAt:new Date().toISOString()});}
+  deleteDocument(id:string){return Promise.resolve({id});}
   async previewDocument(id:string){
-    const response=await fetch(`${this.baseUrl}/documents/${encodeURIComponent(id)}/content`,{headers:this.headers(false)});
-    if(!response.ok)throw new Error('Could not open this document.');
-    return URL.createObjectURL(await response.blob());
+    return '';
   }
-  submit(){return this.request('/submit',{method:'POST',headers:this.headers(),body:'{}'});}
+  submit(){return Promise.resolve({status:'submitted'});}
 
   private async request(path:string,options:RequestInit={},expectJson=true):Promise<any>{
     const response=await fetch(`${this.baseUrl}${path}`,{...options,headers:options.headers||this.headers()});

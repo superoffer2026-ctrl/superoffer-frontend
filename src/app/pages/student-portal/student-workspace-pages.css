@@ -79,3 +79,17 @@
 @media(max-width:720px){.chat-support-page{height:calc(100vh - 60px)}.support-chat-shell{border-radius:15px}.support-chat-thread>div{max-width:90%}}
 .floating-chat-button{position:fixed;right:24px;bottom:22px;z-index:80;min-width:54px;height:54px;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 18px;border:0;border-radius:999px;background:#087a50;color:#fff;box-shadow:0 12px 35px rgba(8,77,51,.28);cursor:pointer}.floating-chat-button span{font-size:21px}.floating-chat-button strong{font-size:12px}.floating-chat-panel{position:fixed;right:24px;bottom:88px;z-index:79;width:min(390px,calc(100vw - 32px));height:min(590px,calc(100vh - 120px));display:flex;flex-direction:column;border:1px solid #d9dfdb;border-radius:20px;background:#fff;overflow:hidden;box-shadow:0 24px 70px rgba(22,46,33,.2)}.floating-chat-panel .support-chat-thread{flex:1}.floating-chat-panel .support-chat-composer{margin:0 13px 13px}.floating-chat-panel .support-chat-notice{font-size:9px}.floating-chat-panel .support-chat-head>button{font-size:24px;letter-spacing:0}
 @media(max-width:720px){.floating-chat-button{right:16px;bottom:15px}.floating-chat-panel{right:16px;bottom:80px;height:min(540px,calc(100vh - 100px))}}
+
+/* Student Card hero + offer stat tiles + marketplace preview (Offer Marketplace/Wallet) */
+.so-reveal{opacity:0;transform:translateY(45px);filter:blur(5px);transition:opacity .85s,transform 1s cubic-bezier(.16,1,.3,1),filter .8s}
+.so-reveal.is-visible{opacity:1;transform:none;filter:none}
+@media(prefers-reduced-motion:reduce){.so-reveal{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}}
+.student-home>app-student-card{display:block;margin-top:24px}
+.wallet-stat-row{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:16px;padding:4px;background:#e3e9e5;border-radius:16px;overflow:hidden}
+.wallet-stat-row article{padding:16px 10px;background:#fff;text-align:center}
+.wallet-stat-row so-stat-counter{display:block;padding:0;border-left:0}
+.wallet-stat-row so-stat-counter strong{font-size:clamp(20px,2vw,28px);color:#102f45;letter-spacing:-.03em}
+.wallet-stat-row so-stat-counter span{margin-top:4px;font-size:9px;color:#78847e;font-weight:800;letter-spacing:.03em}
+.opportunity-row-market{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1100px){.wallet-stat-row{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:720px){.wallet-stat-row{grid-template-columns:repeat(2,1fr)}.opportunity-row-market{grid-template-columns:1fr}}

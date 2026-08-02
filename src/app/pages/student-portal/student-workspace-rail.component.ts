@@ -13,6 +13,7 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
       <div class="workspace-links">
         <a routerLink="/student/dashboard" routerLinkActive="active" title="Dashboard" aria-label="Dashboard"><span>▦</span><small>Dashboard</small></a>
         <a routerLink="/student/offers" routerLinkActive="active" title="Offers" aria-label="Offers"><span>◇</span><small>Offers</small></a>
+        <a routerLink="/student/profile" routerLinkActive="active" title="Profile" aria-label="Profile"><span>○</span><small>Profile</small></a>
         <a routerLink="/student/settings" routerLinkActive="active" title="Settings" aria-label="Settings"><span>⚙</span><small>Settings</small></a>
       </div>
       <a class="workspace-avatar" routerLink="/student/profile" aria-label="Open complete student profile">

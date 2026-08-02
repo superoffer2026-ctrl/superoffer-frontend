@@ -18,15 +18,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   template: `
     <nav class="nav" [class.scrolled]="scrolled" aria-label="Primary navigation">
       <a class="brand" routerLink="/" aria-label="SuperOffer home"><img src="/superoffer-brand-mark.png" alt="SuperOffer"></a>
-      <div class="links"><a routerLink="/students" routerLinkActive="active">Student</a><a routerLink="/university" routerLinkActive="active">University</a><a routerLink="/bank" routerLinkActive="active">Loans & Banks</a><a routerLink="/consultancy" routerLinkActive="active">Consultancy</a></div>
+      <div class="links"><a routerLink="/students" routerLinkActive="active">Student</a><a routerLink="/organization" routerLinkActive="active">Organizations</a><a routerLink="/consultancy" routerLinkActive="active">Consultancy</a></div>
       <div class="actions"><a class="login" [routerLink]="['/auth/login',context]">Log in</a><a class="start" [routerLink]="['/auth/register',context]">Sign up</a></div>
       <button class="menu" (click)="menuOpen=!menuOpen" [attr.aria-expanded]="menuOpen" aria-label="Toggle navigation"><span></span><span></span></button>
     </nav>
-    <div class="drawer" [class.open]="menuOpen"><a routerLink="/students" (click)="menuOpen=false">Student</a><a routerLink="/university" (click)="menuOpen=false">University</a><a routerLink="/bank" (click)="menuOpen=false">Loans & Banks</a><a routerLink="/consultancy" (click)="menuOpen=false">Consultancy</a><a [routerLink]="['/auth/login',context]" (click)="menuOpen=false">Log in</a><a class="start" [routerLink]="['/auth/register',context]" (click)="menuOpen=false">Sign up</a></div>
+    <div class="drawer" [class.open]="menuOpen"><a routerLink="/students" (click)="menuOpen=false">Student</a><a routerLink="/organization" (click)="menuOpen=false">Organizations</a><a routerLink="/consultancy" (click)="menuOpen=false">Consultancy</a><a [routerLink]="['/auth/login',context]" (click)="menuOpen=false">Log in</a><a class="start" [routerLink]="['/auth/register',context]" (click)="menuOpen=false">Sign up</a></div>
   `
 })
 export class SiteHeaderComponent {
-  @Input() context: 'student'|'university'|'bank'|'consultancy' = 'student';
+  @Input() context: 'student'|'organization'|'consultancy' = 'student';
   menuOpen = false;
   scrolled = false;
   @HostListener('window:scroll') onScroll(): void { this.scrolled = scrollY > 16; }

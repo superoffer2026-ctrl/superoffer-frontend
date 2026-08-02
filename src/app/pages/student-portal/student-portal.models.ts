@@ -39,6 +39,18 @@ export const PROFILE_STEP_FIELDS: Record<string, StudentUiField[]> = {
     { key: 'entranceExam', label: 'Entrance exam', placeholder: 'GRE / SAT / GMAT' },
     { key: 'entranceScore', label: 'Exam score', placeholder: 'Optional' }
   ],
+  financial: [
+    { key: 'annualFamilyIncome', label: 'Annual family income', placeholder: '₹18,00,000' },
+    { key: 'parentOccupation', label: 'Parent / guardian occupation', placeholder: 'Business owner' },
+    { key: 'sponsorDetails', label: 'Sponsor details', placeholder: 'Parent / guardian / self', wide: true },
+    { key: 'educationBudget', label: 'Estimated education budget', placeholder: '₹35,00,000' },
+    { key: 'existingLoan', label: 'Existing loan commitments', placeholder: 'None / monthly amount' },
+    { key: 'savings', label: 'Savings available', placeholder: '₹12,00,000' },
+    { key: 'propertyOwnership', label: 'Property ownership', placeholder: 'Owned family residence' },
+    { key: 'financialDocument', label: 'Financial document', type: 'file' },
+    { key: 'incomeProof', label: 'Income proof', type: 'file' },
+    { key: 'bankStatement', label: 'Bank statement', type: 'file' }
+  ],
   skills: [
     { key: 'technicalSkills', label: 'Technical skills', placeholder: 'Python, SQL, Machine Learning', wide: true },
     { key: 'languages', label: 'Languages known', placeholder: 'English, Hindi, Tamil' },
@@ -69,7 +81,8 @@ export const STUDENT_PROFILE_STEPS: StudentProfileStep[] = [
   { path: 'academic-information', title: 'Academic Information', description: 'Education background', icon: '02' },
   { path: 'study-preferences', title: 'Study Preferences', description: 'Future study interests', icon: '03' },
   { path: 'entrance-exams', title: 'Entrance Exams', description: 'Exam information', icon: '04' },
-  { path: 'skills', title: 'Skills & Languages', description: 'Skills and communication', icon: '05' },
+  { path: 'financial-information', title: 'Financial Information', description: 'Affordability and funding', icon: '05' },
+  { path: 'skills', title: 'Skills & Languages', description: 'Skills and communication', icon: '06' },
   { path: 'projects', title: 'Projects & Achievements', description: 'Experience and recognition', icon: '06' },
   { path: 'documents', title: 'Documents Upload', description: 'Supporting documents', icon: '07' },
   { path: 'review', title: 'Review Profile', description: 'Review all sections', icon: '08' },

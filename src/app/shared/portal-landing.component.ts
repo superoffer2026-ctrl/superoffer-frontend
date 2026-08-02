@@ -5,7 +5,7 @@ import { SiteHeaderComponent } from './site-header.component';
 import { SiteFooterComponent } from './site-footer.component';
 
 export interface PortalContent {
-  key: 'student' | 'university' | 'bank' | 'consultancy';
+  key: 'student' | 'organization' | 'consultancy';
   eyebrow: string; title: string; intro: string;
   primary: string; secondary: string;
   stats: { value: string; label: string }[];

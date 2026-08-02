@@ -20,23 +20,23 @@ import { AuthApiService } from '../../core/auth-api.service';
   `
 })
 export class PortalPageComponent implements OnInit{
-  portal='university';cards:any[]=[];user:any=null;error='';token='';
+  portal='consultancy';cards:any[]=[];user:any=null;error='';token='';
   constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService){}
   async ngOnInit(){
-    this.portal=this.route.snapshot.paramMap.get('portal')||'university';
+    this.portal=this.route.snapshot.paramMap.get('portal')||'consultancy';
     if(this.portal==='student'){
       await this.router.navigate(['/student/dashboard'],{replaceUrl:true});
+      return;
+    }
+    if(this.portal==='organization'){
+      await this.router.navigate(['/organization/dashboard'],{replaceUrl:true});
       return;
     }
     this.token=localStorage.getItem('superoffer_access_token')||sessionStorage.getItem('superoffer_access_token')||'';
     if(!this.token){await this.router.navigate(['/auth/login',this.portal]);return;}
     try{
       this.user=await this.api.currentUser(this.token);
-      this.cards=this.portal==='university'
-        ?[{icon:'⌕',title:'Search students',text:'Discover suitable, visible student profiles.'},{icon:'▤',title:'Shortlists',text:'Organise qualified candidates.'},{icon:'↗',title:'Invitations',text:'Create clear admission offers.'}]
-        :this.portal==='bank'
-          ?[{icon:'⌕',title:'Student discovery',text:'Find matching finance candidates.'},{icon:'▤',title:'Loan products',text:'Prepare responsible indicative offers.'},{icon:'↗',title:'Invitations',text:'Track finance offer outcomes.'}]
-          :[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Client pipeline',text:'Track consulting opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted student clients.'}];
+      this.cards=[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Client pipeline',text:'Track consulting opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted student clients.'}];
     }catch(e){this.error=e instanceof Error?e.message:'Could not load portal data.';}
   }
   logout(){localStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_role');this.router.navigate(['/']);}

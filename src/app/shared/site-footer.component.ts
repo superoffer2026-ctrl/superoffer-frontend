@@ -19,9 +19,9 @@ import { RouterLink } from '@angular/router';
     <footer>
       <div class="top">
         <div class="about"><a class="brand" routerLink="/"><img src="/superoffer-brand-mark.png" alt=""><span>SuperOffer</span></a><p>One verified profile connecting students with the right universities, education finance and trusted guidance.</p><span class="status"><i></i> Building a better education marketplace</span></div>
-        <div><h4>Explore</h4><nav><a routerLink="/students">For students</a><a routerLink="/university">For universities</a><a routerLink="/bank">Loans & banks</a><a routerLink="/consultancy">Consultancy</a></nav></div>
+        <div><h4>Explore</h4><nav><a routerLink="/students">For students</a><a routerLink="/organization">For organizations</a><a routerLink="/consultancy">Consultancy</a></nav></div>
         <div><h4>Company</h4><nav><a routerLink="/">About SuperOffer</a><a href="mailto:hello@superoffer.net">Contact us</a><a href="mailto:partners@superoffer.net">Partner with us</a><a routerLink="/auth/login/student">Log in</a></nav></div>
-        <div><h4>Get started</h4><nav><a routerLink="/auth/register/student">Create student profile</a><a routerLink="/auth/register/university">Join as a university</a><a routerLink="/auth/register/bank">Join as a lender</a><a routerLink="/auth/register/consultancy">Join as a consultant</a></nav></div>
+        <div><h4>Get started</h4><nav><a routerLink="/auth/register/student">Create student profile</a><a routerLink="/organization/signup">Join as an organization</a><a routerLink="/auth/register/consultancy">Join as a consultant</a></nav></div>
       </div>
       <div class="bottom"><span>© 2026 SuperOffer. All rights reserved.</span><div><a href="mailto:support@superoffer.net">Support</a><a routerLink="/">Privacy</a><a routerLink="/">Terms</a></div></div>
     </footer>

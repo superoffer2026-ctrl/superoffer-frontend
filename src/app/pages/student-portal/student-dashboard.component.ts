@@ -1,12 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
 import { StudentProfileUiStore } from './student-profile-ui.store';
+import { OfferWalletStore } from './offer-wallet.models';
+import { StudentCardComponent } from './student-card.component';
+import { OfferMarketplaceCardComponent } from './offer-marketplace-card.component';
+import { StatCounterComponent } from '../landing/stat-counter.component';
+import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent],
+  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent, StudentCardComponent, OfferMarketplaceCardComponent, StatCounterComponent, RevealOnScrollDirective],
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
@@ -19,9 +24,30 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
         </div>
         <div class="student-header-actions">
           <a class="header-secondary" routerLink="/student/profile">View profile</a>
-          <a class="header-primary" routerLink="/student/offers">My offers <b>4</b></a>
+          <a class="header-primary" routerLink="/student/offers">My offers <b>{{walletStore.totalCount}}</b></a>
         </div>
       </header>
+
+      <app-student-card
+        [fullName]="store.values['fullName']"
+        [photo]="store.photo"
+        [cgpa]="store.values['score']"
+        [ielts]="store.values['englishScore']"
+        [preferredCountry]="store.values['countries']"
+        [preferredCourse]="store.values['fieldOfInterest']"
+        [completionPct]="82"
+        [verified]="true" />
+
+      <section class="wallet-stat-row" soReveal>
+        <article><so-stat-counter [value]="walletStore.totalCount" label="Total offers" /></article>
+        <article><so-stat-counter [value]="walletStore.newCount" label="New offers" /></article>
+        <article><so-stat-counter [value]="walletStore.universityCount" label="University offers" /></article>
+        <article><so-stat-counter [value]="walletStore.bankCount" label="Loan offers" /></article>
+        <article><so-stat-counter [value]="walletStore.scholarshipCount" label="Scholarship offers" /></article>
+        <article><so-stat-counter [value]="walletStore.consultancyCount" label="Consultancy offers" /></article>
+        <article><so-stat-counter [value]="walletStore.savedCount" label="Saved offers" /></article>
+        <article><so-stat-counter [value]="walletStore.acceptedCount" label="Accepted offers" /></article>
+      </section>
 
       <section class="journey-banner">
         <div class="journey-main">
@@ -83,19 +109,8 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
           <div><span>JUST FOR YOU</span><h2>Recent opportunities</h2><p>Matches based on your goals and academic profile.</p></div>
           <a routerLink="/student/offers">See all offers →</a>
         </header>
-        <div class="opportunity-row">
-          <article class="university-opportunity">
-            <div class="opportunity-logo">N</div>
-            <div class="opportunity-copy"><span>UNIVERSITY OFFER</span><h3>Northbridge University</h3><p>MSc Data Science · Toronto, Canada</p></div>
-            <div class="opportunity-award"><span>SCHOLARSHIP</span><strong>40% tuition</strong></div>
-            <a routerLink="/student/offers">Review offer</a>
-          </article>
-          <article class="funding-opportunity">
-            <div class="opportunity-logo">E</div>
-            <div class="opportunity-copy"><span>FUNDING MATCH</span><h3>EduFund Finance</h3><p>International Education Loan</p></div>
-            <div class="opportunity-award"><span>PRE-QUALIFIED</span><strong>Up to ₹35 lakh</strong></div>
-            <a routerLink="/student/offers">View funding</a>
-          </article>
+        <div class="opportunity-row opportunity-row-market">
+          <app-offer-marketplace-card *ngFor="let offer of walletStore.offers.slice(0,4)" [offer]="offer" [compact]="true" (viewDetails)="goToOffers()" />
         </div>
       </section>
 
@@ -120,6 +135,7 @@ export class StudentDashboardComponent {
     {title:'Manage documents',description:'View uploads and verification',icon:'▤',route:'/student/documents'},
     {title:'Account settings',description:'Privacy and notifications',icon:'⚙',route:'/student/settings'}
   ];
-  constructor(public store:StudentProfileUiStore){}
+  constructor(public store:StudentProfileUiStore, public walletStore:OfferWalletStore, private router:Router){}
   get firstName(){return (this.store.values['fullName']||'Student').split(/\s+/)[0];}
+  goToOffers(){this.router.navigate(['/student/offers']);}
 }

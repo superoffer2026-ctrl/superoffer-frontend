@@ -6,6 +6,7 @@ import { debounceTime, Subscription } from 'rxjs';
 import { OnboardingChipSelectComponent } from './onboarding-chip-select.component';
 import { OnboardingUploadCardComponent } from './onboarding-upload-card.component';
 import { StudentDocument, StudentProfileApiService } from '../../core/student-profile-api.service';
+import { StudentProfileUiStore } from '../student-portal/student-profile-ui.store';
 
 type StudyLevel = 'UG' | 'PG' | 'PHD';
 
@@ -197,7 +198,7 @@ export class StudentOnboardingComponent implements OnDestroy {
 
   readonly form: FormGroup;
 
-  constructor(private fb: FormBuilder, private router: Router, private api: StudentProfileApiService) {
+  constructor(private fb: FormBuilder, private router: Router, private api: StudentProfileApiService, private store: StudentProfileUiStore) {
     const user = JSON.parse(sessionStorage.getItem('superoffer_user') || '{}');
     const names = String(user.full_name || '').split(' ');
     this.form = this.fb.group({
@@ -213,6 +214,7 @@ export class StudentOnboardingComponent implements OnDestroy {
     });
     const saved = localStorage.getItem(this.storageKey);
     if (saved) { try { const value=JSON.parse(saved); this.form.patchValue(value.form); this.step=Math.min(value.step||0,9); this.furthestStep=value.furthestStep||this.step; } catch {} }
+    this.syncProfileToStore();
     this.subscription = this.form.valueChanges.pipe(debounceTime(250)).subscribe(()=>this.save());
     void this.hydrate();
   }
@@ -250,6 +252,7 @@ export class StudentOnboardingComponent implements OnDestroy {
       const {financial: _financial, ...profilePayload}=this.form.getRawValue();
       await this.api.updateProfile(profilePayload);
       if(this.step===7) await this.api.saveFinancial(this.financialPayload());
+      this.syncProfileToStore();
       if(this.step===9){ await this.api.submit();this.step=10;localStorage.removeItem(this.storageKey); }
       else {this.step++;this.furthestStep=Math.max(this.furthestStep,this.step);this.save();}
       scrollTo({top:0,behavior:'smooth'});
@@ -296,6 +299,42 @@ export class StudentOnboardingComponent implements OnDestroy {
   private financialPayload(){
     const value=this.form.get('financial')?.value;
     return {...value,fundingPreference:value.fundingPreference?.[0]||''};
+  }
+  private syncProfileToStore(){
+    const values=this.store.values;
+    const basic=this.form.get('basic')?.value;
+    if(basic){
+      values['fullName']=`${basic.firstName||''} ${basic.lastName||''}`.trim()||values['fullName'];
+      values['email']=basic.email||values['email'];
+      values['phone']=basic.mobile||values['phone'];
+      values['location']=basic.country||values['location'];
+    }
+    const academic=this.form.get('academic')?.value;
+    if(academic){
+      if(this.studyLevel==='UG'){
+        values['institution']=academic.schoolName||values['institution'];
+        values['qualification']=academic.board?`Grade ${academic.currentGrade||''} · ${academic.board}`.trim():values['qualification'];
+        values['score']=academic.twelfthScore||academic.tenthScore||values['score'];
+        values['graduationYear']=academic.passingYear||values['graduationYear'];
+      } else if(this.studyLevel==='PG'){
+        values['institution']=academic.collegeName||values['institution'];
+        values['qualification']=academic.degree?`${academic.degree} ${academic.major||''}`.trim():values['qualification'];
+        values['score']=academic.cgpa||values['score'];
+        values['graduationYear']=academic.graduationYear||values['graduationYear'];
+      } else if(this.studyLevel==='PHD'){
+        values['institution']=academic.university||values['institution'];
+        values['qualification']=academic.masters?`PhD · ${academic.specialization||''}`.trim():values['qualification'];
+        values['score']=academic.mastersCgpa||values['score'];
+        values['graduationYear']=academic.graduationYear||values['graduationYear'];
+      }
+    }
+    const preferences=this.form.get('preferences')?.value;
+    if(preferences){
+      values['fieldOfInterest']=preferences.course||values['fieldOfInterest'];
+      values['countries']=(preferences.countries||[]).join(', ')||values['countries'];
+      values['intake']=(preferences.intake||[]).join(', ')||values['intake'];
+    }
+    values['studyLevel']=this.studyLevel;
   }
   private async hydrate(){
     try{

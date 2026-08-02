@@ -56,6 +56,24 @@ interface AuthLogEntry {
     .detail{position:sticky;top:20px;align-self:start;padding:23px;background:#fff;border:1px solid var(--line);border-radius:13px}.detail-head{display:flex;gap:12px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}.detail-head h2{font-size:19px;margin:3px 0}.detail-head p{font-size:11px;color:var(--muted);margin:0}.detail dl{display:grid;gap:0;margin:15px 0}.detail dl div{display:flex;justify-content:space-between;gap:15px;padding:11px 0;border-bottom:1px solid #edf1ef}.detail dt{font-size:10px;color:var(--muted)}.detail dd{font-size:11px;font-weight:800;text-align:right;margin:0;overflow-wrap:anywhere}.evidence{padding:13px;border-radius:9px;background:#f3f7f5}.evidence strong{font-size:11px}.evidence p{font-size:10px;color:var(--muted);margin:5px 0 0}.review-actions{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:17px}.review-form{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.review-form textarea{width:100%;min-height:90px;margin-top:7px}.review-form footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}.message{padding:11px;border-radius:8px;margin:10px 0}.error{background:#fff0ee;color:#a33d31}.empty{padding:60px;text-align:center;background:#fff;border:1px dashed #cbd7d0;border-radius:12px;color:var(--muted)}
     .audit-table{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}.audit-row{display:grid;grid-template-columns:180px 190px 1fr 160px;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:11px}.audit-row.header{background:#edf3f0;font-size:9px;color:var(--muted);font-weight:900}.audit-row b{color:var(--green)}.audit-row small{color:var(--muted)}
 
+    /* ── Dashboard overview ── */
+    .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .dash-card{padding:20px 22px;background:#fff;border:1px solid var(--line);border-radius:13px}
+    .dash-card>header{margin-bottom:14px}.dash-card>header h2{margin:0;font-size:16px}.dash-card>header small{color:var(--muted);font-size:10px}
+    .health-row,.tier-row{display:grid;grid-template-columns:130px 1fr 70px;align-items:center;gap:10px;padding:8px 0}
+    .health-row span,.tier-row span{font-size:11px;color:#3d4b44}
+    .health-row i,.tier-row i{display:block;height:6px;border-radius:5px;background:#edf2ef;overflow:hidden}
+    .health-row i b,.tier-row i b{display:block;height:100%;background:var(--green);border-radius:5px}
+    .health-row strong,.tier-row strong{font-size:11px;text-align:right}
+    .dash-card-footer{display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .dash-card-footer span{font-size:10px;color:var(--muted)}.dash-card-footer b{color:var(--green);font-size:13px;display:block;margin-bottom:2px}
+    .feed-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid #f1f5f2}.feed-row:last-of-type{border-bottom:0}
+    .feed-row div{flex:1;min-width:0}.feed-row strong{display:block;font-size:11px}.feed-row small{display:block;margin-top:2px;color:var(--muted);font-size:9px}
+    .feed-row .org-icon{width:32px;height:32px;font-size:12px}.feed-row .org-icon.warn{background:#fff0d9;color:#93600f}
+    .feed-row .status{font-style:normal;padding:4px 8px;border-radius:99px;background:#fff0d9;color:#93600f;font-size:9px;font-weight:900;white-space:nowrap}.feed-row .status.approved{background:#e5f5ed;color:var(--green)}
+    .dash-link{margin-top:12px;border:0;background:transparent;color:var(--green);font-weight:800;font-size:11px;cursor:pointer;padding:0}
+    .quick-links-row{display:flex;gap:10px;flex-wrap:wrap}.quick-links-row button{border:1px solid var(--line);background:#fbfcfb;border-radius:9px;padding:11px 16px;font-weight:800;font-size:11px;color:#2c3a33;cursor:pointer}.quick-links-row button:hover{border-color:#7db99d;color:var(--green)}
+
     /* ── Auth Logs styles ── */
     .auth-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
     .auth-search{flex:1;min-width:200px;height:40px;border:1px solid var(--line);border-radius:9px;padding:0 14px;font:inherit;background:#fff;font-size:13px}
@@ -92,8 +110,8 @@ interface AuthLogEntry {
     .auth-page-btn:disabled{opacity:.35;cursor:not-allowed}
     .auth-toast{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;background:#e5f5ed;color:var(--green);font-size:12px;font-weight:800;margin-left:auto}
 
-    @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.queue-layout{grid-template-columns:1fr}.detail{position:static}}
-    @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column;gap:15px}.filters{overflow:auto}.queue-layout{display:block}.request{grid-template-columns:45px 1fr}.request>.status{grid-column:2}.audit-row{grid-template-columns:1fr}.audit-row.header{display:none}.auth-table th:nth-child(n+6){display:none}.auth-table td:nth-child(n+6){display:none}}
+    @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.queue-layout{grid-template-columns:1fr}.detail{position:static}.dash-grid{grid-template-columns:1fr}}
+    @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column;gap:15px}.filters{overflow:auto}.queue-layout{display:block}.request{grid-template-columns:45px 1fr}.request>.status{grid-column:2}.audit-row{grid-template-columns:1fr}.audit-row.header{display:none}.auth-table th:nth-child(n+6){display:none}.auth-table td:nth-child(n+6){display:none}.health-row,.tier-row{grid-template-columns:100px 1fr 55px}}
   `],
   template:`
     <main class="admin-shell">
@@ -122,11 +140,83 @@ interface AuthLogEntry {
             <p>Review universities, education lenders, and consultancies before unlocking login.</p>
           </div>
           <nav class="page-tabs">
+            <button [class.active]="view==='dashboard'" (click)="view='dashboard'">Dashboard</button>
             <button [class.active]="view==='queue'" (click)="view='queue'">Verification queue</button>
             <button [class.active]="view==='audit'" (click)="openAudit()">Audit log</button>
             <button [class.active]="view==='auth-logs'" (click)="view='auth-logs'">Auth logs</button>
           </nav>
         </header>
+
+        <!-- DASHBOARD -->
+        <ng-container *ngIf="view==='dashboard'">
+          <section class="metrics">
+            <article class="metric"><small>Total students</small><strong>{{platformStats.students|number}}</strong></article>
+            <article class="metric"><small>Verified universities</small><strong>{{platformStats.universities}}</strong></article>
+            <article class="metric"><small>Verified banks</small><strong>{{platformStats.banks}}</strong></article>
+            <article class="metric"><small>Verified consultancies</small><strong>{{platformStats.consultancies}}</strong></article>
+            <article class="metric pending"><small>Pending verifications</small><strong>{{platformStats.pendingVerifications}}</strong></article>
+            <article class="metric approved"><small>Monthly revenue</small><strong>{{platformStats.monthlyRevenue}}</strong></article>
+          </section>
+
+          <div class="dash-grid">
+            <section class="dash-card">
+              <header><h2>Platform health</h2><small>Active users by role · this cycle</small></header>
+              <div class="health-row" *ngFor="let row of roleBreakdown">
+                <span>{{row.label}}</span>
+                <i><b [style.width.%]="row.percent"></b></i>
+                <strong>{{row.count|number}}</strong>
+              </div>
+              <footer class="dash-card-footer">
+                <span><b>{{platformStats.invitationVolume|number}}</b> invitations this cycle</span>
+                <span><b>{{platformStats.acceptanceRate}}%</b> acceptance rate</span>
+              </footer>
+            </section>
+
+            <section class="dash-card">
+              <header><h2>Subscription overview</h2><small>Revenue &amp; tier distribution</small></header>
+              <div class="tier-row" *ngFor="let tier of subscriptionOverview.tiers">
+                <span>{{tier.name}}</span>
+                <i><b [style.width.%]="tier.percent"></b></i>
+                <strong>{{tier.orgs}} orgs</strong>
+              </div>
+              <footer class="dash-card-footer">
+                <span><b>{{subscriptionOverview.revenue}}</b> this cycle</span>
+                <span><b>{{subscriptionOverview.upcomingRenewals}}</b> renewals due in 7 days</span>
+              </footer>
+            </section>
+          </div>
+
+          <div class="dash-grid">
+            <section class="dash-card">
+              <header><h2>Recent verification submissions</h2><small>Latest organisation sign-ups</small></header>
+              <div class="feed-row" *ngFor="let item of recentSubmissions">
+                <span class="org-icon">{{item.initial}}</span>
+                <div><strong>{{item.name}}</strong><small>{{item.type}} · submitted {{item.when}}</small></div>
+                <em class="status" [class.approved]="item.status==='Verified'">{{item.status}}</em>
+              </div>
+              <button class="dash-link" (click)="view='queue'">Open verification queue →</button>
+            </section>
+
+            <section class="dash-card">
+              <header><h2>Support &amp; moderation queue</h2><small>Flagged items awaiting review</small></header>
+              <div class="feed-row" *ngFor="let item of moderationQueue">
+                <span class="org-icon warn">!</span>
+                <div><strong>{{item.title}}</strong><small>{{item.detail}}</small></div>
+                <em class="status">{{item.age}}</em>
+              </div>
+              <button class="dash-link" (click)="view='audit'">Open audit log →</button>
+            </section>
+          </div>
+
+          <section class="dash-card quick-links">
+            <header><h2>Quick actions</h2></header>
+            <div class="quick-links-row">
+              <button (click)="view='queue'">Review verification queue</button>
+              <button (click)="openAudit()">View audit log</button>
+              <button (click)="view='auth-logs'">View auth logs</button>
+            </div>
+          </section>
+        </ng-container>
 
         <!-- VERIFICATION QUEUE -->
         <ng-container *ngIf="view==='queue'">
@@ -290,12 +380,40 @@ export class AdminPageComponent implements OnInit, OnDestroy {
 
   // Existing state
   adminKey=''; authenticated=false; loading=false; error=''; reviewing=false;
-  view: 'queue'|'audit'|'auth-logs' = 'queue';
+  view: 'dashboard'|'queue'|'audit'|'auth-logs' = 'dashboard';
   status='PENDING'; orgType='ALL'; registrations:any[]=[];
   selected:any=null; summary:any={}; decision:''|'approve'|'reject'='';
   reviewReason=''; auditEntries:any[]=[];
   statuses=['PENDING','APPROVED','REJECTED','ALL'];
   types=[{label:'All organisations',value:'ALL'},{label:'Universities',value:'UNIVERSITY'},{label:'Banks',value:'BANK'},{label:'Consultancies',value:'CONSULTANCY'}];
+
+  // Dashboard overview (mock — platform-wide summary, independent of live registration data)
+  platformStats={students:2480,universities:86,banks:24,consultancies:41,pendingVerifications:7,monthlyRevenue:'₹18.4L',invitationVolume:1240,acceptanceRate:23};
+  roleBreakdown=[
+    {label:'Students',count:2480,percent:100},
+    {label:'University officers',count:186,percent:38},
+    {label:'Loan officers',count:64,percent:20},
+    {label:'Consultants',count:97,percent:26}
+  ];
+  subscriptionOverview={
+    revenue:'₹18.4L',
+    upcomingRenewals:9,
+    tiers:[
+      {name:'Basic',orgs:64,percent:43},
+      {name:'Professional',orgs:52,percent:35},
+      {name:'Enterprise',orgs:35,percent:24}
+    ]
+  };
+  recentSubmissions=[
+    {initial:'O',name:'Oxford Brookes University',type:'University',when:'2 hours ago',status:'Pending'},
+    {initial:'F',name:'Finance Corp Ltd',type:'Education lender',when:'6 hours ago',status:'Verified'},
+    {initial:'G',name:'Global Consultants',type:'Consultancy',when:'Yesterday',status:'Pending'},
+    {initial:'C',name:'Cambridge Institute',type:'University',when:'2 days ago',status:'Verified'}
+  ];
+  moderationQueue=[
+    {title:'Profile flagged for review',detail:'Reported by University officer · possible duplicate documents',age:'3h ago'},
+    {title:'Disputed invitation',detail:'Student contests withdrawal of an accepted offer',age:'1d ago'}
+  ];
 
   // Auth logs state
   authSearch = '';
