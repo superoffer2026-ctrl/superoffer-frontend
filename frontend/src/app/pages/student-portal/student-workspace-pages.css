@@ -87,9 +87,6 @@
 .student-home>app-student-card{display:block;margin-top:24px}
 .wallet-stat-row{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;margin-top:16px;padding:4px;background:#e3e9e5;border-radius:16px;overflow:hidden}
 .wallet-stat-row article{padding:16px 10px;background:#fff;text-align:center}
-.wallet-stat-row so-stat-counter{display:block;padding:0;border-left:0}
-.wallet-stat-row so-stat-counter strong{font-size:clamp(20px,2vw,28px);color:#102f45;letter-spacing:-.03em}
-.wallet-stat-row so-stat-counter span{margin-top:4px;font-size:9px;color:#78847e;font-weight:800;letter-spacing:.03em}
 .opportunity-row-market{grid-template-columns:repeat(2,1fr)}
 @media(max-width:1100px){.wallet-stat-row{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:720px){.wallet-stat-row{grid-template-columns:repeat(2,1fr)}.opportunity-row-market{grid-template-columns:1fr}}

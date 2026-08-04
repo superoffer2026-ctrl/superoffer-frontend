@@ -11,9 +11,7 @@ import { PersonalInformationComponent } from './pages/student-portal/personal-in
 import { AcademicInformationComponent } from './pages/student-portal/academic-information.component';
 import { StudyPreferencesComponent } from './pages/student-portal/study-preferences.component';
 import { EntranceExamsComponent } from './pages/student-portal/entrance-exams.component';
-import { SkillsLanguagesComponent } from './pages/student-portal/skills-languages.component';
 import { ProjectsAchievementsComponent } from './pages/student-portal/projects-achievements.component';
-import { DocumentsUploadComponent } from './pages/student-portal/documents-upload.component';
 import { ReviewProfileComponent } from './pages/student-portal/review-profile.component';
 import { CompleteProfileComponent } from './pages/student-portal/complete-profile.component';
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
@@ -41,9 +39,9 @@ export const appRoutes: Routes = [
       { path: 'study-preferences', component: StudyPreferencesComponent },
       { path: 'entrance-exams', component: EntranceExamsComponent },
       { path: 'financial-information', component: FinancialInformationComponent },
-      { path: 'skills', component: SkillsLanguagesComponent },
+      { path: 'skills', pathMatch: 'full', redirectTo: 'projects' },
       { path: 'projects', component: ProjectsAchievementsComponent },
-      { path: 'documents', component: DocumentsUploadComponent },
+      { path: 'documents', pathMatch: 'full', redirectTo: 'review' },
       { path: 'review', component: ReviewProfileComponent },
       { path: 'completion', component: CompleteProfileComponent },
       { path: 'offers', component: StudentOfferInboxComponent },
