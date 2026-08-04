@@ -69,7 +69,7 @@ const ROLE_CONFIG: Record<Role, any> = {
         <button class="uni-brand" type="button" (click)="go('dashboard')"><img [src]="cfg.logoSrc" [alt]="cfg.logoAlt"><strong>SuperOffer</strong></button>
         <div class="uni-org"><span>{{cfg.orgInitials}}</span><div><strong>{{orgName}}</strong><small>Verified organisation</small></div></div>
         <nav>
-          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="go(item.id)" [title]="item.label" [attr.aria-label]="item.label">
+          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id || (item.id==='profile' && view==='settings')" (click)="go(item.id)" [title]="item.label" [attr.aria-label]="item.label">
             <span>{{item.icon}}</span><strong>{{item.label}}</strong>
           </button>
         </nav>
@@ -78,11 +78,6 @@ const ROLE_CONFIG: Record<Role, any> = {
       </aside>
 
       <main class="uni-main">
-        <header class="uni-topbar">
-          <div class="uni-header-identity"><span class="uni-mobile-brand">{{cfg.brandLabel}}</span><strong>{{currentViewLabel}}</strong><small>{{orgName}} <i></i> 2026–27 {{cfg.cycleLabel}}</small></div>
-          <div><span class="verified-header">✓ Verified</span><button type="button" aria-label="Notifications" (click)="go('notifications')">◌<b>{{notifications.length}}</b></button></div>
-        </header>
-
         <section class="uni-view" *ngIf="view==='dashboard'">
           <header class="uni-page-title"><div><span>{{cfg.eyebrow}}</span><h1>{{cfg.greeting}}</h1><p>{{cfg.dashboardIntro}}</p></div></header>
 
@@ -288,8 +283,8 @@ const ROLE_CONFIG: Record<Role, any> = {
           <p class="subscription-note">Plan changes are mock frontend interactions until subscription billing is connected.</p>
         </section>
 
-        <section class="uni-view" *ngIf="view==='profile'">
-          <header class="uni-page-title"><div><span>ORGANISATION</span><h1>{{cfg.profileTabLabel}}</h1><p>Manage your organisation profile details.</p></div><span class="org-verified">✓ Verified organisation</span></header>
+        <section class="uni-view" *ngIf="view==='profile' || view==='settings'">
+          <header class="uni-page-title"><div><span>ORGANISATION</span><h1>{{cfg.profileTabLabel}} &amp; Settings</h1><p>Manage your organisation profile and account settings.</p></div><span class="org-verified">✓ Verified organisation</span></header>
           <section class="uni-card uni-org-settings">
             <header><h2>{{cfg.profileTabLabel}}</h2><p>Manage your organisation profile details.</p></header>
             <div class="settings-form"><label>{{cfg.orgFieldLabel}}<input [(ngModel)]="orgName"></label><label>Official domain<input [(ngModel)]="orgDomain"></label><label>Organisation type<select><option *ngFor="let t of cfg.orgTypeOptions">{{t}}</option></select></label><label>Head office / campus<input [(ngModel)]="orgCity"></label><label class="wide">Organisation description<textarea [(ngModel)]="orgDescription"></textarea></label></div>
@@ -306,10 +301,6 @@ const ROLE_CONFIG: Record<Role, any> = {
               </label>
             </div>
           </section>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='settings'">
-          <header class="uni-page-title"><div><span>ACCOUNT</span><h1>Settings</h1><p>Manage your account security.</p></div></header>
 
           <section class="uni-card uni-org-settings">
             <header><h2>Change Password</h2><p>Update the password used to sign in to your workspace.</p></header>
@@ -385,8 +376,7 @@ export class OrganizationWorkspaceComponent {
     {id:'saved',label:'Saved Students',icon:'★'},
     {id:'notifications',label:'Notifications',icon:'◌'},
     {id:'subscription',label:'Subscription',icon:'✦'},
-    {id:'profile',label:'Organization Profile',icon:'◈'},
-    {id:'settings',label:'Settings',icon:'⚙'}
+    {id:'profile',label:'Profile & Settings',icon:'◈'}
   ];
 
   currentPlan = 'Professional';
@@ -441,10 +431,6 @@ export class OrganizationWorkspaceComponent {
   get remainingCredits(){return this.currentPlan==='Enterprise'?'Unlimited':Math.max(0,this.planCapacity[this.currentPlan]-this.profilesViewed);}
   get quotaPercent(){return this.currentPlan==='Enterprise'?12:Math.min(100,Math.round((this.profilesViewed/this.planCapacity[this.currentPlan])*100));}
   get activeOffersCount(){return this.offers.filter(o=>o.status!=='Rejected').length;}
-
-  get currentViewLabel(){
-    return ({dashboard:'Overview',students:'Student discovery',offers:'Offers & responses',saved:'Saved students',notifications:'Notifications',subscription:'Subscription & access',profile:'Organisation profile',settings:'Settings'} as Record<OrganizationView,string>)[this.view];
-  }
 
   get filteredStudents(){
     const f=this.filters;

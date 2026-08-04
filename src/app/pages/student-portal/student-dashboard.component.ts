@@ -39,14 +39,14 @@ import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
         [verified]="true" />
 
       <section class="wallet-stat-row" soReveal>
-        <article><so-stat-counter [value]="walletStore.totalCount" label="Total offers" /></article>
-        <article><so-stat-counter [value]="walletStore.newCount" label="New offers" /></article>
-        <article><so-stat-counter [value]="walletStore.universityCount" label="University offers" /></article>
-        <article><so-stat-counter [value]="walletStore.bankCount" label="Loan offers" /></article>
-        <article><so-stat-counter [value]="walletStore.scholarshipCount" label="Scholarship offers" /></article>
-        <article><so-stat-counter [value]="walletStore.consultancyCount" label="Consultancy offers" /></article>
-        <article><so-stat-counter [value]="walletStore.savedCount" label="Saved offers" /></article>
-        <article><so-stat-counter [value]="walletStore.acceptedCount" label="Accepted offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.totalCount" label="Total offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.newCount" label="New offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.universityCount" label="University offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.bankCount" label="Loan offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.scholarshipCount" label="Scholarship offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.consultancyCount" label="Consultancy offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.savedCount" label="Saved offers" /></article>
+        <article><so-stat-counter [compact]="true" [value]="walletStore.acceptedCount" label="Accepted offers" /></article>
       </section>
 
       <section class="journey-banner">

@@ -8,9 +8,9 @@ export class StudentProfileUiStore {
     location: 'Bengaluru, India',
     qualification: 'B.Tech Computer Science',
     score: '8.7 / 10',
-    fieldOfInterest: 'Data Science',
-    countries: 'Canada, United Kingdom',
-    intake: 'Fall 2027'
+    fieldOfInterest: '',
+    countries: '',
+    intake: ''
   };
   photo = '';
 
