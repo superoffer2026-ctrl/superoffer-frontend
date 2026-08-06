@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { COUNTRIES } from './geo-data';
 import { ALSO_INTERESTED_OPTIONS, FIELDS_OF_STUDY, INTAKE_OPTIONS, PROGRAM_OPTIONS, START_YEARS } from './study-options';
@@ -20,7 +20,7 @@ function requireOne(control: AbstractControl): ValidationErrors | null {
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 2 OF 8</span>
+        <span>STEP 2 OF 7</span>
         <h1>Study Preferences</h1>
         <p>Tell us where and what you'd like to study so we can match you with the right universities, banks and consultants.</p>
       </div>
@@ -160,7 +160,9 @@ export class StudyPreferencesComponent {
     intakes: this.fb.nonNullable.control<string[]>([], requireOne)
   });
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router) {
+  private returnToReview = false;
+
+  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
     this.form.patchValue({
       countries: this.splitList(this.store.values['countries']),
       fieldsOfStudy: this.splitList(this.store.values['fieldOfInterest']),
@@ -169,6 +171,7 @@ export class StudyPreferencesComponent {
       alsoInterestedIn: this.splitList(this.store.values['alsoInterestedIn']),
       intakes: this.splitList(this.store.values['intake'])
     });
+    this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
   }
 
   private splitList(value?: string): string[] {
@@ -292,6 +295,6 @@ export class StudyPreferencesComponent {
     this.store.values['startYear'] = value.startYear;
     this.store.values['alsoInterestedIn'] = value.alsoInterestedIn.join(', ');
     this.store.values['intake'] = value.intakes.join(', ');
-    this.router.navigateByUrl('/student/academic-information');
+    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/academic-information');
   }
 }

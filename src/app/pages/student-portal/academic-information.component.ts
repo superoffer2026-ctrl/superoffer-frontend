@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { ALL_EDU_KEYS, EDUCATION_GAP_OPTIONS, EduField, FILE_STATUS_LATER, FILE_STATUS_PENDING, Qualification, QUALIFICATION_FIELDS, QUALIFICATION_OPTIONS } from './education-options';
 
@@ -12,7 +12,7 @@ import { ALL_EDU_KEYS, EDUCATION_GAP_OPTIONS, EduField, FILE_STATUS_LATER, FILE_
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 3 OF 8</span>
+        <span>STEP 3 OF 7</span>
         <h1>Academic Information</h1>
         <p>Tell us about your education history so we can match you with the right programmes and lenders.</p>
       </div>
@@ -137,13 +137,17 @@ export class AcademicInformationComponent {
     educationGap: this.fb.nonNullable.control<string>('')
   });
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router) {}
+  private returnToReview = false;
+
+  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+    this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+  }
 
   get educationGroup(): FormGroup { return this.form.get('education') as FormGroup; }
   get qualification(): Qualification | '' { return this.form.get('qualification')!.value as Qualification | ''; }
   get visibleFields(): EduField[] { return this.qualification ? QUALIFICATION_FIELDS[this.qualification] : []; }
   get workStatus(): string { return this.form.get('workStatus')!.value; }
-  get isSchoolLevel(): boolean { return this.qualification === '10th' || this.qualification === '12th'; }
+  get isSchoolLevel(): boolean { return this.qualification === '12th'; }
 
   trackByField(index: number, field: EduField): string { return `${this.qualification}:${field.key}`; }
 
@@ -161,7 +165,7 @@ export class AcademicInformationComponent {
       eduControl.updateValueAndValidity({ emitEvent: false });
     });
 
-    if (value === '10th' || value === '12th') {
+    if (value === '12th') {
       this.onWorkStatusChange('');
       const gap = this.form.get('educationGap')!;
       gap.setValue('');
@@ -258,6 +262,6 @@ export class AcademicInformationComponent {
     const degreeSummary = [value.education['degreeName'], value.education['specialization']].filter(Boolean).join(' ');
     this.store.values['qualification'] = degreeSummary || value.qualification || this.store.values['qualification'];
 
-    this.router.navigateByUrl('/student/entrance-exams');
+    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/entrance-exams');
   }
 }

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { CURRENCY_OPTIONS, EARNING_MEMBER_OPTIONS, EMPLOYMENT_CATEGORY_OPTIONS, FUNDING_SOURCE_OPTIONS } from './financial-options';
 
@@ -39,7 +39,7 @@ const DOCUMENT_FIELDS: { key: DocKey; label: string; categories?: string[] }[] =
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 5 OF 8</span>
+        <span>STEP 5 OF 7</span>
         <h1>Financial Information</h1>
         <p>Share an indicative affordability profile so verified universities and finance partners can match you accurately.</p>
       </div>
@@ -222,7 +222,11 @@ export class FinancialInformationComponent {
     declarationConsent: this.fb.nonNullable.control(false, Validators.requiredTrue)
   });
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router) {}
+  private returnToReview = false;
+
+  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+    this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+  }
 
   get fundingSource(): string { return this.form.get('fundingSource')!.value; }
   get currency(): string { return this.form.get('currency')!.value; }
@@ -341,6 +345,6 @@ export class FinancialInformationComponent {
     this.store.values['declarationAccurate'] = String(value.declarationAccurate);
     this.store.values['declarationConsent'] = String(value.declarationConsent);
 
-    this.router.navigateByUrl('/student/projects');
+    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/projects');
   }
 }

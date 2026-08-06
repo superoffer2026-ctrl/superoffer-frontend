@@ -12,6 +12,5 @@ export const STUDENT_PROFILE_STEPS: StudentProfileStep[] = [
   { path: 'entrance-exams', title: 'Entrance Exams', description: 'Exam information', icon: '04' },
   { path: 'financial-information', title: 'Financial Information', description: 'Affordability and funding', icon: '05' },
   { path: 'projects', title: 'Projects & Achievements', description: 'Experience and recognition', icon: '06' },
-  { path: 'review', title: 'Review Profile', description: 'Review all sections', icon: '07' },
-  { path: 'completion', title: 'Complete Profile', description: 'Finish profile setup', icon: '08' }
+  { path: 'review', title: 'Review Profile', description: 'Review all sections', icon: '07' }
 ];

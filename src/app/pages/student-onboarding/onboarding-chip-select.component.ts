@@ -14,7 +14,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     </div>
   `,
   styles: [`
-    .chips{display:flex;flex-wrap:wrap;gap:10px}button{min-height:43px;padding:0 15px;display:inline-flex;align-items:center;gap:8px;border:1px solid #ded7cf;border-radius:999px;color:#514840;background:#fff;font:700 12px Inter,system-ui;cursor:pointer;transition:.2s}button:hover{border-color:#bdaea1;transform:translateY(-1px)}button.selected{border-color:#2b211b;color:#fff;background:#2b211b;box-shadow:0 8px 20px #2b211b1c}button span{font-size:15px}button i{color:#f17835;font-style:normal}
+    .chips{display:flex;flex-wrap:wrap;gap:10px}button{min-height:43px;padding:0 15px;display:inline-flex;align-items:center;gap:8px;border:1px solid #ded7cf;border-radius:999px;color:#514840;background:#fff;font:700 14px Inter,system-ui;cursor:pointer;transition:.2s}button:hover{border-color:#bdaea1;transform:translateY(-1px)}button.selected{border-color:#2b211b;color:#fff;background:#2b211b;box-shadow:0 8px 20px #2b211b1c}button span{font-size:17px}button i{color:#f17835;font-style:normal}
   `]
 })
 export class OnboardingChipSelectComponent {

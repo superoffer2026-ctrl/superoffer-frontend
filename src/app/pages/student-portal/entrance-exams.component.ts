@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { EXAM_CATEGORIES, EXAM_STATUS_OPTIONS, ExamCategoryConfig, ExamCategoryKey, scoreFieldsForStatus } from './exam-options';
 
@@ -12,7 +12,7 @@ import { EXAM_CATEGORIES, EXAM_STATUS_OPTIONS, ExamCategoryConfig, ExamCategoryK
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 4 OF 8</span>
+        <span>STEP 4 OF 7</span>
         <h1>Entrance Exams</h1>
         <p>Tell us about your English proficiency and competitive exam scores.</p>
       </div>
@@ -118,7 +118,11 @@ export class EntranceExamsComponent {
     competitive: this.fb.array<FormGroup>([])
   });
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router) {}
+  private returnToReview = false;
+
+  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+    this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+  }
 
   get attended(): string { return this.form.get('attendedExams')!.value as string; }
 
@@ -225,6 +229,6 @@ export class EntranceExamsComponent {
       this.store.values['entranceScore'] = firstCompetitive['score'] || firstCompetitive['expectedScore'] || firstCompetitive['currentScore'] || '';
     }
 
-    this.router.navigateByUrl('/student/financial-information');
+    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/financial-information');
   }
 }

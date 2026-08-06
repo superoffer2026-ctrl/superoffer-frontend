@@ -4,6 +4,8 @@ import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router
 import { filter } from 'rxjs';
 import { STUDENT_PROFILE_STEPS } from './student-portal.models';
 
+const FURTHEST_STEP_KEY = 'superoffer_furthest_step';
+
 @Component({
   standalone: true,
   imports: [CommonModule, RouterLink, RouterOutlet],
@@ -20,7 +22,7 @@ import { STUDENT_PROFILE_STEPS } from './student-portal.models';
         </div>
 
         <div class="profile-progress">
-          <div class="progress-copy"><span>Profile Completion</span><strong>{{isDashboard || isOffers ? '100%' : 'Step ' + (currentIndex + 1) + ' of 9'}}</strong></div>
+          <div class="progress-copy"><span>Profile Completion</span><strong>{{isDashboard || isOffers ? '100%' : 'Step ' + (currentIndex + 1) + ' of ' + steps.length}}</strong></div>
           <div class="progress-track"><span [style.width.%]="progress"></span></div>
         </div>
 
@@ -28,11 +30,11 @@ import { STUDENT_PROFILE_STEPS } from './student-portal.models';
           <a *ngFor="let item of steps; let i=index"
             [routerLink]="isAccessible(i) ? ['/student', item.path] : null"
             [class.current]="!isDashboard && !isOffers && currentIndex===i"
-            [class.complete]="isDashboard || isOffers || i<currentIndex"
+            [class.complete]="isDashboard || isOffers || i<furthestIndex"
             [class.disabled]="!isAccessible(i)"
             [attr.aria-disabled]="!isAccessible(i)"
             (click)="onStepClick(i,$event)">
-            <span class="step-icon">{{isDashboard || isOffers || i < currentIndex ? '✓' : item.icon}}</span>
+            <span class="step-icon">{{isDashboard || isOffers || i < furthestIndex ? '✓' : item.icon}}</span>
             <span class="step-copy"><strong>{{item.title}}</strong><small>{{item.description}}</small></span>
           </a>
         </nav>
@@ -47,10 +49,12 @@ export class StudentPortalShellComponent {
   collapsed = false;
   mobileOpen = false;
   currentIndex = 0;
+  furthestIndex = 0;
   isDashboard = false;
   isOffers = false;
 
   constructor(private router: Router) {
+    this.furthestIndex = Number(localStorage.getItem(FURTHEST_STEP_KEY) || 0) || 0;
     this.syncRoute(this.router.url);
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(event => {
       this.syncRoute((event as NavigationEnd).urlAfterRedirects);
@@ -59,7 +63,8 @@ export class StudentPortalShellComponent {
   }
 
   get progress() { return this.isDashboard || this.isOffers ? 100 : Math.round(((this.currentIndex + 1) / this.steps.length) * 100); }
-  isAccessible(index: number) { return this.isDashboard || this.isOffers || index <= this.currentIndex; }
+  /** Once a step has been reached, editing an earlier one must not re-lock it — gate on the furthest step ever reached, not the current one. */
+  isAccessible(index: number) { return this.isDashboard || this.isOffers || index <= this.furthestIndex; }
   toggleSidebar() { innerWidth <= 760 ? this.mobileOpen = !this.mobileOpen : this.collapsed = !this.collapsed; }
   toggleMobile() { this.mobileOpen = !this.mobileOpen; }
   onStepClick(index: number, event: Event) { if (!this.isAccessible(index)) event.preventDefault(); }
@@ -72,5 +77,9 @@ export class StudentPortalShellComponent {
     this.isOffers = url.includes('/student/offers') || url.includes('/student/profile') || url.includes('/student/dashboard') || url.includes('/student/settings') || url.includes('/student/help');
     const index = this.steps.findIndex(step => url.includes(`/student/${step.path}`));
     this.currentIndex = index >= 0 ? index : 0;
+    if (this.currentIndex > this.furthestIndex) {
+      this.furthestIndex = this.currentIndex;
+      localStorage.setItem(FURTHEST_STEP_KEY, String(this.furthestIndex));
+    }
   }
 }

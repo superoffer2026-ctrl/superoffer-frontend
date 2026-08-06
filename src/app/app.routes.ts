@@ -13,7 +13,6 @@ import { StudyPreferencesComponent } from './pages/student-portal/study-preferen
 import { EntranceExamsComponent } from './pages/student-portal/entrance-exams.component';
 import { ProjectsAchievementsComponent } from './pages/student-portal/projects-achievements.component';
 import { ReviewProfileComponent } from './pages/student-portal/review-profile.component';
-import { CompleteProfileComponent } from './pages/student-portal/complete-profile.component';
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
 import { StudentOfferInboxComponent } from './pages/portal/student-offer-inbox.component';
 import { StudentFullProfileComponent } from './pages/student-portal/student-full-profile.component';
@@ -43,7 +42,7 @@ export const appRoutes: Routes = [
       { path: 'projects', component: ProjectsAchievementsComponent },
       { path: 'documents', pathMatch: 'full', redirectTo: 'review' },
       { path: 'review', component: ReviewProfileComponent },
-      { path: 'completion', component: CompleteProfileComponent },
+      { path: 'completion', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'offers', component: StudentOfferInboxComponent },
       { path: 'profile', component: StudentFullProfileComponent },
       { path: 'dashboard', component: StudentDashboardComponent },

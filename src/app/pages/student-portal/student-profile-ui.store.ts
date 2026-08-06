@@ -1,17 +1,50 @@
 import { Injectable } from '@angular/core';
 
+const STORAGE_KEY = 'superoffer_student_profile_values';
+
+const DEFAULT_VALUES: Record<string, string> = {
+  fullName: 'Aarav Mehta',
+  email: 'aarav@example.com',
+  location: 'Bengaluru, India',
+  qualification: 'B.Tech Computer Science',
+  score: '8.7 / 10',
+  fieldOfInterest: '',
+  countries: '',
+  intake: ''
+};
+
+function loadPersistedValues(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? { ...DEFAULT_VALUES, ...JSON.parse(raw) } : { ...DEFAULT_VALUES };
+  } catch {
+    return { ...DEFAULT_VALUES };
+  }
+}
+
+function persistValues(values: Record<string, string>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(values)); } catch { /* storage unavailable */ }
+}
+
+/** Wrapping `values` in a Proxy means every `store.values[key] = x` write (ngModel bindings, saveAndContinue calls, etc.) survives a page reload without touching each call site. */
+function createPersistedValues(): Record<string, string> {
+  return new Proxy(loadPersistedValues(), {
+    set(target, prop: string, value) {
+      target[prop] = value;
+      persistValues(target);
+      return true;
+    },
+    deleteProperty(target, prop: string) {
+      delete target[prop];
+      persistValues(target);
+      return true;
+    }
+  });
+}
+
 @Injectable({ providedIn: 'root' })
 export class StudentProfileUiStore {
-  values: Record<string, string> = {
-    fullName: 'Aarav Mehta',
-    email: 'aarav@example.com',
-    location: 'Bengaluru, India',
-    qualification: 'B.Tech Computer Science',
-    score: '8.7 / 10',
-    fieldOfInterest: '',
-    countries: '',
-    intake: ''
-  };
+  values: Record<string, string> = createPersistedValues();
   photo = '';
 
   setFile(key: string, file?: File) {

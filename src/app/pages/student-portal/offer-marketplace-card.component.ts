@@ -54,30 +54,30 @@ import { OfferJourneyTrackerComponent } from './offer-journey-tracker.component'
     .market-card:hover{transform:translateY(-5px);box-shadow:0 22px 48px rgba(17,47,29,.13);border-color:#bfe0cd}
     .market-card-accepted{border-color:#9cd3b6;background:linear-gradient(180deg,#fff 0%,#f4fbf7 100%)}
     .market-card-declined{opacity:.6}
-    .market-card-recommended{position:absolute;top:-11px;right:18px;padding:5px 12px;border-radius:999px;background:linear-gradient(135deg,#087a50,#0ea16c);color:#fff;font-size:9px;font-weight:900;letter-spacing:.06em;box-shadow:0 6px 16px rgba(8,122,80,.35)}
+    .market-card-recommended{position:absolute;top:-11px;right:18px;padding:5px 12px;border-radius:999px;background:linear-gradient(135deg,#087a50,#0ea16c);color:#fff;font-size:11px;font-weight:900;letter-spacing:.06em;box-shadow:0 6px 16px rgba(8,122,80,.35)}
     .market-card-head{display:flex;align-items:flex-start;gap:12px}
-    .market-card-logo{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:#102f45;color:#67d0b2;font-weight:900;font-size:14px}
+    .market-card-logo{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:#102f45;color:#67d0b2;font-weight:900;font-size:16px}
     .market-card-logo img{width:100%;height:100%;object-fit:cover}
     .market-card-identity{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-    .market-card-category{font-size:9px;font-weight:900;letter-spacing:.09em;color:#087a50;text-transform:uppercase}
-    .market-card-identity strong{font-size:15px;letter-spacing:-.01em;color:#151a17}
-    .market-card-identity small{font-size:11px;color:#6d7972}
-    .market-card-status{flex:0 0 auto;padding:5px 9px;border-radius:999px;background:#eef2ef;color:#5f6b65;font-size:9px;font-weight:900;white-space:nowrap}
+    .market-card-category{font-size:11px;font-weight:900;letter-spacing:.09em;color:#087a50;text-transform:uppercase}
+    .market-card-identity strong{font-size:17px;letter-spacing:-.01em;color:#151a17}
+    .market-card-identity small{font-size:13px;color:#6d7972}
+    .market-card-status{flex:0 0 auto;padding:5px 9px;border-radius:999px;background:#eef2ef;color:#5f6b65;font-size:11px;font-weight:900;white-space:nowrap}
     .market-card-status.status-shortlisted{background:#fff3df;color:#93600d}
     .market-card-status.status-accepted{background:#e5f4ec;color:#087a50}
     .market-card-status.status-rejected{background:#fdeceb;color:#a1372c}
-    .market-card-headline{margin:0;font-size:13.5px;font-weight:700;color:#233129;line-height:1.4}
+    .market-card-headline{margin:0;font-size:15.5px;font-weight:700;color:#233129;line-height:1.4}
     .market-card-highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:1px;background:#eef2ef;border-radius:12px;overflow:hidden}
     .market-card-highlights>div{padding:10px 12px;background:#fbfcfb;display:flex;flex-direction:column;gap:4px}
-    .market-card-highlights small{font-size:8px;font-weight:800;letter-spacing:.06em;color:#7a877f;text-transform:uppercase}
-    .market-card-highlights strong{font-size:12.5px;color:#151a17}
+    .market-card-highlights small{font-size:10px;font-weight:800;letter-spacing:.06em;color:#7a877f;text-transform:uppercase}
+    .market-card-highlights strong{font-size:14.5px;color:#151a17}
     .market-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;border-top:1px solid #eef2ef}
-    .market-card-foot>time{font-size:10px;color:#8a948e;flex:0 0 auto}
+    .market-card-foot>time{font-size:12px;color:#8a948e;flex:0 0 auto}
     .market-card-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-    .market-icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e1e8e3;border-radius:9px;background:#fff;color:#6d7972;font-size:14px;cursor:pointer;transition:.16s}
+    .market-icon-btn{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e1e8e3;border-radius:9px;background:#fff;color:#6d7972;font-size:16px;cursor:pointer;transition:.16s}
     .market-icon-btn:hover{border-color:#9cd3b6;color:#087a50}
     .market-icon-btn.active{background:#e8f6ef;border-color:#9cd3b6;color:#087a50}
-    .market-secondary-btn,.market-primary-btn,.market-decline-btn{border-radius:9px;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .market-secondary-btn,.market-primary-btn,.market-decline-btn{border-radius:9px;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
     .market-secondary-btn{border:1px solid #d7e0dc;background:#fff;color:#3c4a43}
     .market-secondary-btn:hover{border-color:#087a50;color:#087a50}
     .market-primary-btn{border:1px solid #087a50;background:#087a50;color:#fff}
@@ -86,7 +86,7 @@ import { OfferJourneyTrackerComponent } from './offer-journey-tracker.component'
     .market-decline-btn:hover{background:#fdeceb}
     .market-card-compact{padding:16px;gap:10px}
     .market-card-compact .market-card-logo{width:36px;height:36px}
-    .market-card-compact .market-card-identity strong{font-size:13px}
+    .market-card-compact .market-card-identity strong{font-size:15px}
     @media(max-width:480px){.market-card-actions{width:100%;justify-content:flex-start}}
   `]
 })

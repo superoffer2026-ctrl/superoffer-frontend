@@ -23,6 +23,7 @@ import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
           <p>Here’s what needs your attention today.</p>
         </div>
         <div class="student-header-actions">
+          <span class="submitted-chip" *ngIf="isSubmitted">✓ Submitted — visible to universities</span>
           <a class="header-secondary" routerLink="/student/profile">View profile</a>
           <a class="header-primary" routerLink="/student/offers">My offers <b>{{walletStore.totalCount}}</b></a>
         </div>
@@ -35,8 +36,8 @@ import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
         [ielts]="store.values['englishScore']"
         [preferredCountry]="store.values['countries']"
         [preferredCourse]="store.values['fieldOfInterest']"
-        [completionPct]="82"
-        [verified]="true" />
+        [completionPct]="completionPct"
+        [verified]="isSubmitted" />
 
       <section class="wallet-stat-row" soReveal>
         <article><so-stat-counter [compact]="true" [value]="walletStore.totalCount" label="Total offers" /></article>
@@ -54,15 +55,19 @@ import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
           <div class="journey-icon">✓</div>
           <div>
             <span>YOUR NEXT STEP</span>
-            <h2>Finish your profile to improve your matches</h2>
-            <p>Add your academic transcript and confirm your study preferences. It takes about 8 minutes.</p>
+            <h2 *ngIf="isSubmitted">Your profile is live with our partner universities</h2>
+            <h2 *ngIf="!isSubmitted">Finish your profile to improve your matches</h2>
+            <p *ngIf="isSubmitted">Submitted {{submittedAtLabel}}. Universities and lenders can now discover and match you with offers.</p>
+            <p *ngIf="!isSubmitted">Complete every section and submit from Review Profile so universities can discover you.</p>
           </div>
-          <a routerLink="/student/personal-information">Continue profile <b>→</b></a>
+          <a *ngIf="!isSubmitted" routerLink="/student/personal-information">Continue profile <b>→</b></a>
+          <a *ngIf="isSubmitted" routerLink="/student/review">View submission <b>→</b></a>
         </div>
         <div class="journey-progress">
-          <div><span>Profile strength</span><strong>82%</strong></div>
-          <div class="journey-track"><i></i></div>
-          <small>Two sections need attention</small>
+          <div><span>Profile strength</span><strong>{{completionPct}}%</strong></div>
+          <div class="journey-track"><i [style.width.%]="completionPct"></i></div>
+          <small *ngIf="!isSubmitted">{{missingSectionCount}} section{{missingSectionCount===1?'':'s'}} need attention</small>
+          <small *ngIf="isSubmitted">All required sections complete</small>
         </div>
       </section>
 
@@ -138,4 +143,37 @@ export class StudentDashboardComponent {
   constructor(public store:StudentProfileUiStore, public walletStore:OfferWalletStore, private router:Router){}
   get firstName(){return (this.store.values['fullName']||'Student').split(/\s+/)[0];}
   goToOffers(){this.router.navigate(['/student/offers']);}
+
+  private v(key: string): string { return this.store.values[key] || ''; }
+
+  get isSubmitted(): boolean { return this.store.values['profileStatus'] === 'SUBMITTED'; }
+
+  get submittedAtLabel(): string {
+    const raw = this.store.values['submittedAt'];
+    if (!raw) return '';
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? '' : `on ${date.toLocaleDateString()}`;
+  }
+
+  private requiredChecklist(): boolean[] {
+    return [
+      !!this.v('fullName'), !!this.v('email'), !!this.v('mobileNumber'), !!this.v('country'), !!this.v('city'),
+      !!this.v('countries'), !!this.v('fieldOfInterest'), !!this.v('studyLevel'), !!this.v('startYear'), !!this.v('intake'),
+      !!this.v('qualificationLevel'), !!this.v('institution'), !!this.v('score'), !!this.v('graduationYear')
+    ];
+  }
+
+  get completionPct(): number {
+    const checklist = this.requiredChecklist();
+    return Math.round((checklist.filter(Boolean).length / checklist.length) * 100);
+  }
+
+  get missingSectionCount(): number {
+    const missing = [
+      !(this.v('fullName') && this.v('email') && this.v('mobileNumber') && this.v('country') && this.v('city')),
+      !(this.v('countries') && this.v('fieldOfInterest') && this.v('studyLevel') && this.v('startYear') && this.v('intake')),
+      !(this.v('qualificationLevel') && this.v('institution') && this.v('score') && this.v('graduationYear'))
+    ];
+    return missing.filter(Boolean).length;
+  }
 }

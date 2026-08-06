@@ -18,7 +18,7 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
         </div><small>Role-based access • Secure sessions • Privacy by design</small>
       </aside>
       <section class="auth-panel">
-        <form (ngSubmit)="submit()" #authForm="ngForm">
+        <form (ngSubmit)="onFormSubmit()" #authForm="ngForm">
           <a class="back-link" [routerLink]="['/', portal]">← Back to {{portalLabel}}</a>
           <span class="eyebrow">{{mode === 'login' ? 'Secure sign in' : 'Account registration'}}</span>
           <h2>{{mode === 'login' ? 'Log in to SuperOffer' : 'Create your account'}}</h2>
@@ -34,26 +34,42 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
             <label>Confirm password<input name="confirmPassword" type="password" [(ngModel)]="form.confirmPassword" minlength="8" required placeholder="Re-enter your password"></label>
           </div>
 
-          <div class="form-grid" *ngIf="mode === 'register' && portal !== 'organization'">
+          <div class="form-grid" *ngIf="mode === 'register' && portal !== 'organization' && portal !== 'student'">
             <label>Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
             <label>Phone number<input name="phone" [(ngModel)]="form.phone" placeholder="+91 00000 00000"></label>
             <label class="full">Official email<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
-            <ng-container *ngIf="portal !== 'student'">
-              <label class="full">Organisation legal name<input name="organization" [(ngModel)]="form.organization" required></label>
-              <label>Registration number<input name="registrationNumber" [(ngModel)]="form.registrationNumber"></label>
-              <label>Accreditation / licence reference<input name="license" [(ngModel)]="form.license"></label>
-            </ng-container>
+            <label class="full">Organisation legal name<input name="organization" [(ngModel)]="form.organization" required></label>
+            <label>Registration number<input name="registrationNumber" [(ngModel)]="form.registrationNumber"></label>
+            <label>Accreditation / licence reference<input name="license" [(ngModel)]="form.license"></label>
             <label class="full">Password<input name="password" type="password" [(ngModel)]="form.password" minlength="8" required placeholder="8+ characters with a letter and number"></label>
           </div>
 
-          <div *ngIf="mode === 'login'">
+          <div *ngIf="mode === 'login' && portal !== 'student'">
             <label>Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
             <label>Password<input name="password" type="password" [(ngModel)]="form.password" required placeholder="Enter your password"></label>
             <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="form.remember"> Keep me signed in</label>
             <p class="form-message success">Demo mode: enter any valid email and password to continue.</p>
           </div>
+
+          <div class="form-grid" *ngIf="portal === 'student'">
+            <label class="full" *ngIf="mode === 'register'">Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
+            <label class="full">Mobile number
+              <div class="phone-input-row">
+                <select name="mobileCountry" [(ngModel)]="form.mobileCountry" required>
+                  <option value="+91">+91 IN</option>
+                  <option value="+1">+1 US</option>
+                  <option value="+44">+44 UK</option>
+                  <option value="+971">+971 AE</option>
+                  <option value="+61">+61 AU</option>
+                </select>
+                <input name="mobileNumber" type="tel" inputmode="numeric" [(ngModel)]="form.mobileNumber" required minlength="7" placeholder="98765 43210">
+              </div>
+            </label>
+            <p class="form-message success full">We'll send a one-time code to this number on WhatsApp.</p>
+          </div>
+
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
-          <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : mode === 'login' ? 'Log in securely' : 'Create account'}}</button>
+          <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : buttonLabel}}</button>
           <p class="switch">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
             <a [routerLink]="['/auth', mode === 'login' ? 'register' : 'login', portal]">{{mode === 'login' ? 'Create an account' : 'Log in'}}</a></p>
         </form>
@@ -64,9 +80,13 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
 export class AuthPageComponent implements OnInit {
   portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   orgTypeOptions = ORG_TYPE_OPTIONS;
-  form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true};
+  form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
   constructor(private route:ActivatedRoute,private router:Router){}
-  ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';});}
+  ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});}
+  get buttonLabel(){
+    if(this.portal==='student')return 'Send OTP via WhatsApp';
+    return this.mode==='login'?'Log in securely':'Create account';
+  }
   get portalLabel(){return this.portal[0].toUpperCase()+this.portal.slice(1);}
   get authTitle(){return this.portal==='student'?'Build your opportunity profile.':`Register your ${this.portal} securely.`;}
   get authCopy(){
@@ -99,7 +119,8 @@ export class AuthPageComponent implements OnInit {
     sessionStorage.removeItem('superoffer_access_token');
     (this.form.remember?localStorage:sessionStorage).setItem('superoffer_access_token',session.access_token);
     sessionStorage.setItem('superoffer_role',session.role);
-    sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email,organization:session.organization}));
+    const mobile=this.portal==='student'?`${this.form.mobileCountry} ${this.form.mobileNumber}`:undefined;
+    sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email||undefined,mobile,organization:session.organization}));
     if(this.portal==='organization'){
       const orgType = this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email);
       rememberOrganizationType(this.form.email, orgType);
@@ -110,10 +131,17 @@ export class AuthPageComponent implements OnInit {
     const studentDestination = this.mode === 'register' ? ['/student/onboarding'] : ['/student/dashboard'];
     await this.router.navigate(this.portal==='student'?studentDestination:['/portal',this.portal]);
   }
+  onFormSubmit(){
+    this.submit();
+  }
   async submit(){
     this.loading=true;this.error='';this.message='';
     if(this.portal==='organization'&&this.mode==='register'&&this.form.password!==this.form.confirmPassword){
       this.error='Passwords do not match.';this.loading=false;return;
+    }
+    if(this.portal==='student'){
+      const digits=this.form.mobileNumber.replace(/\D/g,'');
+      if(digits.length<7){this.error='Enter a valid mobile number.';this.loading=false;return;}
     }
     const session={
       role:this.role(),

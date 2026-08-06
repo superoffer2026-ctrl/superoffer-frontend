@@ -26,15 +26,15 @@ const STAGE_ORDER: JourneyStage[] = ['Received', 'Viewed', 'Compared', 'Shortlis
     .otrack-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;text-align:center}
     .otrack-step:not(:last-child):after{content:"";position:absolute;top:11px;left:calc(50% + 14px);right:calc(-50% + 14px);height:2px;background:#e1e8e3}
     .otrack-step.done:not(:last-child):after{background:#087a50}
-    .otrack-dot{width:22px;height:22px;flex:0 0 auto;display:grid;place-items:center;border-radius:50%;background:#eef2ef;color:#7a877f;font-size:10px;font-weight:800;z-index:1}
+    .otrack-dot{width:22px;height:22px;flex:0 0 auto;display:grid;place-items:center;border-radius:50%;background:#eef2ef;color:#7a877f;font-size:12px;font-weight:800;z-index:1}
     .otrack-step.current .otrack-dot{background:#087a50;color:#fff;box-shadow:0 0 0 4px rgba(8,122,80,.15)}
     .otrack-step.done .otrack-dot{background:#087a50;color:#fff}
-    .otrack-step small{font-size:8px;font-weight:800;color:#7a877f;letter-spacing:.03em}
+    .otrack-step small{font-size:10px;font-weight:800;color:#7a877f;letter-spacing:.03em}
     .otrack-step.current small,.otrack-step.done small{color:#173025}
     .otrack-declined-dot .otrack-dot{background:#d8503b!important;color:#fff!important}
     .otrack-accepted-dot .otrack-dot{background:#087a50!important;color:#fff!important;box-shadow:0 0 0 4px rgba(8,122,80,.15)}
     .otrack-compact .otrack-step{gap:0}
-    .otrack-compact .otrack-dot{width:16px;height:16px;font-size:8px}
+    .otrack-compact .otrack-dot{width:16px;height:16px;font-size:10px}
     .otrack-compact .otrack-step:not(:last-child):after{top:8px}
   `]
 })

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
 
@@ -12,7 +12,7 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 1 OF 8</span>
+        <span>STEP 1 OF 7</span>
         <h1>Personal Information</h1>
         <p>Tell us who you are and how institutions and lenders can reach you. This information is used across your SuperOffer profile.</p>
       </div>
@@ -129,9 +129,12 @@ export class PersonalInformationComponent {
   submitted = false;
   showAltMobile = false;
 
-  constructor(public store: StudentProfileUiStore, private router: Router) {
+  private returnToReview = false;
+
+  constructor(public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
     this.showAltMobile = !!(this.store.values['altMobileNumber'] || this.store.values['altMobileCountry']);
     if (!this.store.values['mobileCountry']) this.store.values['mobileCountry'] = 'IN';
+    this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
   }
 
   get initials() {
@@ -222,6 +225,6 @@ export class PersonalInformationComponent {
     const mobile = `${this.dialFor(this.store.values['mobileCountry'])} ${this.store.values['mobileNumber'] || ''}`.trim();
     this.store.values['phone'] = mobile;
     this.store.values['location'] = [this.store.values['city'], this.store.values['country']].filter(Boolean).join(', ');
-    this.router.navigateByUrl('/student/study-preferences');
+    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/study-preferences');
   }
 }
