@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PortalKey } from '../../core/auth-api.service';
 import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, rememberOrganizationType } from '../../core/organization.models';
-import { OrganizationRegistrationsStore } from '../../core/organization-registrations.store';
 
 @Component({
   selector:'app-auth-page', standalone:true, imports:[CommonModule,FormsModule,RouterLink],
@@ -25,7 +24,7 @@ import { OrganizationRegistrationsStore } from '../../core/organization-registra
           <h2>{{mode === 'login' ? 'Log in to SuperOffer' : 'Create your account'}}</h2>
           <p>{{mode === 'login' ? 'Enter the details associated with your account.' : 'Use accurate information to create your role-specific access.'}}</p>
 
-          <div class="form-grid" *ngIf="mode === 'register' && portal === 'organization' && !orgRegistrationSubmitted">
+          <div class="form-grid" *ngIf="mode === 'register' && portal === 'organization'">
             <label class="full">Organization name<input name="organization" [(ngModel)]="form.organization" required placeholder="Your organization's legal name"></label>
             <label>Organization type<select name="orgType" [(ngModel)]="form.orgType" required><option *ngFor="let opt of orgTypeOptions" [value]="opt.value">{{opt.label}}</option></select></label>
             <label>Country<input name="country" [(ngModel)]="form.country" required placeholder="Country"></label>
@@ -70,7 +69,7 @@ import { OrganizationRegistrationsStore } from '../../core/organization-registra
           </div>
 
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
-          <button type="submit" class="button primary wide-button" *ngIf="!orgRegistrationSubmitted" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : buttonLabel}}</button>
+          <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : buttonLabel}}</button>
           <p class="switch">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
             <a [routerLink]="['/auth', mode === 'login' ? 'register' : 'login', portal]">{{mode === 'login' ? 'Create an account' : 'Log in'}}</a></p>
         </form>
@@ -79,11 +78,11 @@ import { OrganizationRegistrationsStore } from '../../core/organization-registra
   `
 })
 export class AuthPageComponent implements OnInit {
-  portal: PortalKey='student'; mode='login'; loading=false; error=''; message=''; orgRegistrationSubmitted=false;
+  portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   orgTypeOptions = ORG_TYPE_OPTIONS;
   form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
-  constructor(private route:ActivatedRoute,private router:Router,private orgRegistrations:OrganizationRegistrationsStore){}
-  ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';this.orgRegistrationSubmitted=false;});}
+  constructor(private route:ActivatedRoute,private router:Router){}
+  ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});}
   get buttonLabel(){
     if(this.portal==='student')return 'Send OTP via WhatsApp';
     return this.mode==='login'?'Log in securely':'Create account';
@@ -137,23 +136,8 @@ export class AuthPageComponent implements OnInit {
   }
   async submit(){
     this.loading=true;this.error='';this.message='';
-    if(this.portal==='organization'&&this.mode==='register'){
-      if(this.form.password!==this.form.confirmPassword){this.error='Passwords do not match.';this.loading=false;return;}
-      this.orgRegistrations.submit({
-        fullName:this.form.fullName,email:this.form.email,phone:this.form.phone,
-        organizationName:this.form.organization,orgType:this.form.orgType,country:this.form.country
-      });
-      this.orgRegistrationSubmitted=true;
-      this.message=`${this.form.organization||'Your organization'} has been submitted for review. A SuperOffer admin will approve or reject access, and you'll be able to log in once approved.`;
-      this.loading=false;
-      return;
-    }
-    if(this.portal==='organization'&&this.mode==='login'){
-      const record=this.orgRegistrations.findByEmail(this.form.email);
-      if(!record){this.error='No organization registration found for this email. Please register first.';this.loading=false;return;}
-      if(record.approval_status==='PENDING'){this.error='Your organization is still being reviewed by the SuperOffer admin team.';this.loading=false;return;}
-      if(record.approval_status==='REJECTED'){this.error=`Your registration was not approved${record.rejection_reason?': '+record.rejection_reason:'.'}`;this.loading=false;return;}
-      rememberOrganizationType(this.form.email,record.organization.organizationType);
+    if(this.portal==='organization'&&this.mode==='register'&&this.form.password!==this.form.confirmPassword){
+      this.error='Passwords do not match.';this.loading=false;return;
     }
     if(this.portal==='student'){
       const digits=this.form.mobileNumber.replace(/\D/g,'');
