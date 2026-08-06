@@ -1,9 +1,9 @@
 import { UNIVERSITY_OPTIONS } from './university-options';
 
-export type Qualification = '10th' | '12th' | 'Diploma' | "Bachelor's Degree" | "Master's Degree";
+export type Qualification = '12th' | 'Diploma' | "Bachelor's Degree" | "Master's Degree";
 
 export const QUALIFICATION_OPTIONS: Qualification[] = [
-  '10th', '12th', 'Diploma', "Bachelor's Degree", "Master's Degree"
+  '12th', 'Diploma', "Bachelor's Degree", "Master's Degree"
 ];
 
 export const CURRICULUM_OPTIONS: string[] = ['CBSE', 'ICSE', 'State Board', 'IB', 'IGCSE', 'NIOS', 'Other'];
@@ -34,16 +34,11 @@ const completionYearField: EduField = { key: 'completionYear', label: 'Completio
 const yearsOfEducationField: EduField = { key: 'yearsOfEducation', label: 'Years of Education', type: 'number', placeholder: 'e.g. 10' };
 const curriculumField: EduField = { key: 'curriculum', label: 'Curriculum', type: 'select', options: CURRICULUM_OPTIONS };
 
+const schoolNameField: EduField = { key: 'institutionName', label: 'School Name', type: 'text', placeholder: 'e.g. Delhi Public School', wide: true };
+
 export const QUALIFICATION_FIELDS: Record<Qualification, EduField[]> = {
-  '10th': [
-    curriculumField,
-    cgpaField,
-    startedYearField,
-    completionYearField,
-    yearsOfEducationField,
-    { key: 'markCertificate', label: '10th Mark Certificate', type: 'file' }
-  ],
   '12th': [
+    schoolNameField,
     curriculumField,
     cgpaField,
     startedYearField,
@@ -52,6 +47,7 @@ export const QUALIFICATION_FIELDS: Record<Qualification, EduField[]> = {
     { key: 'markCertificate', label: '12th Mark Certificate', type: 'file' }
   ],
   Diploma: [
+    { key: 'institutionName', label: 'College Name', type: 'text', placeholder: 'e.g. Government Polytechnic College', wide: true },
     { key: 'specialization', label: 'Specialization', type: 'text', placeholder: 'e.g. Mechanical Engineering' },
     cgpaField,
     backlogsField,

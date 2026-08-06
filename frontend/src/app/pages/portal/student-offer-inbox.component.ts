@@ -4,23 +4,22 @@ import { FormsModule } from '@angular/forms';
 import { StudentProfileUiStore } from '../student-portal/student-profile-ui.store';
 import { StudentWorkspaceRailComponent } from '../student-portal/student-workspace-rail.component';
 import { OfferDecisionStatus, OfferWalletStore, StudentOffer } from '../student-portal/offer-wallet.models';
-import { OfferJourneyTrackerComponent } from '../student-portal/offer-journey-tracker.component';
 
 type OfferFilter = 'All' | OfferDecisionStatus;
 
 @Component({
   selector: 'app-student-offer-inbox',
   standalone: true,
-  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent, OfferJourneyTrackerComponent],
+  imports: [CommonModule, FormsModule, StudentWorkspaceRailComponent],
   styleUrl: '../../offer-workspace.css',
   styles: [`
     :host{--line:#dfe6e1;--muted:#6d7972;--green:#087a50;display:block;min-height:100vh;background:#fff;color:#172019;font-family:"DM Sans",sans-serif}
     button,input{font:inherit}.logo{display:grid;place-items:center;border-radius:10px;background:#102f45;color:#fff;font-weight:900}
-    .inbox-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:#102f45;color:#67d0b2;text-decoration:none;font-size:17px;font-weight:900}
+    .inbox-logo{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:11px;background:#102f45;color:#67d0b2;text-decoration:none;font-size:19px;font-weight:900}
     .offers-utility-rail{position:fixed;inset:0 auto 0 0;z-index:20;width:68px;display:flex;flex-direction:column;align-items:center;padding:16px 0;box-sizing:border-box;background:#f8faf9;border-right:1px solid #d7e0dc}
     .offers-utility-rail .student-profile-link{margin-top:auto}
-    .student-profile-link{display:flex;align-items:center;gap:8px;padding:3px;border-radius:50%;color:#172019;text-decoration:none;transition:.18s}.student-profile-link:hover{background:#dce8ed}.student-profile-link>span{width:39px;height:39px;display:grid;place-items:center;overflow:hidden;border:2px solid #cbded5;border-radius:50%;background:#e7f4ed;color:var(--green);font-size:11px;font-weight:900}.student-profile-link img{width:100%;height:100%;object-fit:cover}
-    .conversation-options{border:0;background:transparent;color:#718078;font-size:20px;font-weight:800;letter-spacing:2px;cursor:pointer;padding:8px}
+    .student-profile-link{display:flex;align-items:center;gap:8px;padding:3px;border-radius:50%;color:#172019;text-decoration:none;transition:.18s}.student-profile-link:hover{background:#dce8ed}.student-profile-link>span{width:39px;height:39px;display:grid;place-items:center;overflow:hidden;border:2px solid #cbded5;border-radius:50%;background:#e7f4ed;color:var(--green);font-size:13px;font-weight:900}.student-profile-link img{width:100%;height:100%;object-fit:cover}
+    .conversation-options{border:0;background:transparent;color:#718078;font-size:22px;font-weight:800;letter-spacing:2px;cursor:pointer;padding:8px}
     .primary-btn,.secondary-btn{border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer}.primary-btn{border:1px solid var(--green);background:var(--green);color:#fff}.secondary-btn{border:1px solid #ccd8d1;background:#fff;color:#445149}
     .mailbox-error{margin:12px 18px;padding:12px;border-radius:8px;background:#fff0ee;color:#a93628}.institution-logo{flex:0 0 auto}.institution-logo.bank-logo{background:#fff2e8!important;color:#b55a24!important;border-color:#efd4c2}
     @media(max-width:720px){
@@ -99,9 +98,6 @@ type OfferFilter = 'All' | OfferDecisionStatus;
               <section class="offer-next-steps">
                 <div><small>NEXT STEPS</small><strong>To progress this offer</strong></div>
                 <ul><li *ngFor="let step of selected.nextSteps">{{step}}</li></ul>
-              </section>
-              <section class="offer-conditions" style="margin-top:14px">
-                <div><h3>Offer journey</h3><app-offer-journey-tracker [stage]="walletStore.stage(selected)" /></div>
               </section>
             </div>
             <footer class="offer-decision-bar">

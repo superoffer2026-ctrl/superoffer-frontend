@@ -12,7 +12,7 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 6 OF 8</span>
+        <span>STEP 6 OF 7</span>
         <h1>Projects &amp; Achievements</h1>
         <p>Showcase the projects, experience and recognition that set your profile apart. This step is optional.</p>
       </div>

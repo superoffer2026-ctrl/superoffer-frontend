@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OrganizationType } from '../../core/organization.models';
+import { SubmittedStudentsStore } from '../../core/submitted-students.store';
 
 type Role = OrganizationType;
 type OrganizationView = 'dashboard' | 'students' | 'offers' | 'saved' | 'notifications' | 'subscription' | 'profile' | 'settings';
@@ -179,7 +180,7 @@ const ROLE_CONFIG: Record<Role, any> = {
 
                   <div class="stage-content">
                     <div class="stage-content-scroll">
-                      <div class="stage-top-row"><span>{{browseIndex+1}} of {{filteredStudents.length}} · Verified student · Indian national</span></div>
+                      <div class="stage-top-row"><span>{{browseIndex+1}} of {{filteredStudents.length}} · Verified student · Indian national</span><span *ngIf="currentStudent.live" style="display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 9px;border-radius:999px;background:#e2f1e8;color:#087a50;font-size:12px;font-weight:900;letter-spacing:.04em">● JUST SUBMITTED</span></div>
                       <h1 class="stage-headline">{{currentStudent.name}}</h1>
                       <span class="stage-role-pill">{{currentStudent.degree}} · {{currentStudent.course}}</span>
                       <p class="stage-sub">Targeting {{currentStudent.country}} · {{currentStudent.intake}}</p>
@@ -406,7 +407,7 @@ export class OrganizationWorkspaceComponent {
     visibility:'' as '' | 'academicOnly' | 'offerAvailable'
   };
 
-  students = [
+  demoStudents = [
     {name:'Aarav Mehta',initials:'AM',photo:'/intelligent-matching-students.png',course:'Data Science',country:'Canada',degree:'Postgraduate',cgpa:'8.9 / 10',cgpaValue:8.9,ielts:7.5,englishTest:'IELTS' as const,englishScore:7.5,backlogs:0,workExperienceYears:0,visaRefused:false,documentsVerified:5,examScore:'IELTS 7.5 · GRE 323',budget:'₹38,00,000',budgetValue:3800000,financialSummary:'Family income ₹18L/yr · Savings ₹12L',skills:['Python','SQL','Machine Learning','Tableau'],score:94,factor:'Strong academic fit',intake:'Fall 2027',scholarshipSeeking:true,bio:'Data-focused engineering graduate building responsible machine-learning products for education.',color:'#0f6f54',eligible:true,eligibilityNote:'Co-applicant income and collateral cover the requested amount within standard lending limits.',
       toefl:100,gre:323,familyIncome:1800000,requiredLoanAmount:2600000,
       universityInterests:[{university:'Northbridge University',country:'Canada',course:'MSc Data Science',status:'Admitted' as UniversityOfferStatus,scholarship:'40% tuition',tuitionFee:'CAD 42,000 / year',remainingTuition:'CAD 25,200 / year',livingCost:'CAD 14,000 / year',logo:'/logos/northbridge.png'}]},
@@ -421,6 +422,10 @@ export class OrganizationWorkspaceComponent {
     {name:'Riya Patel',initials:'RP',photo:'/intelligent-matching-students.png',course:'International Business',country:'Canada',degree:'Postgraduate',cgpa:'8.4 / 10',cgpaValue:8.4,ielts:7.5,englishTest:'IELTS' as const,englishScore:7.5,backlogs:1,workExperienceYears:2,visaRefused:false,documentsVerified:4,examScore:'IELTS 7.5 · GMAT 680',budget:'₹30,00,000',budgetValue:3000000,financialSummary:'Family income ₹14L/yr · Savings ₹9L',skills:['Market Research','Excel','Negotiation','Power BI'],score:84,factor:'Budget aligned',intake:'Fall 2027',scholarshipSeeking:true,bio:'International-business graduate with export-consulting internship experience across two markets.',color:'#9a4f63',eligible:false,eligibilityNote:'Requested budget exceeds standard debt-to-income guidelines for the declared co-applicant income.',
       gmat:680,familyIncome:1400000,requiredLoanAmount:2100000}
   ];
+
+  get students(): any[] {
+    return [...this.submittedStudentsStore.list(), ...this.demoStudents];
+  }
 
   orgName=ROLE_CONFIG['UNIVERSITY'].orgNameDefault;
   orgDomain=ROLE_CONFIG['UNIVERSITY'].orgDomainDefault;
@@ -598,7 +603,14 @@ export class OrganizationWorkspaceComponent {
     this.notify(`Loan evaluation mode set to ${this.bankEvaluationModeOptions.find(o=>o.value===mode)?.label}`);
   }
 
-  constructor(private router:Router,private route:ActivatedRoute){
+  @HostListener('window:storage', ['$event'])
+  onStorageChange(event: StorageEvent) {
+    // No-op body: just being inside NgZone's patched listener is enough to
+    // trigger change detection so newly submitted students appear live.
+    if (event.key) { /* re-render */ }
+  }
+
+  constructor(private router:Router,private route:ActivatedRoute,private submittedStudentsStore:SubmittedStudentsStore){
     const storedRole = (sessionStorage.getItem('superoffer_org_type') as Role) || 'UNIVERSITY';
     this.applyRole(storedRole);
     this.route.data.subscribe(data=>{

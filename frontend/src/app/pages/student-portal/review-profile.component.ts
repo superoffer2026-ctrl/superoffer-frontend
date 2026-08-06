@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
+import { SubmittedStudentsStore, mapProfileToOrgStudent } from '../../core/submitted-students.store';
 
 interface ExamEntry { exam: string; status: string; score: string; expectedScore: string; currentScore: string; }
 interface ProjectEntry { title: string; role: string; description: string; }
@@ -13,7 +14,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
   template: `
     <section class="step-page">
       <div class="step-heading">
-        <span>STEP 7 OF 8</span>
+        <span>STEP 7 OF 7</span>
         <h1>Review Profile</h1>
         <p>Check everything looks right before submitting your profile to our partner universities, banks and consultants.</p>
       </div>
@@ -42,12 +43,12 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>Personal Information</h2>
               <span class="section-status" [class.ok]="personalComplete()" [class.warn]="!personalComplete()">{{ personalComplete() ? '✓ Complete' : '⚠ Incomplete' }}</span>
             </div>
-            <a class="edit-btn" routerLink="/student/personal-information">Edit</a>
+            <a class="edit-btn" routerLink="/student/personal-information" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="summary-list">
             <div class="summary-item"><span>Full Name</span><strong [class.empty]="!v('fullName')">{{ v('fullName') || 'Not added' }}</strong></div>
             <div class="summary-item"><span>Email</span><strong [class.empty]="!v('email')">{{ v('email') || 'Not added' }}</strong></div>
-            <div class="summary-item"><span>Mobile</span><strong [class.empty]="!v('mobileNumber')">{{ v('phone') || 'Not added' }}</strong></div>
+            <div class="summary-item"><span>Mobile</span><strong [class.empty]="!v('mobileNumber')">{{ v('mobileNumber') || 'Not added' }}</strong></div>
             <div class="summary-item"><span>Country</span><strong [class.empty]="!v('country')">{{ v('country') || 'Not added' }}</strong></div>
             <div class="summary-item"><span>City</span><strong [class.empty]="!v('city')">{{ v('city') || 'Not added' }}</strong></div>
           </div>
@@ -61,7 +62,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>Study Preferences</h2>
               <span class="section-status" [class.ok]="studyComplete()" [class.warn]="!studyComplete()">{{ studyComplete() ? '✓ Complete' : '⚠ Incomplete' }}</span>
             </div>
-            <a class="edit-btn" routerLink="/student/study-preferences">Edit</a>
+            <a class="edit-btn" routerLink="/student/study-preferences" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="summary-list">
             <div class="summary-item"><span>Countries</span><strong [class.empty]="!v('countries')">{{ v('countries') || 'Not added' }}</strong></div>
@@ -80,7 +81,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>Academic Information</h2>
               <span class="section-status" [class.ok]="academicComplete()" [class.warn]="!academicComplete()">{{ academicComplete() ? '✓ Complete' : '⚠ Incomplete' }}</span>
             </div>
-            <a class="edit-btn" routerLink="/student/academic-information">Edit</a>
+            <a class="edit-btn" routerLink="/student/academic-information" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="summary-list">
             <div class="summary-item"><span>Highest Qualification</span><strong [class.empty]="!v('qualificationLevel')">{{ v('qualificationLevel') || 'Not added' }}</strong></div>
@@ -98,7 +99,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>English Language Tests</h2>
               <span class="section-status ok" *ngIf="englishExams().length">✓ {{englishExams().length}} added</span>
             </div>
-            <a class="edit-btn" routerLink="/student/entrance-exams">Edit</a>
+            <a class="edit-btn" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="entry-list" *ngIf="englishExams().length">
             <div class="entry-row" *ngFor="let e of englishExams()">
@@ -109,7 +110,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
           <div class="empty-state" *ngIf="!englishExams().length">
             <span class="empty-icon">📝</span>
             <p>No English test recorded yet.</p>
-            <a class="empty-cta" routerLink="/student/entrance-exams">+ Add now</a>
+            <a class="empty-cta" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">+ Add now</a>
           </div>
         </div>
 
@@ -121,7 +122,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>Standardized Tests</h2>
               <span class="section-status ok" *ngIf="competitiveExams().length">✓ {{competitiveExams().length}} added</span>
             </div>
-            <a class="edit-btn" routerLink="/student/entrance-exams">Edit</a>
+            <a class="edit-btn" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="entry-list" *ngIf="competitiveExams().length">
             <div class="entry-row" *ngFor="let e of competitiveExams()">
@@ -132,7 +133,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
           <div class="empty-state" *ngIf="!competitiveExams().length">
             <span class="empty-icon">🧮</span>
             <p>No standardized test recorded yet.</p>
-            <a class="empty-cta" routerLink="/student/entrance-exams">+ Add now</a>
+            <a class="empty-cta" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">+ Add now</a>
           </div>
         </div>
 
@@ -143,7 +144,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
             <div class="section-title-block">
               <h2>Projects &amp; Achievements</h2>
             </div>
-            <a class="edit-btn" routerLink="/student/projects">Edit</a>
+            <a class="edit-btn" routerLink="/student/projects" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="entry-list" *ngIf="projects().length">
             <div class="entry-row" *ngFor="let p of projects()">
@@ -156,7 +157,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
           <div class="empty-state" *ngIf="!projects().length && !achievements().length">
             <span class="empty-icon">🏆</span>
             <p>No projects or achievements added yet.</p>
-            <a class="empty-cta" routerLink="/student/projects">+ Add now</a>
+            <a class="empty-cta" routerLink="/student/projects" [queryParams]="{from:'review'}">+ Add now</a>
           </div>
         </div>
       </div>
@@ -169,7 +170,11 @@ interface ProjectEntry { title: string; role: string; description: string; }
   `
 })
 export class ReviewProfileComponent {
-  constructor(public store: StudentProfileUiStore, private router: Router) {}
+  constructor(
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private submittedStudentsStore: SubmittedStudentsStore
+  ) {}
 
   v(key: string): string { return this.store.values[key] || ''; }
 
@@ -227,7 +232,9 @@ export class ReviewProfileComponent {
   }
 
   submitProfile() {
-    if (this.completionPct < 100) return;
-    this.router.navigateByUrl('/student/completion');
+    this.submittedStudentsStore.upsert(mapProfileToOrgStudent(this.store.values, this.store.photo));
+    this.store.values['profileStatus'] = 'SUBMITTED';
+    this.store.values['submittedAt'] = new Date().toISOString();
+    this.router.navigateByUrl('/student/dashboard');
   }
 }
