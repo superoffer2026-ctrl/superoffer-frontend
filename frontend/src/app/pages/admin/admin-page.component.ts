@@ -3,6 +3,12 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthApiService } from '../../core/auth-api.service';
+import { OrganizationRegistrationsStore } from '../../core/organization-registrations.store';
+
+// Falls back to this key when the real admin API isn't reachable yet (the
+// NestJS backend doesn't implement the approval endpoints yet) so the queue
+// can still be reviewed against locally stored registrations.
+const LOCAL_FALLBACK_ADMIN_KEY = 'development-admin-key';
 
 // ── Mock auth log data ──────────────────────────────────────────────────────
 const MOCK_AUTH_LOGS: AuthLogEntry[] = [
@@ -130,9 +136,11 @@ interface AuthLogEntry {
           <p class="message error" *ngIf="error">{{error}}</p>
           <button class="primary wide" [disabled]="loading">{{loading?'Connecting…':'Open verification queue'}}</button>
         </form>
+        <p style="margin-top:16px;font-size:12px;color:var(--muted)">No backend connected yet? Use <code>development-admin-key</code> to review registrations stored on this device.</p>
       </section>
 
       <section class="admin-main" *ngIf="authenticated">
+        <p class="message" style="background:#fff3d9;color:#93600f;margin-bottom:18px" *ngIf="localMode">Showing local browser data — the backend approval API isn't connected yet, so reviews here are stored on this device only.</p>
         <header class="page-head">
           <div>
             <span class="eyebrow">TRUST &amp; VERIFICATION</span>
@@ -379,7 +387,7 @@ export class AdminPageComponent implements OnInit, OnDestroy {
   private refreshTimer?: number;
 
   // Existing state
-  adminKey=''; authenticated=false; loading=false; error=''; reviewing=false;
+  adminKey=''; authenticated=false; loading=false; error=''; reviewing=false; localMode=false;
   view: 'dashboard'|'queue'|'audit'|'auth-logs' = 'dashboard';
   status='PENDING'; orgType='ALL'; registrations:any[]=[];
   selected:any=null; summary:any={}; decision:''|'approve'|'reject'='';
@@ -425,7 +433,7 @@ export class AdminPageComponent implements OnInit, OnDestroy {
   authPageSize = 10;
   exported = false;
 
-  constructor(private api:AuthApiService, private cdr:ChangeDetectorRef){}
+  constructor(private api:AuthApiService, private cdr:ChangeDetectorRef, private orgRegistrations:OrganizationRegistrationsStore){}
 
   ngOnInit(){ this.adminKey=sessionStorage.getItem('superoffer_admin_key')||''; if(this.adminKey) this.connect(); }
   ngOnDestroy(){ this.stopAutoRefresh(); }
@@ -441,8 +449,16 @@ export class AdminPageComponent implements OnInit, OnDestroy {
   private stopAutoRefresh(){ if(this.refreshTimer){ window.clearInterval(this.refreshTimer); this.refreshTimer=undefined; } }
 
   async load(){
-    const result=await this.api.adminRegistrations(this.adminKey,this.status,this.orgType);
-    this.registrations=result.registrations||[]; this.summary=result.summary||{};
+    try{
+      const result=await this.api.adminRegistrations(this.adminKey,this.status,this.orgType);
+      this.registrations=result.registrations||[]; this.summary=result.summary||{};
+      this.localMode=false;
+    }catch(e){
+      if(this.adminKey!==LOCAL_FALLBACK_ADMIN_KEY) throw e;
+      this.localMode=true;
+      this.registrations=this.orgRegistrations.list(this.status,this.orgType);
+      this.summary=this.orgRegistrations.summary();
+    }
     if(this.selected) this.selected=this.registrations.find((x:any)=>x.user_id===this.selected.user_id)||null;
     this.cdr.detectChanges();
   }
@@ -461,7 +477,11 @@ export class AdminPageComponent implements OnInit, OnDestroy {
     if(!this.selected) return; this.reviewing=true; this.error='';
     try{
       const rejected=this.decision==='reject';
-      await this.api.reviewRegistration(this.adminKey,this.selected.user_id,rejected?'REJECTED':'APPROVED',rejected?this.reviewReason:'',rejected?'':this.reviewReason);
+      if(this.localMode){
+        this.orgRegistrations.review(this.selected.user_id,rejected?'REJECTED':'APPROVED',rejected?this.reviewReason:'',rejected?'':this.reviewReason);
+      }else{
+        await this.api.reviewRegistration(this.adminKey,this.selected.user_id,rejected?'REJECTED':'APPROVED',rejected?this.reviewReason:'',rejected?'':this.reviewReason);
+      }
       this.decision=''; this.reviewReason=''; await this.load();
     }catch(e){ this.error=e instanceof Error?e.message:'Review could not be saved.'; }
     finally{ this.reviewing=false; this.cdr.detectChanges(); }
@@ -469,7 +489,10 @@ export class AdminPageComponent implements OnInit, OnDestroy {
 
   async openAudit(){
     this.view='audit'; this.error='';
-    try{ const result=await this.api.adminAuditLog(this.adminKey); this.auditEntries=result.entries||[]; }
+    try{
+      if(this.localMode){ this.auditEntries=this.orgRegistrations.auditLog(); }
+      else{ const result=await this.api.adminAuditLog(this.adminKey); this.auditEntries=result.entries||[]; }
+    }
     catch(e){ this.error=e instanceof Error?e.message:'Could not load audit log.'; }
     this.cdr.detectChanges();
   }
