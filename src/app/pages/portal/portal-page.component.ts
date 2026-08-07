@@ -2,19 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthApiService } from '../../core/auth-api.service';
-import { StudentOfferInboxComponent } from './student-offer-inbox.component';
-import { StudentProfileOnboardingComponent } from './student-profile-onboarding.component';
-import { UniversityFlowComponent } from '../university/university-flow.component';
 
 @Component({
-  selector:'app-portal-page',standalone:true,imports:[CommonModule,RouterLink,StudentOfferInboxComponent,StudentProfileOnboardingComponent,UniversityFlowComponent],
+  selector:'app-portal-page',standalone:true,imports:[CommonModule,RouterLink],
   template:`
-    <app-student-profile-onboarding *ngIf="portal==='student' && showStudentProfile" [profile]="studentProfileData"
-      [token]="token" (completed)="profileCompleted($event)" (offersRequested)="showStudentProfile=false" (signedOut)="logout()" />
-    <app-student-offer-inbox *ngIf="portal==='student' && !showStudentProfile" [user]="user" [error]="error"
-      [backendOffers]="studentOfferData" (editProfile)="showStudentProfile=true" (signedOut)="logout()" />
-    <app-university-flow *ngIf="portal==='university'" />
-    <main class="workspace" *ngIf="portal!=='student' && portal!=='university'">
+    <main class="workspace">
       <aside><a class="brand light-brand" routerLink="/"><span>S</span>SuperOffer</a>
         <nav><a class="active">Overview</a><a>Profile</a><a>Activity</a><a>Reports</a><a>Settings</a></nav>
         <button (click)="logout()">Sign out</button>
@@ -28,11 +20,24 @@ import { UniversityFlowComponent } from '../university/university-flow.component
   `
 })
 export class PortalPageComponent implements OnInit{
-  portal='student';cards:any[]=[];studentOfferData:any[]=[];studentProfileData:any=null;showStudentProfile=true;user:any=null;error='';token='';
+  portal='consultancy';cards:any[]=[];user:any=null;error='';token='';
   constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService){}
-  async ngOnInit(){this.portal=this.route.snapshot.paramMap.get('portal')||'student';this.token=localStorage.getItem('superoffer_access_token')||sessionStorage.getItem('superoffer_access_token')||'';if(!this.token && this.portal==='student'){await this.router.navigate(['/auth/login',this.portal]);return;}try{if(this.token){this.user=await this.api.currentUser(this.token);}if(this.portal==='student'){const result=await this.api.studentFullProfile(this.token);this.studentProfileData=result.data;this.showStudentProfile=!this.studentProfileData.profileComplete;if(!this.showStudentProfile)await this.loadStudentOffers();}else this.cards=this.portal==='university'?[{icon:'⌕',title:'Search students',text:'Discover suitable, visible student profiles.'},{icon:'▤',title:'Shortlists',text:'Organise qualified candidates.'},{icon:'↗',title:'Invitations',text:'Create clear admission offers.'}]:this.portal==='bank'?[{icon:'⌕',title:'Student discovery',text:'Find matching finance candidates.'},{icon:'▤',title:'Loan products',text:'Prepare responsible indicative offers.'},{icon:'↗',title:'Invitations',text:'Track finance offer outcomes.'}]:[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Client pipeline',text:'Track consulting opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted student clients.'}];}catch(e){if(this.portal==='student')this.error=e instanceof Error?e.message:'Could not load portal data.';}}
-  async loadStudentOffers(){const offers=await this.api.studentOffers(this.token);this.studentOfferData=offers.results||offers.offers||[];}
-  async profileCompleted(profile:any){this.studentProfileData=profile;await this.loadStudentOffers();this.showStudentProfile=false;}
+  async ngOnInit(){
+    this.portal=this.route.snapshot.paramMap.get('portal')||'consultancy';
+    if(this.portal==='student'){
+      await this.router.navigate(['/student/dashboard'],{replaceUrl:true});
+      return;
+    }
+    if(this.portal==='organization'){
+      await this.router.navigate(['/organization/dashboard'],{replaceUrl:true});
+      return;
+    }
+    this.token=localStorage.getItem('superoffer_access_token')||sessionStorage.getItem('superoffer_access_token')||'';
+    if(!this.token){await this.router.navigate(['/auth/login',this.portal]);return;}
+    try{
+      this.user=await this.api.currentUser(this.token);
+      this.cards=[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Client pipeline',text:'Track consulting opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted student clients.'}];
+    }catch(e){this.error=e instanceof Error?e.message:'Could not load portal data.';}
+  }
   logout(){localStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_role');this.router.navigate(['/']);}
 }
-

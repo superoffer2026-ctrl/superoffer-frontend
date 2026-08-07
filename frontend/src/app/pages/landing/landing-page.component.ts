@@ -1,149 +1,113 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SiteHeaderComponent } from '../../shared/site-header.component';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { SiteFooterComponent } from '../../shared/site-footer.component';
-import { LandingHeroComponent } from './components/landing-hero.component';
-import { LandingSimulatorComponent } from './components/landing-simulator.component';
-import { LandingProcessComponent } from './components/landing-process.component';
-import { LandingPortalsComponent } from './components/landing-portals.component';
-import { LandingFaqComponent } from './components/landing-faq.component';
-import { AuthApiService } from '../../core/auth-api.service';
+import { SiteHeaderComponent } from '../../shared/site-header.component';
+import { RevealOnScrollDirective } from './reveal-on-scroll.directive';
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    SiteHeaderComponent,
-    SiteFooterComponent,
-    LandingHeroComponent,
-    LandingSimulatorComponent,
-    LandingProcessComponent,
-    LandingPortalsComponent,
-    LandingFaqComponent
-  ],
+  imports: [CommonModule, RouterLink, SiteHeaderComponent, SiteFooterComponent, RevealOnScrollDirective],
+  styleUrl: './landing-page.component.css',
   template: `
     <app-site-header />
+    <main class="landing">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1 class="hero-enter">The right education opportunities,<br><em>in one place.</em></h1>
+          <p class="hero-enter d1">Create one verified profile and discover university admissions, education finance, and expert guidance matched around your plans.</p>
+          <div class="hero-actions hero-enter d2">
+            <a class="btn dark" routerLink="/auth/register/student">Create your free profile <b>→</b></a>
+          </div>
+          <div class="proof hero-enter d3"><span>✓ Free for students</span><span>✓ Private by default</span><span>✓ Verified organisations</span></div>
+        </div>
 
-    <main class="landing-wrapper">
-      <!-- Background Ambient Glow Orbs -->
-      <div class="ambient-orb orb-1 animate-glow"></div>
-      <div class="ambient-orb orb-2 animate-glow"></div>
-      <div class="ambient-orb orb-3 animate-glow"></div>
-
-      <!-- HERO SECTION WITH SIMULATOR -->
-      <section class="hero-section">
-        <app-landing-hero />
-        <app-landing-simulator />
+        <div class="scroll-hint"><i></i> Scroll to explore</div>
       </section>
 
-      <!-- LIVE IMPACT STATS STRIP -->
-      <section class="stats-strip">
-        <div class="glass-card stats-container">
-          <div class="stat-card">
-            <span class="stat-number gradient-text">\${{stats?.scholarship_value_m || 85}}M+</span>
-            <span class="stat-label">Scholarship Value Offered</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number gradient-text">{{stats?.active_universities || 380}}+</span>
-            <span class="stat-label">Verified Universities</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number gradient-text">{{(stats?.verified_students || 12450) | number}}</span>
-            <span class="stat-label">Active Student Profiles</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number gradient-text">94%</span>
-            <span class="stat-label">Offer Acceptance Yield</span>
+      <section class="campus-story" id="experience" soReveal>
+        <div class="campus-image"><img src="/students-campus.png" alt="International students walking together toward their university campus"></div>
+        <div class="campus-copy">
+          <span class="pill"><i></i> From possibility to campus</span>
+          <h2>Find the university where your next chapter begins.</h2>
+          <p>SuperOffer helps ambitious students move from uncertainty to a confident choice—with the right programme, finance and support connected along the way.</p>
+          <a class="btn dark" routerLink="/auth/register/student">Start your journey <b>→</b></a>
+        </div>
+      </section>
+
+      <section class="scene offers-scene" soReveal>
+        <header class="scene-heading centered">
+          <span class="pill dark-pill">Opportunities</span>
+          <h2>Real offers arrive.<br><em>You stay in control.</em></h2>
+          <p>Compare admission, scholarship and funding details without switching between portals.</p>
+        </header>
+        <div class="offer-deck">
+          <article *ngFor="let offer of offers; let i=index" [style.--i]="i">
+            <header><i>{{offer.logo}}</i><span><small>{{offer.type}}</small><b>{{offer.name}}</b></span><strong>{{offer.score}}<small>% match</small></strong></header>
+            <h3>{{offer.course}}</h3>
+            <p>{{offer.detail}}</p>
+            <div><span>Tuition <b>{{offer.tuition}}</b></span><span>Scholarship <b>{{offer.scholarship}}</b></span></div>
+            <footer><button>View offer</button><small>Received today</small></footer>
+          </article>
+        </div>
+      </section>
+
+      <section class="scene match-scene" soReveal>
+        <div class="match-copy">
+          <span class="pill"><i></i> Intelligent matching</span>
+          <h2>The right fit becomes visible.</h2>
+          <p>Your goals, academics and preferences become meaningful signals. Universities see more than marks—and you see why every opportunity fits.</p>
+          <ul><li><i>01</i><span><b>Context, not just credentials</b><small>Skills, projects and ambition all contribute.</small></span></li><li><i>02</i><span><b>Transparent match signals</b><small>Understand the reason behind each recommendation.</small></span></li><li><i>03</i><span><b>Your privacy, your choice</b><small>You decide when a conversation moves forward.</small></span></li></ul>
+        </div>
+        <div class="matching-photo">
+          <img src="/intelligent-matching-students.png" alt="A university student reviewing matched programme options with an admissions advisor">
+          <div class="photo-caption"><span><i></i> Match found</span><b>Clarity for every next step.</b></div>
+        </div>
+      </section>
+
+      <section class="journey-hub" soReveal>
+        <div class="hub-copy">
+          <span class="pill light-pill"><i></i> Your journey, connected</span>
+          <h2>Every milestone.<br><em>One clear view.</em></h2>
+          <p>From your first match to the day you arrive on campus, SuperOffer keeps every decision, document and deadline moving together.</p>
+          <a routerLink="/auth/register/student">Create your journey workspace <b>→</b></a>
+        </div>
+        <div class="hub-ui">
+          <header><span><i>S</i><b>My journey</b></span><small>Fall 2027 · United Kingdom</small><em>AM</em></header>
+          <div class="hub-progress"><span><b>Journey progress</b><small>Everything is on track</small></span><strong>68%</strong><i><b></b></i></div>
+          <div class="hub-columns">
+            <div class="timeline">
+              <small>NEXT MILESTONES</small>
+              <article class="done"><i>✓</i><span><b>Profile verified</b><small>Completed 18 July</small></span></article>
+              <article class="current"><i>2</i><span><b>Choose your offer</b><small>3 offers ready to compare</small></span><em>Today</em></article>
+              <article><i>3</i><span><b>Confirm your finance</b><small>2 eligible loan options</small></span></article>
+              <article><i>4</i><span><b>Prepare your visa</b><small>Checklist unlocks next</small></span></article>
+            </div>
+            <div class="hub-side">
+              <small>RECOMMENDED FOR YOU</small>
+              <article class="decision-card"><span>BEST OVERALL MATCH</span><div><i>N</i><b>Northbridge University<small>MSc Data Science</small></b><strong>96</strong></div><button>Compare offer →</button></article>
+              <div class="support-card"><i>◇</i><span><b>Need help deciding?</b><small>Your advisor is available today.</small></span><button>Message</button></div>
+              <div class="deadline"><span><i></i><b>Next deadline</b></span><strong>12 days</strong></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- PROCESS PIPELINE -->
-      <app-landing-process />
-
-      <!-- ECOSYSTEM PORTALS -->
-      <app-landing-portals />
-
-      <!-- FREQUENTLY ASKED QUESTIONS -->
-      <app-landing-faq />
+      <section class="final-cta" soReveal>
+        <span class="pill light-pill">Your future, brought closer</span>
+        <h2>Start with one profile.<br><em>Open more doors.</em></h2>
+        <p>Free for students. Private by default. Ready when you are.</p>
+        <a class="btn light" routerLink="/auth/register/student">Create your free profile <b>→</b></a>
+      </section>
     </main>
-
     <app-site-footer />
-  `,
-  styles: [`
-    .landing-wrapper {
-      position: relative;
-      overflow: hidden;
-      max-width: 1360px;
-      margin: 0 auto;
-      padding: 20px 24px 80px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    /* Ambient Glow Orbs */
-    .ambient-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(120px);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .orb-1 { width: 500px; height: 500px; background: rgba(56, 189, 248, 0.15); top: -100px; left: -100px; }
-    .orb-2 { width: 600px; height: 600px; background: rgba(99, 102, 241, 0.12); top: 600px; right: -150px; }
-    .orb-3 { width: 450px; height: 450px; background: rgba(16, 185, 129, 0.1); bottom: 200px; left: 10%; }
-
-    /* Hero Section */
-    .hero-section {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 48px;
-      align-items: center;
-      padding: 60px 0 80px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Stats Strip */
-    .stats-strip { margin: 40px 0 80px; position: relative; z-index: 1; }
-    .stats-container {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      padding: 36px;
-      gap: 24px;
-      text-align: center;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 20px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    }
-    .stat-number { font-family: 'Outfit', sans-serif; font-size: 38px; font-weight: 800; display: block; }
-    .gradient-text {
-      background: linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, #818cf8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .stat-label { font-size: 13px; color: #94a3b8; font-weight: 600; margin-top: 4px; display: block; }
-
-    @media (max-width: 1024px) {
-      .hero-section { grid-template-columns: 1fr; }
-      .stats-container { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 640px) {
-      .stats-container { grid-template-columns: 1fr; }
-    }
-  `]
+  `
 })
-export class LandingPageComponent implements OnInit {
-  stats: any = null;
-
-  constructor(private api: AuthApiService) {}
-
-  async ngOnInit() {
-    try {
-      this.stats = await this.api.publicStats();
-    } catch {
-      // Fallback
-    }
-  }
+export class LandingPageComponent {
+  readonly offers = [
+    {logo:'N',type:'ADMISSION + SCHOLARSHIP',name:'Northbridge University',course:'MSc Data Science',detail:'London · September 2027 · Full-time',tuition:'£24,500',scholarship:'35%',score:96},
+    {logo:'W',type:'PRIORITY INVITATION',name:'Westford Institute',course:'MSc Artificial Intelligence',detail:'Manchester · September 2027 · Full-time',tuition:'£21,800',scholarship:'25%',score:91},
+    {logo:'L',type:'ADMISSION OFFER',name:'Lakeview University',course:'MSc Business Analytics',detail:'Edinburgh · January 2028 · Full-time',tuition:'£22,200',scholarship:'20%',score:88}
+  ];
 }

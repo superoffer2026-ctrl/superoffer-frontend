@@ -1,0 +1,92 @@
+:host{
+  --green:#087a50;
+  --green-dark:#066640;
+  --green-soft:#e8f5ee;
+  --navy:#173247;
+  --ink:#1d2822;
+  --muted:#6f7e76;
+  --line:#dce5e0;
+  --error:#c0392b;
+  display:block;
+  min-height:100vh;
+  background:#f7f3ec;
+  color:var(--ink);
+  font-family:"DM Sans",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+label{margin-top:0}
+.step-page{width:min(980px,calc(100% - 72px));margin:0 auto;padding:64px 0 42px}
+.step-heading>span{display:inline-block;margin-bottom:13px;color:var(--green);font-size:12px;font-weight:900;letter-spacing:.16em}
+.step-heading h1{margin:0;color:var(--navy);font-size:38px;line-height:1.13;letter-spacing:-.04em}
+.step-heading p{max-width:720px;margin:12px 0 0;color:var(--muted);font-size:16px;line-height:1.65}
+.profile-form-card{margin-top:34px;padding:34px;border:1px solid #e2ddd5;border-radius:16px;background:#fff;box-shadow:0 12px 34px rgba(35,63,48,.06)}
+.placeholder-copy{display:flex;align-items:center;gap:17px;padding-bottom:26px;border-bottom:1px solid #e6ece8}
+.placeholder-icon{width:54px;height:54px;display:grid;place-items:center;flex:0 0 auto;border-radius:13px;background:var(--green-soft);color:var(--green);font-size:16px;font-weight:900}
+.placeholder-copy h2{margin:0 0 6px;color:var(--navy);font-size:20px;letter-spacing:-.015em}
+.placeholder-copy p{margin:0;color:var(--muted);font-size:14px}
+
+.section-title{margin:30px 0 0;color:var(--navy);font-size:17px;font-weight:900;letter-spacing:-.01em}
+.section-title:first-of-type{margin-top:27px}
+.section-hint{margin:4px 0 0;color:var(--muted);font-size:13.5px;font-weight:600}
+
+.field-label{display:flex;align-items:center;gap:5px}
+.required-mark{color:var(--error);font-weight:900}
+.field-error{margin-top:1px;color:var(--error);font-size:13px;font-weight:700}
+
+/* Project entry cards */
+.project-entry{position:relative;margin-top:16px;padding:20px;border:1px solid #e2ddd5;border-radius:14px;background:#fbfcfa}
+.project-entry-head{display:flex;align-items:center;justify-content:space-between}
+.project-entry-head strong{color:var(--navy);font-size:15px;font-weight:900;letter-spacing:.02em;text-transform:uppercase}
+.project-remove{width:24px;height:24px;display:grid;place-items:center;border:0;border-radius:50%;background:#f5e6e4;color:var(--error);font-size:16px;line-height:1;cursor:pointer;padding:0}
+.project-remove:hover{background:#f0d3d0}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.field-grid label{display:flex;flex-direction:column;gap:8px;color:#36453d;font-size:14px;font-weight:800}
+.field-grid label.wide{grid-column:1/-1}
+.field-grid input,.field-grid textarea{box-sizing:border-box;display:block;width:100%;padding:0 14px;border:1px solid #d7e2dc;border-radius:10px;background-color:#fff;color:var(--ink);font:inherit;font-size:15px;outline:none}
+.field-grid input{height:48px}
+.field-grid textarea{padding:12px 14px;min-height:88px;resize:vertical;line-height:1.5}
+.field-grid input:focus,.field-grid textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px #e3f3eb}
+.field-grid label.field-invalid input{border-color:#e2a39a;background-color:#fff7f6}
+
+.add-project-btn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:40px;padding:0 16px;border:1.5px dashed #b7ccc0;border-radius:10px;background:#f6faf8;color:var(--green-dark);font-size:14px;font-weight:800;cursor:pointer;transition:.15s}
+.add-project-btn:hover{border-color:var(--green);background:var(--green-soft)}
+
+/* Achievements tag input */
+.tag-input-row{display:flex;gap:8px;margin-top:14px}
+.tag-input-row input{flex:1;min-width:0;box-sizing:border-box;height:48px;padding:0 14px;border:1px solid #d7e2dc;border-radius:10px;background:#fbfcfb;color:var(--ink);font:inherit;font-size:15px;outline:none}
+.tag-input-row input:focus{border-color:var(--green);box-shadow:0 0 0 3px #e3f3eb}
+.tag-add-btn{flex:0 0 auto;padding:0 18px;border:0;border-radius:10px;background:var(--green);color:#fff;font-size:14px;font-weight:900;cursor:pointer}
+.tag-add-btn:hover{background:var(--green-dark)}
+.tag-add-btn:disabled{background:#c9d6cf;cursor:not-allowed}
+.tag-suggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.tag-suggestion{height:30px;padding:0 12px;border:1px dashed #c3d3cb;border-radius:999px;background:#fff;color:#5f6b64;font-size:13px;font-weight:800;cursor:pointer;transition:.15s}
+.tag-suggestion:hover{border-style:solid;border-color:var(--green);color:var(--green-dark);background:var(--green-soft)}
+.tag-chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tag-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:7px 8px 7px 13px;border-radius:999px;background:var(--green-soft);color:var(--green-dark);font-size:14px;font-weight:800}
+.tag-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.tag-chip button{flex:0 0 auto;width:17px;height:17px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(8,122,80,.16);color:var(--green-dark);font-size:12px;line-height:1;cursor:pointer;padding:0}
+.tag-chip button:hover{background:var(--error);color:#fff}
+.tag-empty-hint{margin-top:12px;color:var(--muted);font-size:13.5px;font-weight:600}
+
+.save-message{margin-top:16px;font-size:14px;font-weight:700}
+.save-message.error{color:var(--error)}
+
+.step-actions{display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+.button{min-width:112px;padding:12px 20px;border-radius:9px;text-align:center;text-decoration:none;font-size:14px;font-weight:900;transition:.18s;border:0;cursor:pointer}
+.button.primary{margin-left:auto;background:var(--green);color:#fff;box-shadow:0 6px 14px rgba(8,122,80,.16)}
+.button.primary:hover{background:var(--green-dark);transform:translateY(-1px)}
+.button.primary:disabled{opacity:.5;cursor:not-allowed;pointer-events:none}
+.button.secondary{border:1px solid #ccd8d1;background:#fff;color:#425149;text-decoration:none;display:inline-flex;align-items:center}
+.button.secondary:hover{border-color:#9db9aa;color:var(--green)}
+
+@media(max-width:760px){
+  .step-page{width:calc(100% - 32px);padding:78px 0 32px}
+  .step-heading h1{font-size:31px}
+  .profile-form-card{padding:24px 20px}
+  .placeholder-copy{align-items:flex-start}
+  .field-grid{grid-template-columns:1fr}
+  .field-grid label.wide{grid-column:auto}
+  .tag-input-row{flex-direction:column}
+  .step-actions{gap:12px}
+  .button{min-width:104px}
+}

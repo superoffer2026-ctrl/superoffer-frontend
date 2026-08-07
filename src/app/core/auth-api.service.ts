@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type PortalKey = 'student' | 'university' | 'bank' | 'consultancy';
+export type PortalKey = 'student' | 'organization' | 'consultancy';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
@@ -31,12 +31,6 @@ export class AuthApiService {
     return this.request('/students/me', { headers: { authorization: `Bearer ${token}` } });
   }
 
-  async studentFullProfile(token: string): Promise<any> {
-    const data = await this.studentProfile(token);
-    return { data };
-  }
-
-
   async updateStudentProfile(token: string, profile: Record<string, unknown>): Promise<any> {
     return this.request('/students/me', {
       method: 'PUT',
@@ -45,65 +39,59 @@ export class AuthApiService {
     });
   }
 
+  async studentFullProfile(token: string): Promise<any> {
+    return this.request('/student/profile', { headers: { authorization: `Bearer ${token}` } });
+  }
+
+  async saveStudentProfileSection(token: string, section: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request(`/student/profile/${section}`, {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async uploadStudentDocument(token: string, documentType: string, file: File): Promise<any> {
+    const form = new FormData();
+    form.append('documentType', documentType);
+    form.append('file', file);
+    return this.request(`/student/profile/documents`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: form
+    }, false);
+  }
+
   async studentOffers(token: string): Promise<any> {
     return this.request('/students/me/offers', { headers: { authorization: `Bearer ${token}` } });
   }
 
-  async adminRegistrations(adminKey: string, status = 'PENDING'): Promise<any> {
-    return this.request(`/admin/registrations?status=${encodeURIComponent(status)}`, {
+  async adminRegistrations(adminKey: string, status = 'PENDING', orgType = 'ALL'): Promise<any> {
+    return this.request(`/admin/registrations?status=${encodeURIComponent(status)}&org_type=${encodeURIComponent(orgType)}`, {
       headers: { 'x-admin-key': adminKey }
     });
   }
 
-  async adminAuthLogs(adminKey: string, queryParams: Record<string, string> = {}): Promise<any> {
-    const query = new URLSearchParams(queryParams).toString();
-    return this.request(`/admin/auth-logs${query ? '?' + query : ''}`, {
-      headers: { 'x-admin-key': adminKey }
-    });
-  }
-
-  async downloadAuthLogsCsv(adminKey: string, queryParams: Record<string, string> = {}): Promise<Blob> {
-    const query = new URLSearchParams({ ...queryParams, format: 'csv' }).toString();
-    const response = await fetch(`${this.baseUrl}/admin/auth-logs?${query}`, {
-      headers: { 'x-admin-key': adminKey }
-    });
-    if (!response.ok) throw new Error('Could not download authentication logs CSV.');
-    return response.blob();
-  }
-
-  async publicStats(): Promise<any> {
-    return this.request('/public/stats');
-  }
-
-  async publicUniversities(): Promise<any> {
-    return this.request('/public/universities');
-  }
-
-  async publicCategories(): Promise<any> {
-    return this.request('/public/categories');
-  }
-
-  async publicTestimonials(): Promise<any> {
-    return this.request('/public/testimonials');
-  }
-
-  async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = ''): Promise<any> {
+  async reviewRegistration(adminKey: string, userId: string, approvalStatus: 'APPROVED' | 'REJECTED', rejectionReason = '', approvalNote = ''): Promise<any> {
     return this.request(`/admin/users/${encodeURIComponent(userId)}/approval`, {
       method: 'PATCH',
       headers: { 'x-admin-key': adminKey },
-      body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason })
+      body: JSON.stringify({ approval_status: approvalStatus, rejection_reason: rejectionReason, approval_note: approvalNote })
     });
   }
 
+  async adminAuditLog(adminKey: string): Promise<any> {
+    return this.request('/admin/audit-log?limit=100', { headers:{ 'x-admin-key':adminKey } });
+  }
 
-  private async request(path: string, options: RequestInit = {}): Promise<any> {
+  private async request(path: string, options: RequestInit = {}, json = true): Promise<any> {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), this.requestTimeoutMs);
     try {
       const response = await fetch(`${this.baseUrl}${path}`, {
         ...options,
         signal: controller.signal,
-        headers: { 'content-type': 'application/json', ...(options.headers || {}) }
+        headers: { ...(json ? { 'content-type': 'application/json' } : {}), ...(options.headers || {}) }
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {

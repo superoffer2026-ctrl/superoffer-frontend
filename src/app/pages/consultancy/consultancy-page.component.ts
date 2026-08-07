@@ -4,7 +4,7 @@ import { PortalLandingComponent, PortalContent } from '../../shared/portal-landi
 @Component({selector:'app-consultancy-page',standalone:true,imports:[PortalLandingComponent],template:'<app-portal-landing [content]="content" />'})
 export class ConsultancyPageComponent {
   content:PortalContent={
-    key:'consultancy',eyebrow:'SuperOffer for study-abroad experts',title:'Meet students with genuine intent and guide them with confidence.',
+    key:'consultancy',eyebrow:'SuperOffer for study-abroad experts',title:'Guide serious students from profile to admission.',
     intro:'Build a verified consultancy presence, discover suitable students, present transparent service engagements, and support accepted clients through their study-abroad journey.',
     primary:'Register consultancy',secondary:'See consultancy benefits',
     stats:[{value:'Intent',label:'qualified student discovery'},{value:'One',label:'active consultant per student'},{value:'Verified',label:'consultancy profiles'}],
