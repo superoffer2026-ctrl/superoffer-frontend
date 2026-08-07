@@ -8,6 +8,7 @@ import { StudentCardComponent } from './student-card.component';
 import { OfferMarketplaceCardComponent } from './offer-marketplace-card.component';
 import { StatCounterComponent } from '../landing/stat-counter.component';
 import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
+import { FINANCIAL_DOCUMENT_FIELDS } from './financial-options';
 
 @Component({
   standalone: true,
@@ -68,6 +69,40 @@ import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
           <div class="journey-track"><i [style.width.%]="completionPct"></i></div>
           <small *ngIf="!isSubmitted">{{missingSectionCount}} section{{missingSectionCount===1?'':'s'}} need attention</small>
           <small *ngIf="isSubmitted">All required sections complete</small>
+        </div>
+      </section>
+
+      <section class="loan-nudge-banner">
+        <div class="loan-nudge-icon">₹</div>
+        <div class="loan-nudge-copy">
+          <span>BANK OFFERS</span>
+          <ng-container [ngSwitch]="bankOffersState">
+            <ng-container *ngSwitchCase="'ask'">
+              <h2>Get bank offers by filling your documents</h2>
+              <p>Tell us if you'd like an education loan — we'll match you with lenders once your documents are in.</p>
+            </ng-container>
+            <ng-container *ngSwitchCase="'upload'">
+              <h2>Upload your documents to get bank offers</h2>
+              <p>Complete your verification documents so our lending partners can send you matched loan offers.</p>
+            </ng-container>
+            <ng-container *ngSwitchCase="'complete'">
+              <h2>Your documents are with our lending partners</h2>
+              <p>We've shared your details with verified banks — check My Offers for matched loan offers.</p>
+            </ng-container>
+            <ng-container *ngSwitchCase="'declined'">
+              <h2>Not looking for a loan right now</h2>
+              <p>Changed your mind? You can still get matched with bank offers anytime.</p>
+            </ng-container>
+          </ng-container>
+        </div>
+        <div class="loan-nudge-actions" *ngIf="bankOffersState==='ask'">
+          <button type="button" (click)="answerLoanQuestion(true)">Yes, get bank offers</button>
+          <button type="button" class="ghost" (click)="answerLoanQuestion(false)">No, not now</button>
+        </div>
+        <a *ngIf="bankOffersState==='upload'" routerLink="/student/loan-eligibility">Upload documents <b>→</b></a>
+        <a *ngIf="bankOffersState==='complete'" routerLink="/student/offers">View offers <b>→</b></a>
+        <div class="loan-nudge-actions" *ngIf="bankOffersState==='declined'">
+          <button type="button" (click)="answerLoanQuestion(true)">Get bank offers</button>
         </div>
       </section>
 
@@ -175,5 +210,24 @@ export class StudentDashboardComponent {
       !(this.v('qualificationLevel') && this.v('institution') && this.v('score') && this.v('graduationYear'))
     ];
     return missing.filter(Boolean).length;
+  }
+
+  get loanDocumentsComplete(): boolean {
+    const category = this.v('employmentCategory');
+    if (!category) return false;
+    return FINANCIAL_DOCUMENT_FIELDS
+      .filter(doc => !doc.categories || doc.categories.includes(category))
+      .every(doc => !!this.v(doc.key));
+  }
+
+  get bankOffersState(): 'ask' | 'upload' | 'complete' | 'declined' {
+    const needsLoan = this.v('needsLoan');
+    if (!needsLoan) return 'ask';
+    if (needsLoan === 'no') return 'declined';
+    return this.loanDocumentsComplete ? 'complete' : 'upload';
+  }
+
+  answerLoanQuestion(wantsLoan: boolean) {
+    this.store.values['needsLoan'] = wantsLoan ? 'yes' : 'no';
   }
 }

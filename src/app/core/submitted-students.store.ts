@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { FINANCIAL_DOCUMENT_FIELDS } from '../pages/student-portal/financial-options';
 
 const STORAGE_KEY = 'superoffer_submitted_students';
 
@@ -6,6 +7,8 @@ export interface UniversityInterestRecord {
   university: string; country: string; course: string; status: string;
   scholarship?: string; tuitionFee?: string; remainingTuition?: string; livingCost?: string; logo?: string;
 }
+
+export interface FinancialDocumentRecord { key: string; label: string; uploaded: boolean; }
 
 export interface SubmittedStudent {
   id: string;
@@ -45,6 +48,9 @@ export interface SubmittedStudent {
   familyIncome?: number;
   requiredLoanAmount?: number;
   universityInterests?: UniversityInterestRecord[];
+  needsLoan?: 'yes' | 'no' | '';
+  employmentCategory?: string;
+  financialDocuments?: FinancialDocumentRecord[];
 }
 
 function load(): SubmittedStudent[] {
@@ -139,6 +145,12 @@ export function mapProfileToOrgStudent(values: Record<string, string>, photo: st
 
   const scholarshipSeeking = values['fundingSource'] === 'Scholarship' || values['fundingSource'] === 'Combination of the Above';
 
+  const needsLoan = (values['needsLoan'] as 'yes' | 'no' | '') || '';
+  const employmentCategory = values['employmentCategory'] || '';
+  const financialDocuments: FinancialDocumentRecord[] = FINANCIAL_DOCUMENT_FIELDS
+    .filter(doc => !doc.categories || !employmentCategory || doc.categories.includes(employmentCategory))
+    .map(doc => ({ key: doc.key, label: doc.label, uploaded: !!values[doc.key] }));
+
   const hash = Array.from(name).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
   const color = CARD_PALETTE[hash % CARD_PALETTE.length];
 
@@ -165,6 +177,8 @@ export function mapProfileToOrgStudent(values: Record<string, string>, photo: st
     live: true,
     submittedAt: new Date().toISOString(),
     gre, gmat,
-    familyIncome: budgetValue || undefined
+    familyIncome: budgetValue || undefined,
+    needsLoan, employmentCategory,
+    financialDocuments: needsLoan === 'yes' ? financialDocuments : undefined
   };
 }

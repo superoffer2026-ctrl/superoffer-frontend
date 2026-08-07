@@ -15,23 +15,6 @@ const EARNER_INCOME_FIELDS: Record<string, 'fatherIncome' | 'motherIncome' | 'gu
   Guardian: 'guardianIncome'
 };
 
-type DocKey =
-  | 'incomeCertificate' | 'salarySlips' | 'payslips' | 'itr' | 'form16'
-  | 'bankStatements' | 'businessIncomeProof' | 'agriculturalIncomeCertificate' | 'scholarshipLetter';
-
-/** `categories` restricts a document to those employment categories; omit it to show the document for everyone. */
-const DOCUMENT_FIELDS: { key: DocKey; label: string; categories?: string[] }[] = [
-  { key: 'incomeCertificate', label: 'Income Certificate' },
-  { key: 'salarySlips', label: 'Salary Slips (Last 24 Months)', categories: ['Salaried'] },
-  { key: 'payslips', label: 'Payslips (Last 24 Months)', categories: ['Salaried'] },
-  { key: 'form16', label: 'Form 16 (Last 2 Financial Years)', categories: ['Salaried'] },
-  { key: 'businessIncomeProof', label: 'Business Income Proof (for Self-Employed/Business Owners)', categories: ['Self-Employed', 'Business'] },
-  { key: 'agriculturalIncomeCertificate', label: 'Agricultural Income Certificate', categories: ['Agriculture'] },
-  { key: 'itr', label: 'Income Tax Return (Last 2 Financial Years)', categories: ['Self-Employed', 'Business', 'Agriculture', 'Other'] },
-  { key: 'bankStatements', label: 'Bank Statements (Last 6 Months)' },
-  { key: 'scholarshipLetter', label: 'Scholarship or Funding Letter (if applicable)' }
-];
-
 @Component({
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
@@ -143,37 +126,29 @@ const DOCUMENT_FIELDS: { key: DocKey; label: string; categories?: string[] }[] =
           </label>
         </div>
 
-        <h3 class="section-title">Financial Documents</h3>
-        <p class="section-subtitle" *ngIf="!employmentCategory">Select an employment category above to see the documents you need.</p>
-        <ng-container *ngIf="employmentCategory">
-        <p class="section-subtitle">Documents relevant to "{{employmentCategory}}" — upload where applicable.</p>
-        <div class="doc-list">
-          <div class="doc-row" *ngFor="let doc of visibleDocuments()">
-            <span class="doc-row-label">{{doc.label}}</span>
-            <div class="doc-row-control">
-              <label class="doc-upload-btn" *ngIf="!hasFile(doc.key)">
-                <span>⬆ Upload</span>
-                <input type="file" accept="image/png,image/jpeg,application/pdf" (change)="onFileChange(doc.key,$event)">
-              </label>
-              <div class="doc-file-chip" *ngIf="hasFile(doc.key)">
-                <span class="file-icon">📄</span>
-                <span class="file-name">{{ fileStatusLabel(doc.key) }}</span>
-                <button type="button" class="file-remove" (click)="clearFile(doc.key)" aria-label="Remove file">×</button>
-              </div>
-            </div>
-          </div>
+        <h3 class="section-title">Education Loan</h3>
+        <div class="declaration-group">
+          <label class="declaration-item">
+            <input type="radio" formControlName="needsLoan" value="yes" (blur)="markTouched('needsLoan')">
+            <span>Yes, I'll need an education loan to fund part of my studies.</span>
+          </label>
+          <label class="declaration-item">
+            <input type="radio" formControlName="needsLoan" value="no" (blur)="markTouched('needsLoan')">
+            <span>No, I'm self-funded or already have funding arranged.</span>
+          </label>
+          <small class="field-hint" *ngIf="form.value.needsLoan==='yes'">You can check indicative eligibility and upload verification documents anytime from Loan eligibility in your dashboard.</small>
+          <small class="field-error" *ngIf="showError('needsLoan')">Let us know if you'll need an education loan</small>
         </div>
-        </ng-container>
 
         <h3 class="section-title">Declaration</h3>
         <div class="declaration-group">
           <label class="declaration-item">
             <input type="checkbox" formControlName="declarationAccurate">
-            <span>I confirm that the financial information and uploaded documents are accurate and authentic.</span>
+            <span>I confirm that the financial information provided is accurate.</span>
           </label>
           <label class="declaration-item">
             <input type="checkbox" formControlName="declarationConsent">
-            <span>I consent to the verification of my financial documents.</span>
+            <span>I consent to the verification of my financial information.</span>
           </label>
           <small class="field-error" *ngIf="showError('declarationAccurate') || showError('declarationConsent')">Please accept both declarations to continue</small>
         </div>
@@ -209,15 +184,7 @@ export class FinancialInformationComponent {
     guardianIncome: this.fb.nonNullable.control(''),
     currency: this.fb.nonNullable.control('', Validators.required),
     employmentCategory: this.fb.nonNullable.control('', Validators.required),
-    incomeCertificate: this.fb.nonNullable.control(''),
-    salarySlips: this.fb.nonNullable.control(''),
-    payslips: this.fb.nonNullable.control(''),
-    itr: this.fb.nonNullable.control(''),
-    form16: this.fb.nonNullable.control(''),
-    bankStatements: this.fb.nonNullable.control(''),
-    businessIncomeProof: this.fb.nonNullable.control(''),
-    agriculturalIncomeCertificate: this.fb.nonNullable.control(''),
-    scholarshipLetter: this.fb.nonNullable.control(''),
+    needsLoan: this.fb.nonNullable.control('', Validators.required),
     declarationAccurate: this.fb.nonNullable.control(false, Validators.requiredTrue),
     declarationConsent: this.fb.nonNullable.control(false, Validators.requiredTrue)
   });
@@ -226,6 +193,30 @@ export class FinancialInformationComponent {
 
   constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+    this.prefillFromStore();
+  }
+
+  private prefillFromStore() {
+    const v = this.store.values;
+    this.form.patchValue({
+      fundingSource: v['fundingSource'] || '',
+      currency: v['currency'] || '',
+      employmentCategory: v['employmentCategory'] || '',
+      needsLoan: v['needsLoan'] || '',
+      fatherIncome: v['fatherIncome'] || '',
+      motherIncome: v['motherIncome'] || '',
+      guardianIncome: v['guardianIncome'] || '',
+      declarationAccurate: v['declarationAccurate'] === 'true',
+      declarationConsent: v['declarationConsent'] === 'true'
+    });
+    const earning = (v['earningMembers'] || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!earning.length) return;
+    this.form.get('earningMembers')!.setValue(earning);
+    for (const person of earning) {
+      const incomeControl = this.form.get(EARNER_INCOME_FIELDS[person]);
+      incomeControl?.setValidators(Validators.required);
+      incomeControl?.updateValueAndValidity({ emitEvent: false });
+    }
   }
 
   get fundingSource(): string { return this.form.get('fundingSource')!.value; }
@@ -266,11 +257,6 @@ export class FinancialInformationComponent {
     this.employmentQuery = '';
     this.delayedCloseEmployment();
   }
-  visibleDocuments() {
-    const category = this.employmentCategory;
-    return DOCUMENT_FIELDS.filter(doc => !doc.categories || !category || doc.categories.includes(category));
-  }
-
   selectedEarning(): string[] { return this.form.get('earningMembers')!.value as string[]; }
   isEarningSelected(value: string): boolean { return this.selectedEarning().includes(value); }
   filteredEarning(): string[] {
@@ -309,16 +295,6 @@ export class FinancialInformationComponent {
     return this.selectedEarning().reduce((sum, earner) => sum + this.parseAmount(this.form.get(EARNER_INCOME_FIELDS[earner])!.value), 0);
   }
 
-  onFileChange(key: DocKey, event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.form.get(key)!.setValue(file.name);
-    this.form.get(key)!.markAsTouched();
-  }
-  clearFile(key: DocKey) { this.form.get(key)!.setValue(''); }
-  hasFile(key: DocKey): boolean { return !!this.form.get(key)!.value; }
-  fileStatusLabel(key: DocKey): string { return this.form.get(key)!.value || 'No file selected'; }
-
   markTouched(key: string) { this.form.get(key)!.markAsTouched(); }
   showError(key: string): boolean {
     const control = this.form.get(key)!;
@@ -339,9 +315,7 @@ export class FinancialInformationComponent {
     this.store.values['annualHouseholdIncome'] = String(this.householdIncomeTotal());
     this.store.values['currency'] = value.currency;
     this.store.values['employmentCategory'] = value.employmentCategory;
-    for (const doc of DOCUMENT_FIELDS) {
-      this.store.values[doc.key] = value[doc.key];
-    }
+    this.store.values['needsLoan'] = value.needsLoan;
     this.store.values['declarationAccurate'] = String(value.declarationAccurate);
     this.store.values['declarationConsent'] = String(value.declarationConsent);
 

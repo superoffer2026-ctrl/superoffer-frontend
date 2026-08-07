@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PortalKey } from '../../core/auth-api.service';
 import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, rememberOrganizationType } from '../../core/organization.models';
+import { createAccount, findAccount } from '../../core/accounts.store';
 
 @Component({
   selector:'app-auth-page', standalone:true, imports:[CommonModule,FormsModule,RouterLink],
@@ -48,7 +49,6 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
             <label>Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
             <label>Password<input name="password" type="password" [(ngModel)]="form.password" required placeholder="Enter your password"></label>
             <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="form.remember"> Keep me signed in</label>
-            <p class="form-message success">Demo mode: enter any valid email and password to continue.</p>
           </div>
 
           <div class="form-grid" *ngIf="portal === 'student'">
@@ -70,7 +70,7 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
 
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
           <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : buttonLabel}}</button>
-          <p class="switch">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
+          <p class="switch" *ngIf="portal !== 'student'">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
             <a [routerLink]="['/auth', mode === 'login' ? 'register' : 'login', portal]">{{mode === 'login' ? 'Create an account' : 'Log in'}}</a></p>
         </form>
       </section>
@@ -128,8 +128,7 @@ export class AuthPageComponent implements OnInit {
       await this.router.navigate(['/organization/dashboard']);
       return;
     }
-    const studentDestination = this.mode === 'register' ? ['/student/onboarding'] : ['/student/dashboard'];
-    await this.router.navigate(this.portal==='student'?studentDestination:['/portal',this.portal]);
+    await this.router.navigate(this.portal==='student'?['/student/dashboard']:['/portal',this.portal]);
   }
   onFormSubmit(){
     this.submit();
@@ -139,15 +138,46 @@ export class AuthPageComponent implements OnInit {
     if(this.portal==='organization'&&this.mode==='register'&&this.form.password!==this.form.confirmPassword){
       this.error='Passwords do not match.';this.loading=false;return;
     }
+    const identifier=this.portal==='student'?`${this.form.mobileCountry}${this.form.mobileNumber.replace(/\D/g,'')}`:this.form.email;
     if(this.portal==='student'){
       const digits=this.form.mobileNumber.replace(/\D/g,'');
       if(digits.length<7){this.error='Enter a valid mobile number.';this.loading=false;return;}
     }
+
+    // Organization login skips the account-match check — frontend-only testing of the university/bank
+    // workspace shouldn't require registering an org account first. Sign up still validates normally.
+    const skipAccountCheck=this.portal==='organization'&&this.mode==='login';
+
+    const existing=skipAccountCheck?undefined:findAccount(this.portal,identifier);
+    if(this.mode==='register'&&existing){
+      this.error=this.portal==='student'?'An account with this number already exists. Log in instead.':'An account with this email already exists. Log in instead.';
+      this.loading=false;return;
+    }
+    if(this.mode==='login'&&!skipAccountCheck&&!existing){
+      this.error=this.portal==='student'?"We couldn't find an account with this number. Create an account first.":"We couldn't find an account with this email. Create an account first.";
+      this.loading=false;return;
+    }
+    if(this.mode==='login'&&!skipAccountCheck&&this.portal!=='student'&&existing!.password!==this.form.password){
+      this.error='Incorrect password.';this.loading=false;return;
+    }
+
+    if(this.mode==='register'){
+      createAccount(this.portal,identifier,{
+        identifier,
+        password:this.portal!=='student'?this.form.password:undefined,
+        fullName:this.form.fullName||this.form.organization||'Demo User',
+        organization:this.portal==='student'?undefined:(this.form.organization||`${this.portalLabel} Demo Organisation`)
+      });
+    }
+    const account=skipAccountCheck
+      ?{identifier,fullName:this.form.organization||'Demo User',organization:this.form.organization||`${this.portalLabel} Demo Organisation`}
+      :(this.mode==='register'?findAccount(this.portal,identifier)!:existing!);
+
     const session={
       role:this.role(),
       access_token:'frontend-demo-session',
-      full_name:this.form.fullName||this.form.organization||'Demo User',
-      organization:this.portal==='student'?null:{name:this.form.organization||`${this.portalLabel} Demo Organisation`}
+      full_name:account.fullName,
+      organization:this.portal==='student'?null:{name:account.organization}
     };
     try{
       await this.openPortal(session);

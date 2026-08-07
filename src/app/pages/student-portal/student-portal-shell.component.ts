@@ -74,8 +74,11 @@ export class StudentPortalShellComponent {
 
   private syncRoute(url: string) {
     this.isDashboard = url.includes('/student/dashboard');
-    this.isOffers = url.includes('/student/offers') || url.includes('/student/profile') || url.includes('/student/dashboard') || url.includes('/student/settings') || url.includes('/student/help');
     const index = this.steps.findIndex(step => url.includes(`/student/${step.path}`));
+    /** Any page outside the 7 wizard steps (dashboard, offers, profile, settings, loan-eligibility, saved-universities, etc.)
+     *  uses its own workspace-rail layout, so the step sidebar must stay hidden there — derive from the step list
+     *  itself rather than an allowlist that silently goes stale whenever a new non-wizard page is added. */
+    this.isOffers = index < 0;
     this.currentIndex = index >= 0 ? index : 0;
     if (this.currentIndex > this.furthestIndex) {
       this.furthestIndex = this.currentIndex;

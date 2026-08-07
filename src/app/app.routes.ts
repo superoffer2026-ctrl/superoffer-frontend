@@ -78,7 +78,10 @@ export const appRoutes: Routes = [
   ...['dashboard','students','subscription','offers','settings'].map(page => ({ path: `portal/bank/${page}`, pathMatch: 'full' as const, redirectTo: `organization/${page}` })),
 
   { path: 'organization/student/:id', component: OrganizationWorkspaceComponent, data: { page: 'students' }, title: 'Organization Workspace | SuperOffer' },
-  ...['dashboard','students','offers','saved','notifications','subscription','profile','settings'].map(page => ({ path: `organization/${page}`, component: OrganizationWorkspaceComponent, data: { page }, title: 'Organization Workspace | SuperOffer' })),
+  // Legacy page ids kept working after the Invitations/Shortlists rename below.
+  { path: 'organization/offers', pathMatch: 'full', redirectTo: 'organization/invitations' },
+  { path: 'organization/saved', pathMatch: 'full', redirectTo: 'organization/shortlists' },
+  ...['dashboard','students','shortlists','invitations','catalog','templates','criteria','reports','notifications','subscription','profile','settings'].map(page => ({ path: `organization/${page}`, component: OrganizationWorkspaceComponent, data: { page }, title: 'Organization Workspace | SuperOffer' })),
 
   ...['dashboard','students','settings'].map(path => ({ path: `portal/consultancy/${path}`, component: ConsultancyWorkspaceComponent, data: { page: path }, title: 'Consultancy Workspace | SuperOffer' })),
   { path: 'portal/consultancy', pathMatch: 'full', redirectTo: 'portal/consultancy/dashboard' },
