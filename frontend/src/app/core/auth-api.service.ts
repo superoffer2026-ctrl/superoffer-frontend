@@ -23,6 +23,14 @@ export class AuthApiService {
     return this.request(`/auth/status/${userId}`);
   }
 
+  async requestOtp(phone: string, fullName?: string): Promise<any> {
+    return this.request('/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone, full_name: fullName }) });
+  }
+
+  async verifyOtp(phone: string, code: string): Promise<any> {
+    return this.request('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) });
+  }
+
   async currentUser(token: string): Promise<any> {
     return this.request('/auth/me', { headers: { authorization: `Bearer ${token}` } });
   }
