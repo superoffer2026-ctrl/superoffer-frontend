@@ -10,7 +10,7 @@ type OrganizationView = 'dashboard' | 'students' | 'shortlists' | 'invitations' 
 type OfferStatus = 'Sent' | 'Viewed' | 'Negotiating' | 'Accepted' | 'Rejected' | 'Withdrawn' | 'Expired';
 type BankEvaluationMode = 'ACADEMIC_ONLY' | 'UNIVERSITY_OFFER_ONLY' | 'ACADEMIC_AND_OFFER';
 type UniversityOfferStatus = 'Offer Sent' | 'Shortlisted' | 'Selected' | 'Admitted';
-type SettingsTab = 'org' | 'accreditation' | 'team' | 'notifications' | 'security';
+type SettingsTab = 'org' | 'subscription' | 'accreditation' | 'team' | 'notifications' | 'security';
 
 const BANK_EVALUATION_MODE_KEY = 'superoffer_bank_evaluation_mode';
 
@@ -29,14 +29,28 @@ interface UniversityInterest {
   scholarship?: string; tuitionFee?: string; remainingTuition?: string; livingCost?: string; logo?: string;
 }
 
-interface Program {
-  id: string; name: string; degreeLevel: 'Undergraduate' | 'Postgraduate'; course: string; country: string;
+interface Product {
+  id: string; name: string; category?: string; degreeLevel: 'Undergraduate' | 'Postgraduate'; course: string; country: string;
   intakes: string[]; tuitionFee: string; scholarshipRange: string; durationYears: number; seats: number | 'Rolling';
+  minCgpa?: number; englishTest?: string; minEnglishScore?: number; preferredCurricula?: string; targetCountries?: string;
+  templates?: any[];
+  url?: string;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  inviteNote?: string;
+  templateName?: string;
 }
 
 interface LoanProduct {
-  id: string; name: string; interestRateMin: number; interestRateMax: number; currency: string; maxAmount: string;
+  id: string; name: string; category?: string; interestRateMin: number; interestRateMax: number; currency: string; maxAmount: string;
   tenureOptions: number[]; collateralRequired: boolean; eligibleCountries: string[];
+  guarantorRequired?: boolean; maxFamilyIncome?: number;
+  templates?: any[];
+  url?: string;
+  createdAt?: string;
+  lastModifiedAt?: string;
+  inviteNote?: string;
+  templateName?: string;
 }
 
 interface OfferTemplate { id: string; name: string; description: string; terms: Record<string, any>; usedCount: number; }
@@ -54,17 +68,17 @@ const ROLE_CONFIG: Record<Role, any> = {
     dashboardIntro: "Here's a premium overview of your student discovery pipeline.",
     cycleLabel: 'recruitment cycle', createActionLabel: 'Send admission terms',
     searchEyebrow: 'STUDENT DISCOVERY', searchTitle: 'Find best-fit students',
-    searchIntro: 'Browse verified student profiles ranked by compatibility with your programmes.',
+    searchIntro: 'Browse verified student profiles ranked by compatibility with your products.',
     subscriptionIntro: 'Increase the number of student profiles your university can review and invite this cycle.',
     offerVerb: 'offer', offerNoun: 'admission and scholarship proposal', offerEyebrow: 'admission',
     orgFieldLabel: 'University name', orgTypeOptions: ['Private university'],
     orgNameDefault: 'Northbridge University', orgDomainDefault: 'northbridge.edu', orgCityDefault: 'Toronto, Canada',
-    orgDescriptionDefault: 'Internationally focused university offering career-led postgraduate programmes.',
+    orgDescriptionDefault: 'Internationally focused university offering career-led postgraduate products.',
     profileTabLabel: 'University Profile',
-    catalogEyebrow: 'PROGRAM CATALOG', catalogTitle: 'Programmes', catalogIntro: 'Maintain the programmes you recruit for — these power search filters and match scoring.',
+    catalogEyebrow: 'PRODUCT CATALOG', catalogTitle: 'Products', catalogIntro: 'Maintain the products you recruit for — these power search filters and match scoring.',
     templatesEyebrow: 'OFFER TEMPLATES', templatesTitle: 'Offer templates', templatesIntro: 'Start an invitation from a reusable template instead of building terms from scratch every time.',
-    criteriaEyebrow: 'ADMISSION CRITERIA', criteriaTitle: 'Admission criteria', criteriaIntro: 'Set the academic thresholds AI Matching uses to rank students against your programmes.',
-    reportsEyebrow: 'REPORTS', reportsTitle: 'Admissions funnel', reportsIntro: 'Track how invitations move from sent to accepted, and which programmes convert best.',
+    criteriaEyebrow: 'ADMISSION CRITERIA', criteriaTitle: 'Admission criteria', criteriaIntro: 'Set the academic thresholds AI Matching uses to rank students against your products.',
+    reportsEyebrow: 'REPORTS', reportsTitle: 'Admissions funnel', reportsIntro: 'Track how invitations move from sent to accepted, and which products convert best.',
     weightFactors: [
       { label: 'Academic fit', weight: 35 },
       { label: 'Test score fit', weight: 20 },
@@ -108,36 +122,250 @@ const ROLE_CONFIG: Record<Role, any> = {
   template: `
     <div class="uni-shell">
       <aside class="uni-sidebar">
-        <button class="uni-brand" type="button" (click)="go('dashboard')"><img [src]="cfg.logoSrc" [alt]="cfg.logoAlt"><strong>SuperOffer</strong></button>
-        <div class="uni-org"><span>{{cfg.orgInitials}}</span><div><strong>{{orgName}}</strong><small>Verified organisation</small></div></div>
+        <button class="uni-brand workspace-logo" type="button" (click)="go('dashboard')" aria-label="SuperOffer">S</button>
         <nav>
-          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id || (item.id==='profile' && view==='settings')" (click)="go(item.id)" [title]="navLabel(item.id)" [attr.aria-label]="navLabel(item.id)">
-            <span>{{item.icon}}</span><strong>{{navLabel(item.id)}}</strong>
+          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="go(item.id)" [title]="navLabel(item.id)" [attr.aria-label]="navLabel(item.id)">
+            <span class="nav-icon" [ngSwitch]="item.id">
+              <svg *ngSwitchCase="'dashboard'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+              <svg *ngSwitchCase="'students'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg *ngSwitchCase="'templates'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <svg *ngSwitchCase="'notifications'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </span>
+            <strong>{{navLabel(item.id)}}</strong>
           </button>
         </nav>
-        <div class="uni-plan"><span>{{currentPlan | uppercase}} PLAN</span><strong>{{profilesViewed}} of {{planQuotaLabel}}</strong><small>student profiles viewed</small><i><b [style.width.%]="quotaPercent"></b></i></div>
-        <button class="uni-user" type="button" (click)="go('profile')" title="Organisation profile" aria-label="Organisation profile"><span>{{cfg.userInitials}}</span><div><strong>{{cfg.userName}}</strong><small>{{cfg.userTitle}}</small></div><b>↗</b></button>
+        <button class="uni-user workspace-avatar" type="button" [class.active]="view==='profile' || view==='settings'" (click)="go('profile')" title="Organisation profile" aria-label="Organisation profile"><span>{{cfg.userInitials}}</span></button>
       </aside>
 
-      <main class="uni-main">
-        <section class="uni-view" *ngIf="view==='dashboard'">
+      <!-- ============================================================
+           UNIFIED 3-COLUMN WORKSPACE: EXACT DESIGN PARITY WITH STUDENT OFFERS
+           ============================================================ -->
+      <main class="offer-workspace-page" *ngIf="view==='students' || view==='shortlists' || view==='invitations'">
+        <section class="offer-workspace">
+          <!-- COLUMN 1: CANDIDATES & APPLICANTS FEED -->
+          <aside class="offer-mailbox">
+            <header class="mailbox-toolbar">
+              <button class="all-offers-reset" type="button" (click)="workspaceFilter='All'">
+                <strong>{{ role==='BANK' ? 'Student Loan Applicants' : 'Candidates & Offers' }}</strong>
+                <small>{{workspaceOffers.length}} candidates to review</small>
+              </button>
+              <div class="compact-offer-filters">
+                <button type="button" [class.active]="workspaceFilter==='All'" (click)="workspaceFilter='All'">All <b>{{workspaceOffers.length}}</b></button>
+                <button type="button" [class.active]="workspaceFilter==='Accepted'" (click)="workspaceFilter='Accepted'">Invited <b>{{countWorkspaceOffers('Accepted')}}</b></button>
+                <button type="button" [class.active]="workspaceFilter==='Shortlisted'" (click)="workspaceFilter='Shortlisted'">Shortlisted <b>{{countWorkspaceOffers('Shortlisted')}}</b></button>
+                <button type="button" [class.active]="workspaceFilter==='Rejected'" (click)="workspaceFilter='Rejected'">Rejected <b>{{countWorkspaceOffers('Rejected')}}</b></button>
+              </div>
+            </header>
+
+            <button class="offer-mail-item" *ngFor="let cand of filteredWorkspaceOffers"
+              [class.selected]="cand.id===selectedOfferItem.id" (click)="selectOffer(cand)">
+              <span class="logo candidate-avatar-badge" [style.background]="cand.avatarColor">
+                {{cand.initials}}
+              </span>
+              <span class="mail-offer-main">
+                <div><small>{{cand.matchBadge}}</small><time>{{cand.received}}</time></div>
+                <strong>{{cand.name}}</strong>
+                <p>{{cand.course}} · {{cand.targetCountry}}</p>
+                <b>{{cand.headline}}</b>
+              </span>
+              <i *ngIf="cand.status==='Pending'"></i>
+            </button>
+          </aside>
+
+          <!-- COLUMN 2 & 3: READING PANE & LIVE NEGOTIATION -->
+          <section class="offer-reading-pane" *ngIf="selectedOfferItem">
+            <!-- COLUMN 2: CANDIDATE PROFILE & OFFER DETAILS -->
+            <div class="offer-details-column">
+              <header class="reading-pane-header">
+                <div class="reading-institution">
+                  <img *ngIf="selectedOfferItem.avatarUrl" [src]="selectedOfferItem.avatarUrl" alt="Profile" class="logo candidate-avatar-badge" style="object-fit: cover;">
+                  <span *ngIf="!selectedOfferItem.avatarUrl" class="logo candidate-avatar-badge" [style.background]="selectedOfferItem.avatarColor">
+                    {{selectedOfferItem.initials}}
+                  </span>
+                  <div style="display: flex; flex-direction: column; justify-content: center;">
+                    <h2 style="margin: 0 0 4px 0; line-height: 1;">{{selectedOfferItem.name}}</h2>
+                    <p class="reading-course" style="font-size: 14px; margin: 0; color: #3f4d46; line-height: 1;">{{selectedOfferItem.course}}</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
+                  <button type="button" class="secondary-btn shortlist-action" title="Shortlist"
+                          style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px;" 
+                          [class.chosen]="selectedOfferItem.status==='Shortlisted'" 
+                          (click)="setOfferStatus(selectedOfferItem, selectedOfferItem.status==='Shortlisted' ? 'Pending' : 'Shortlisted')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                  </button>
+                  <button type="button" class="secondary-btn reject-action" title="Reject"
+                          style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: #a13d3d;" 
+                          [class.chosen]="selectedOfferItem.status==='Rejected'" 
+                          (click)="setOfferStatus(selectedOfferItem, 'Rejected')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                  <button type="button" class="secondary-btn" style="padding: 6px 16px; height: 32px; font-size: 13px; font-weight: 700; color: #087a50; border-color: #087a50;" (click)="openProductInviteModal()">Product Invite</button>
+                  <button type="button" class="primary-btn" style="padding: 6px 16px; height: 32px; font-size: 13px; display: flex; align-items: center; gap: 4px;" (click)="sendCandidateInvite(selectedOfferItem)">
+                    <svg *ngIf="selectedOfferItem.status!=='Accepted'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>{{selectedOfferItem.status==='Accepted' ? '✓ Invite Sent' : 'Invite'}}</span>
+                  </button>
+                </div>
+              </header>
+
+              <div class="reading-pane-scroll">
+                <!-- HERO KEY TERMS -->
+                <section class="offer-detail-hero">
+                  <small>{{role==='BANK' ? 'FINANCIAL ASSESSMENT & LOAN PROPOSAL' : 'ACADEMIC & SCHOLARSHIP EVALUATION'}}</small>
+                  <h1>{{selectedOfferItem.headline}}</h1>
+                  <div class="offer-key-terms">
+                    <div><small>{{role==='BANK' ? 'TARGET COURSE' : 'PRODUCT'}}</small><strong>{{selectedOfferItem.course}}</strong></div>
+                    <div><small>{{selectedOfferItem.offerValueLabel | uppercase}}</small><strong>{{selectedOfferItem.offerValue}}</strong></div>
+                    <div><small>TARGET INTAKE</small><strong>{{selectedOfferItem.intake}}</strong></div>
+                    <div><small>DECISION BY</small><strong>{{selectedOfferItem.deadline}}</strong></div>
+                  </div>
+                </section>
+
+                <!-- STUDY PREFERENCES -->
+                <section class="offer-conditions" style="margin-top:0; padding-bottom: 8px;">
+                  <h3 style="margin-bottom: 12px; color: #172019;">Study Intent & Preferences</h3>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase;">Which country to study in?</small><strong style="font-size:13px;color:#172019;">{{selectedOfferItem.targetCountry}}</strong></div>
+                    <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase;">What to study / Product</small><strong style="font-size:13px;color:#172019;">{{selectedOfferItem.course}}</strong></div>
+                    <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase;">When / Intake</small><strong style="font-size:13px;color:#172019;">{{selectedOfferItem.intake}}</strong></div>
+                    <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;text-transform:uppercase;">Future Study Interests</small><strong style="font-size:13px;color:#172019;">{{selectedOfferItem.futureInterests}}</strong></div>
+                  </div>
+                </section>
+
+                <!-- 4-METRICS ACADEMIC SUMMARY -->
+                <section class="candidate-academic-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px;background:#f6f9f7;border:1px solid #dfe6e1;border-radius:10px;margin-top:2px;">
+                  <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;">CGPA / MARKS</small><strong style="font-size:14px;color:#172019;">{{selectedOfferItem.cgpa}}</strong></div>
+                  <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;">TEST SCORES</small><strong style="font-size:14px;color:#172019;">{{selectedOfferItem.examScore}}</strong></div>
+                  <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;">BUDGET</small><strong style="font-size:14px;color:#172019;">{{selectedOfferItem.budget}}</strong></div>
+                  <div><small style="font-size:10px;color:#6b7871;font-weight:700;display:block;margin-bottom:3px;">VERIFIED DOCS</small><strong style="font-size:14px;color:#087a50;">{{selectedOfferItem.documentsVerified}}/5 Verified</strong></div>
+                </section>
+
+                <!-- CANDIDATE BIO & SKILLS -->
+                <section class="offer-conditions">
+                  <div>
+                    <h3 style="margin-bottom: 8px;">Experience & Recognition</h3>
+                    <p>{{selectedOfferItem.bio}}</p>
+                    <h3 style="margin-top: 16px; margin-bottom: 8px;">Skills & Communication</h3>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                      <span *ngFor="let sk of selectedOfferItem.skills" style="background:#eef5f1;color:#087a50;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid #d5e5dc;">{{sk}}</span>
+                    </div>
+                  </div>
+                  <button type="button" (click)="notify('Opening verified student documents')">View verified dossier →</button>
+                </section>
+
+                <!-- OFFER CONDITIONS -->
+                <section class="offer-conditions" style="margin-top:0;">
+                  <div>
+                    <h3>Terms & Requirements</h3>
+                    <p>{{selectedOfferItem.conditions}}</p>
+                  </div>
+                  <button type="button" (click)="notify('Viewing full terms')">Edit offer terms →</button>
+                </section>
+
+                <!-- NEXT STEPS CHECKLIST -->
+                <section class="offer-next-steps">
+                  <div><small>ACTION CHECKLIST</small><strong>To progress this candidate</strong></div>
+                  <ul><li *ngFor="let step of selectedOfferItem.nextSteps">{{step}}</li></ul>
+                </section>
+              </div>
+
+            </div>
+
+            <!-- COLUMN 3: DIRECT STUDENT MESSAGING -->
+            <section class="offer-conversation">
+              <header class="conversation-head">
+                <div class="chat-contact">
+                  <span class="logo candidate-avatar-badge" [style.background]="selectedOfferItem.avatarColor">{{selectedOfferItem.initials}}</span>
+                  <div>
+                    <h3>{{selectedOfferItem.name}}</h3>
+                    <p>Candidate · {{selectedOfferItem.course}}</p>
+                    <small><i></i> Online & Active</small>
+                  </div>
+                </div>
+                <button class="conversation-options" type="button" aria-label="Conversation options" (click)="notify('Conversation options')">•••</button>
+              </header>
+              <div class="message-thread">
+                <div *ngFor="let message of selectedOfferItem.messages" [class.student-message]="message.from==='institution'">
+                  <span>{{message.from==='institution' ? 'YOU' : selectedOfferItem.initials}}</span>
+                  <div><strong>{{message.author}}</strong><p>{{message.body}}</p><small>{{message.time}}</small></div>
+                </div>
+              </div>
+              <form class="message-composer" (ngSubmit)="sendChatMessage()">
+                <button type="button" aria-label="Attach file" (click)="notify('Attachment picker')">＋</button>
+                <input name="chatDraft" [(ngModel)]="chatDraft" placeholder="Message {{selectedOfferItem.name}}…" autocomplete="off">
+                <button class="primary-btn" [disabled]="!chatDraft.trim()" type="submit">Send</button>
+              </form>
+            </section>
+          </section>
+        </section>
+      </main>
+
+      <!-- STANDARD VIEW MAIN FOR DASHBOARD, TEMPLATES, NOTIFICATIONS, PROFILE -->
+      <main class="uni-main" *ngIf="view!=='students' && view!=='shortlists' && view!=='invitations'">
+        <section class="uni-view" *ngIf="view==='dashboard' || view==='reports'">
           <header class="uni-page-title"><div><span>{{cfg.eyebrow}}</span><h1>{{cfg.greeting}}</h1><p>{{cfg.dashboardIntro}}</p></div></header>
 
           <div class="uni-metrics">
             <article><span>CURRENT SUBSCRIPTION</span><strong>{{currentPlan}}</strong><small>{{planQuotaLabel}} profiles / cycle</small></article>
             <article><span>PROFILES VIEWED</span><strong>{{profilesViewed}}</strong><small>this {{cfg.cycleLabel}}</small></article>
-            <article><span>REMAINING PROFILE CREDITS</span><strong>{{remainingCredits}}</strong><small>available to view</small></article>
-            <article><span>ACTIVE OFFERS</span><strong>{{activeOffersCount}}</strong><small>awaiting a student response</small></article>
+            <article><span>ACCEPTANCE RATE</span><strong>{{acceptanceRate}}%</strong><small>{{avgResponseTime}} avg response</small></article>
+            <article><span>ACTIVE OFFERS</span><strong>{{activeOffersCount}}</strong><small>awaiting student response</small></article>
           </div>
 
           <section class="uni-card quick-actions-card">
             <header><div><span>QUICK ACTIONS</span><h2>Move your pipeline forward</h2></div></header>
             <div class="quick-actions">
-              <button type="button" class="quick-action" (click)="go('students')"><span>⌕</span><div><strong>Browse Students</strong><small>Discover best-fit candidates</small></div></button>
-              <button type="button" class="quick-action" (click)="openOfferComposer()"><span>◇</span><div><strong>Create Offer</strong><small>{{cfg.createActionLabel}}</small></div></button>
-              <button type="button" class="quick-action" (click)="go('subscription')"><span>✦</span><div><strong>Upgrade Plan</strong><small>Unlock more profile credits</small></div></button>
+              <button type="button" class="quick-action" (click)="go('students')">
+                <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <div><strong>Browse Students</strong><small>Discover best-fit candidates</small></div>
+              </button>
+              <button type="button" class="quick-action" (click)="openOfferComposer()">
+                <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+                <div><strong>Create Offer</strong><small>{{cfg.createActionLabel}}</small></div>
+              </button>
+              <button type="button" class="quick-action" (click)="go('subscription')">
+                <span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+                <div><strong>Manage Plan</strong><small>{{remainingCredits}} credits remaining</small></div>
+              </button>
             </div>
           </section>
+
+          <!-- Conversion Funnel (Merged from Reports) -->
+          <section class="uni-card uni-funnel-chart">
+            <header><div><span>CONVERSION FUNNEL</span><h2>Sent → Viewed → Negotiating → Accepted</h2><p>Real-time candidate progression through each stage.</p></div></header>
+            <div *ngFor="let stage of funnelStages"><span>{{stage.label}}</span><i><b [style.width.%]="stage.percent">{{stage.count}}</b></i><small>{{stage.percent}}%</small></div>
+          </section>
+
+          <!-- Performance & Conversion Insights (Merged from Reports) -->
+          <div class="report-grid">
+            <article class="uni-card">
+              <header style="padding: 20px 24px 10px; border-bottom: 0;">
+                <div><span>{{role==='BANK' ? 'RATE SENSITIVITY' : 'PERFORMANCE'}}</span><h2 style="font-size:18px;">{{role==='BANK' ? 'Rate sensitivity' : 'Product performance'}}</h2><p style="font-size:13px; color:#7a8680; margin:3px 0 0;">Acceptance rate by {{role==='BANK'?'interest rate band':'product'}}</p></div>
+              </header>
+              <div class="bar-chart">
+                <span *ngFor="let bar of performanceBars"><i [style.height.%]="bar.percent"></i><b>{{bar.percent}}%</b><small>{{bar.label}}</small></span>
+              </div>
+            </article>
+            <article class="uni-card">
+              <header style="padding: 20px 24px 10px; border-bottom: 0;">
+                <div><span>INSIGHTS</span><h2 style="font-size:18px;">{{role==='BANK' ? 'Terms vs. acceptance' : 'Best converting match bands'}}</h2><p style="font-size:13px; color:#7a8680; margin:3px 0 0;">Key drivers of student offer acceptance</p></div>
+              </header>
+              <ol style="list-style:none; padding:0 24px 20px; margin:0; display:flex; flex-direction:column; gap:12px;">
+                <li *ngFor="let row of rankedInsights" style="display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:#f7faf8; border:1px solid #e7efe9;">
+                  <b style="font-size:18px;">{{row.icon}}</b>
+                  <p style="flex:1; margin:0;"><strong style="display:block; font-size:13.5px; color:#172019;">{{row.label}}</strong><small style="color:#78847e; font-size:12px;">{{row.detail}}</small></p>
+                  <span style="font-size:14px; font-weight:800; color:#087a50;">{{row.value}}</span>
+                </li>
+              </ol>
+            </article>
+          </div>
 
           <section class="uni-card uni-activity uni-activity-full">
             <header><div><span>RECENT OFFERS</span><h2>Latest offer activity</h2></div><button (click)="go('invitations')">View all</button></header>
@@ -151,363 +379,77 @@ const ROLE_CONFIG: Record<Role, any> = {
           </section>
         </section>
 
-        <section class="uni-view" *ngIf="view==='students'">
-          <header class="uni-page-title"><div><span>{{cfg.searchEyebrow}}</span><h1>{{cfg.searchTitle}}</h1><p>{{cfg.searchIntro}}</p></div></header>
-
-          <div class="candidate-toolbar">
-            <button type="button" class="candidate-filter-btn" [class.active]="filtersOpen" (click)="filtersOpen=!filtersOpen">
-              <span>▤</span> Filters<b class="filter-count" *ngIf="activeFilterCount">{{activeFilterCount}}</b>
-            </button>
-            <div class="candidate-toolbar-count"><strong>{{filteredStudents.length}}</strong> matching students<small>Results update instantly · contact details stay hidden until an offer is accepted.</small></div>
-            <button type="button" class="candidate-reset-link" *ngIf="activeFilterCount" (click)="resetFilters()">Reset filters</button>
-          </div>
-
-          <div class="candidate-filter-panel" *ngIf="filtersOpen">
-            <div class="filter-panel-grid">
-              <div class="filter-rail-group">
-                <h3>Programme &amp; destination</h3>
-                <label>Course<select [(ngModel)]="filters.course"><option value="">Any course</option><option *ngFor="let c of courseOptions" [value]="c">{{c}}</option></select></label>
-                <label>Degree level<select [(ngModel)]="filters.degree"><option value="">Any degree</option><option>Undergraduate</option><option>Postgraduate</option></select></label>
-                <label>Preferred country<select [(ngModel)]="filters.country"><option value="">Any country</option><option *ngFor="let c of countryOptions" [value]="c">{{c}}</option></select></label>
-                <label>Intake<select [(ngModel)]="filters.intake"><option value="">Any intake</option><option *ngFor="let i of intakeOptions" [value]="i">{{i}}</option></select></label>
-              </div>
-
-              <div class="filter-rail-group">
-                <h3>Academic &amp; test scores</h3>
-                <label>Min. CGPA / Marks<input type="number" step="0.1" min="0" max="10" [(ngModel)]="filters.cgpaMin" placeholder="e.g. 7.5"></label>
-                <label>English test<select [(ngModel)]="filters.englishTest"><option value="">Any test</option><option *ngFor="let t of englishTestOptions" [value]="t">{{t}}</option></select></label>
-                <label>Min. English score<input type="number" step="0.5" min="0" [(ngModel)]="filters.englishScoreMin" placeholder="e.g. 6.5"></label>
-                <label>Min. GRE<input type="number" min="0" max="340" [(ngModel)]="filters.greMin" placeholder="e.g. 310"></label>
-                <label>Min. GMAT<input type="number" min="0" max="800" [(ngModel)]="filters.gmatMin" placeholder="e.g. 650"></label>
-                <label>Max. backlogs<input type="number" min="0" [(ngModel)]="filters.backlogsMax" placeholder="e.g. 0"></label>
-              </div>
-
-              <div class="filter-rail-group">
-                <h3>Experience &amp; financial fit</h3>
-                <label>Min. work experience (yrs)<input type="number" min="0" step="0.5" [(ngModel)]="filters.workExperienceMin" placeholder="e.g. 1"></label>
-                <label class="filter-checkbox"><input type="checkbox" [(ngModel)]="filters.noVisaRefusals"> No prior visa refusals only</label>
-                <label>Min. self-funding budget (₹)<input type="number" [(ngModel)]="filters.budgetMin" placeholder="e.g. 2000000"></label>
-                <label>{{role==='BANK' ? 'Loan requirement' : 'Scholarship interest'}}<select [(ngModel)]="filters.scholarship"><option value="">Any</option><option value="yes">{{role==='BANK' ? 'Requires a loan' : 'Seeking scholarship'}}</option><option value="no">Self-funded</option></select></label>
-              </div>
-
-              <div class="filter-rail-group" *ngIf="role==='BANK'">
-                <h3>Financial eligibility</h3>
-                <label>Max. family income (₹/yr)<input type="number" [(ngModel)]="filters.familyIncomeMax" placeholder="e.g. 2000000"></label>
-                <label>Max. loan amount needed (₹)<input type="number" [(ngModel)]="filters.requiredLoanMax" placeholder="e.g. 3000000"></label>
-              </div>
-
-              <div class="filter-rail-group" *ngIf="role==='BANK' && bankEvaluationMode!=='ACADEMIC_ONLY'">
-                <h3>University interest</h3>
-                <label>University name<input [(ngModel)]="filters.universityName" placeholder="e.g. Northbridge University"></label>
-                <label>University course<input [(ngModel)]="filters.universityCourse" placeholder="e.g. MSc Data Science"></label>
-                <label>Offer status<select [(ngModel)]="filters.offerStatus"><option value="">Any status</option><option>Offer Sent</option><option>Shortlisted</option><option>Selected</option><option>Admitted</option></select></label>
-                <label *ngIf="bankEvaluationMode==='ACADEMIC_AND_OFFER'">Visibility<select [(ngModel)]="filters.visibility"><option value="">Academic + university offer (both)</option><option value="academicOnly">Academic only</option><option value="offerAvailable">University offer available</option></select></label>
-              </div>
+        <section class="uni-view" *ngIf="view==='templates' || view==='catalog' || view==='criteria'">
+          <header class="uni-page-title">
+            <div>
+              <span>{{ role==='BANK' ? 'FINANCIAL PRODUCTS & UNDERWRITING' : 'Product Management' }}</span>
+              <h1>{{ role==='BANK' ? 'Loan Products' : 'Products' }}</h1>
+              <p>{{ role==='BANK' ? 'Manage loan products, underwriting criteria, and their standard offer templates.' : 'Manage course offerings, admission criteria, and their standard offer templates.' }}</p>
             </div>
-            <footer class="filter-panel-footer">
-              <button type="button" class="uni-secondary" (click)="resetFilters()">Reset all</button>
-              <button type="button" class="uni-primary" (click)="filtersOpen=false">Show {{filteredStudents.length}} students</button>
-            </footer>
-          </div>
-
-          <ng-container *ngIf="filteredStudents.length; else noStudents">
-            <div class="student-result-list">
-              <article class="student-result-row" *ngFor="let student of filteredStudents" (click)="openStudentPanel(student)">
-                <div class="result-row-photo">
-                  <img [src]="student.photo" [alt]="student.name">
-                  <button type="button" class="result-row-save" [class.chosen]="isShortlisted(student.name)" (click)="$event.stopPropagation(); toggleShortlist(student.name)" [attr.aria-label]="isShortlisted(student.name) ? 'Remove from saved students' : 'Save student'">{{isShortlisted(student.name) ? '★' : '☆'}}</button>
-                </div>
-                <div class="result-row-main">
-                  <div class="result-row-head">
-                    <h3>{{student.name}}</h3>
-                    <div class="result-row-score"><strong>{{overallScore(student)}}%</strong><small>MATCH</small></div>
-                  </div>
-                  <p class="result-meta">{{student.degree}} · {{student.course}}</p>
-                  <p class="result-meta-sub">Targeting {{student.country}} · {{student.intake}}</p>
-                  <div class="bank-badge-row result-badges" *ngIf="role==='BANK' && bankBadges(student).length">
-                    <span *ngFor="let badge of bankBadges(student)" [class.pre-approved]="badge==='PRE-APPROVED'">{{badge}}</span>
-                  </div>
-                  <div class="result-stats">
-                    <span>CGPA<b>{{student.cgpa}}</b></span>
-                    <span>Tests<b>{{student.examScore}}</b></span>
-                    <span>Budget<b>{{student.budget}}</b></span>
-                  </div>
-                </div>
-                <div class="result-row-actions">
-                  <button type="button" class="uni-primary" (click)="$event.stopPropagation(); openOfferComposer(student)">Send {{cfg.offerVerb}}</button>
-                </div>
-              </article>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button type="button" (click)="downloadCsvTemplate()" style="background:transparent; border:none; color:#087a50; font-size:13px; font-weight:700; cursor:pointer; padding:0; text-decoration:underline;">Download CSV Template</button>
+              <input type="file" #importFileInput style="display:none" accept=".csv" (change)="importProducts($event)">
+              <button class="uni-secondary" (click)="importFileInput.click()" style="padding: 0 16px; height: 36px;">Import via CSV</button>
+              <button class="uni-primary" (click)="openCatalogModal()">+ Add {{role==='BANK' ? 'loan product' : 'product'}}</button>
             </div>
-          </ng-container>
-          <ng-template #noStudents><section class="uni-card empty-state"><strong>No students match your filters</strong><p>Try widening your budget, intake or score criteria.</p><button type="button" class="uni-secondary" (click)="resetFilters()">Reset filters</button></section></ng-template>
+          </header>
 
-          <div class="university-panel-backdrop carousel-backdrop" *ngIf="studentPanelOpen && currentStudent" (click)="studentPanelOpen=false">
-            <div class="carousel-shell" (click)="$event.stopPropagation()">
-              <header class="carousel-shell-head">
-                <span>Verified student · Indian national</span>
-                <button type="button" (click)="studentPanelOpen=false" aria-label="Close">×</button>
-              </header>
+          <!-- SECTION: ACTIVE PRODUCTS / PRODUCTS DIRECTORY -->
+          <section class="uni-card" style="margin-bottom: 24px;">
 
-              <div class="carousel-stage">
-                <button type="button" class="carousel-arrow carousel-arrow-left" (click)="swapProfile(-1)" [disabled]="browseIndex===0" aria-label="Previous candidate">‹</button>
 
-                <div class="carousel-card" *ngFor="let item of carouselWindow; trackBy: trackByStudentName"
-                  [style.transform]="cardTransform(item.offset)"
-                  [style.filter]="cardBlur(item.offset)"
-                  [style.opacity]="cardOpacity(item.offset)"
-                  [style.zIndex]="cardZ(item.offset)"
-                  [class.carousel-card-center]="item.offset===0"
-                  [class.candidate-profile-panel]="item.offset===0"
-                  [class.carousel-card-peek]="item.offset!==0"
-                  (click)="item.offset!==0 && jumpToOffset(item.offset)">
-
-                  <ng-container *ngIf="item.offset!==0">
-                    <div class="carousel-peek">
-                      <span [style.background]="item.student.color"><img [src]="item.student.photo" [alt]="item.student.name"></span>
-                      <strong>{{item.student.name}}</strong>
-                      <small>{{overallScore(item.student)}}% match</small>
+              <div class="product-catalog">
+                <ng-container *ngIf="role==='UNIVERSITY'">
+                  <article *ngFor="let p of products">
+                    <span class="product-mark">{{p.name.charAt(0)}}</span>
+                    <div class="product-name">
+                      <h2>
+                        <a *ngIf="p.url" [href]="p.url" target="_blank" style="text-decoration: underline; text-decoration-color: #c9d5cf; text-underline-offset: 4px;" (click)="$event.stopPropagation()">{{p.name}} ↗</a>
+                        <ng-container *ngIf="!p.url">{{p.name}}</ng-container>
+                      </h2>
+                      <p>Created by {{cfg.userName}}<ng-container *ngIf="p.createdAt"> on {{p.createdAt | date:'MMM d, yyyy'}}</ng-container></p>
                     </div>
-                  </ng-container>
-
-                  <ng-container *ngIf="item.offset===0">
-                    <div class="candidate-profile-hero">
-                      <span [style.background]="item.student.color"><img [src]="item.student.photo" [alt]="item.student.name" style="width:100%;height:100%;object-fit:cover;border-radius:inherit"></span>
-                      <div><small>{{item.student.degree}} · {{item.student.course}}</small><h1>{{item.student.name}}</h1><p>Targeting {{item.student.country}} · {{item.student.intake}}</p></div>
-                      <strong>{{overallScore(item.student)}}%<small>Match</small></strong>
+                    <div style="font-size: 13px; color: #4f6057; text-align: right; display: flex; flex-direction: column; justify-content: center;">
+                      <ng-container *ngIf="p.lastModifiedAt">Last modified<br><span style="color: #172019; font-weight: 500;">{{p.lastModifiedAt | date:'MMM d, yyyy'}}</span></ng-container>
                     </div>
-
-                    <div class="bank-badge-row" *ngIf="role==='BANK' && bankBadges(item.student).length">
-                      <span *ngFor="let badge of bankBadges(item.student)" [class.pre-approved]="badge==='PRE-APPROVED'">{{badge}}</span>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" (click)="openCatalogModal(p)">Edit</button>
                     </div>
-
-                    <section>
-                      <dl>
-                        <div><dt>CGPA / Marks</dt><dd>{{item.student.cgpa}}</dd></div>
-                        <div><dt>Test scores</dt><dd>{{item.student.examScore}}</dd></div>
-                        <div><dt>Budget</dt><dd>{{item.student.budget}}</dd></div>
-                        <div><dt>Documents</dt><dd>{{item.student.documentsVerified}}/5 verified</dd></div>
-                      </dl>
-                    </section>
-
-                    <section>
-                      <div class="match-factor-list">
-                        <h2>Why this match</h2>
-                        <div *ngFor="let f of matchFactors(item.student)"><span>{{f.label}} ({{f.weight}}%)</span><b><i [style.width.%]="f.score"></i></b><small>{{f.score}}%</small></div>
-                      </div>
-                    </section>
-
-                    <section *ngIf="role==='BANK'">
-                      <div class="eligibility-pill" [class.eligible]="item.student.eligible"><span>{{item.student.eligible ? '✓ Loan eligible' : '! Needs manual review'}}</span><small>{{item.student.eligibilityNote}}</small></div>
-                    </section>
-
-                    <section class="finance-doc-block" *ngIf="role==='BANK' && item.student.needsLoan==='yes'">
-                      <small>LOAN DOCUMENTS <ng-container *ngIf="item.student.financialDocuments?.length">· {{uploadedDocCount(item.student)}}/{{item.student.financialDocuments.length}} uploaded</ng-container></small>
-                      <ng-container *ngIf="item.student.financialDocuments?.length; else noFinanceDocs">
-                        <div class="finance-doc-row" *ngFor="let doc of item.student.financialDocuments">
-                          <span [class.doc-uploaded]="doc.uploaded">{{doc.uploaded ? '✓' : '—'}}</span>
-                          <strong>{{doc.label}}</strong>
-                        </div>
-                      </ng-container>
-                      <ng-template #noFinanceDocs><p class="finance-doc-empty">Wants a loan — hasn't selected an employment category or uploaded documents yet.</p></ng-template>
-                    </section>
-
-                    <section class="uni-interest-block" *ngIf="role==='BANK' && bankEvaluationMode!=='ACADEMIC_ONLY' && item.student.universityInterests?.length">
-                      <small>UNIVERSITY INTEREST</small>
-                      <article *ngFor="let interest of item.student.universityInterests">
-                        <span class="uni-interest-logo"><img *ngIf="interest.logo" [src]="interest.logo" [alt]="interest.university"><ng-container *ngIf="!interest.logo">{{interest.university.charAt(0)}}</ng-container></span>
-                        <div><strong>{{interest.university}}</strong><small>{{interest.country}} · {{interest.course}}</small></div>
-                        <b class="uni-interest-status" [class]="'status-'+interest.status.toLowerCase().replace(' ','-')">{{interest.status}}</b>
-                        <div class="uni-interest-terms"><span>Scholarship <b>{{interest.scholarship||'—'}}</b></span><span>Tuition <b>{{interest.tuitionFee||'—'}}</b></span><span>Remaining <b>{{interest.remainingTuition||'—'}}</b></span><span>Living cost <b>{{interest.livingCost||'—'}}</b></span></div>
-                      </article>
-                    </section>
-
-                    <section>
-                      <div class="stage-skills"><small>SKILLS</small><span *ngFor="let skill of item.student.skills">{{skill}}</span></div>
-                      <p class="stage-bio">{{item.student.bio}}</p>
-                    </section>
-
-                    <footer>
-                      <button type="button" class="uni-secondary shortlist-toggle" [class.chosen]="isShortlisted(item.student.name)" (click)="$event.stopPropagation(); toggleShortlist(item.student.name)">{{isShortlisted(item.student.name) ? '★ Saved' : '☆ Save student'}}</button>
-                      <button type="button" class="uni-primary" (click)="$event.stopPropagation(); openOfferComposer(item.student)">Send {{cfg.offerVerb}}</button>
-                    </footer>
-                  </ng-container>
-                </div>
-
-                <button type="button" class="carousel-arrow carousel-arrow-right" (click)="swapProfile(1)" [disabled]="browseIndex===filteredStudents.length-1" aria-label="Next candidate">›</button>
+                  </article>
+                  <div class="empty-state" *ngIf="!products.length">
+                    <strong>No products yet</strong>
+                    <p>Add your first product to start receiving matched students.</p>
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="role==='BANK'">
+                  <article *ngFor="let p of loanProducts">
+                    <span class="product-mark">{{p.name.charAt(0)}}</span>
+                    <div class="product-name">
+                      <h2>
+                        <a *ngIf="p.url" [href]="p.url" target="_blank" style="text-decoration: underline; text-decoration-color: #c9d5cf; text-underline-offset: 4px;" (click)="$event.stopPropagation()">{{p.name}} ↗</a>
+                        <ng-container *ngIf="!p.url">{{p.name}}</ng-container>
+                      </h2>
+                      <p>Created by {{cfg.userName}}<ng-container *ngIf="p.createdAt"> on {{p.createdAt | date:'MMM d, yyyy'}}</ng-container></p>
+                    </div>
+                    <div style="font-size: 13px; color: #4f6057; text-align: right; display: flex; flex-direction: column; justify-content: center;">
+                      <ng-container *ngIf="p.lastModifiedAt">Last modified<br><span style="color: #172019; font-weight: 500;">{{p.lastModifiedAt | date:'MMM d, yyyy'}}</span></ng-container>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                      <button type="button" (click)="openCatalogModal(p)">Edit</button>
+                    </div>
+                  </article>
+                  <div class="empty-state" *ngIf="!loanProducts.length">
+                    <strong>No loan products yet</strong>
+                    <p>Add your first product to start receiving matched students.</p>
+                  </div>
+                </ng-container>
               </div>
+            </section>
 
-              <div class="carousel-counter">{{browseIndex+1}} of {{filteredStudents.length}}</div>
-            </div>
-          </div>
+
         </section>
 
-        <section class="uni-view" *ngIf="view==='shortlists'">
-          <header class="uni-page-title"><div><span>SHORTLISTS</span><h1>Your shortlist</h1><p>Students you have saved for {{cfg.cycleLabel}} follow-up.</p></div></header>
 
-          <div class="shortlist-summary">
-            <button type="button" class="active"><span>★</span><div><strong>{{savedStudents.length}}</strong><small>Saved students</small></div></button>
-            <button type="button" (click)="go('invitations')"><span>◇</span><div><strong>{{activeOffersCount}}</strong><small>Active offers</small></div></button>
-            <button type="button" (click)="go('students')"><span>⌕</span><div><strong>{{filteredStudents.length}}</strong><small>In current search</small></div></button>
-          </div>
-
-          <div class="shortlist-table" *ngIf="savedStudents.length; else noSaved">
-            <div class="shortlist-table-head"><span>Student</span><span>Match</span><span>Fit factor</span><span>Status</span><span>Actions</span></div>
-            <article *ngFor="let student of savedStudents">
-              <div><span class="candidate-avatar" [style.background]="student.color">{{student.initials}}</span><p><strong>{{student.name}}</strong><small>{{student.course}} · {{student.country}}</small></p></div>
-              <b>{{overallScore(student)}}%</b>
-              <span class="candidate-factor">{{student.factor}}</span>
-              <small>Shortlisted</small>
-              <div><button type="button" (click)="openOfferComposer(student)">Send {{cfg.offerVerb}}</button><button type="button" (click)="toggleShortlist(student.name)">Remove</button></div>
-            </article>
-          </div>
-          <ng-template #noSaved><section class="uni-card empty-state"><strong>No saved students yet</strong><p>Save promising students from the discovery tab to review them later.</p><button type="button" class="uni-secondary" (click)="go('students')">Browse students</button></section></ng-template>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='invitations'">
-          <header class="uni-page-title"><div><span>OFFERS &amp; RESPONSES</span><h1>Invitations</h1><p>Create and track every {{cfg.offerEyebrow}} offer from sent to accepted.</p></div><button class="uni-primary" (click)="openOfferComposer()">Create offer</button></header>
-
-          <div class="invitation-metrics">
-            <div><small>TOTAL SENT</small><strong>{{offers.length}}</strong></div>
-            <div><small>VIEWED</small><strong>{{viewedRate}}%</strong><span>opened at least once</span></div>
-            <div><small>ACCEPTANCE RATE</small><strong>{{acceptanceRate}}%</strong></div>
-            <div><small>AVG. RESPONSE TIME</small><strong>{{avgResponseTime}}</strong></div>
-          </div>
-
-          <div class="invitation-filters"><button *ngFor="let status of offerStatuses" [class.active]="offerFilter===status" (click)="offerFilter=status">{{status}}</button></div>
-          <section class="university-invitations" *ngIf="filteredOffers.length; else noOffers">
-            <ng-container *ngFor="let offer of filteredOffers">
-              <article>
-                <div><span>{{offer.initials}}</span><p><strong>{{offer.student}}</strong><small>{{offer.course}}</small></p></div>
-                <p><strong>{{offerPrimary(offer)}}</strong><small>{{offerSecondary(offer)}}</small></p>
-                <b [class]="statusToneClass(offer)">{{displayStatus(offer)}}</b>
-                <p><strong>{{expiryLabel(offer)}}</strong><small>{{isTerminal(offer) ? 'Closed' : '14-day expiry'}}</small></p>
-                <p><strong>{{offer.deadline}}</strong><small>Decision by</small></p>
-                <button type="button" [disabled]="isTerminal(offer)" (click)="withdrawOffer(offer)">{{isTerminal(offer) ? 'Closed' : 'Withdraw'}}</button>
-              </article>
-              <div class="negotiation-alert" *ngIf="displayStatus(offer)==='Negotiating'">
-                <span>↔</span>
-                <div><strong>{{offer.student}} requested revised terms</strong><p>{{lastStudentMessage(offer)}}</p></div>
-                <button type="button" (click)="openNegotiationPanel(offer)">Respond</button>
-              </div>
-            </ng-container>
-          </section>
-          <ng-template #noOffers><section class="uni-card empty-state"><strong>No offers yet</strong><p>Create your first offer for a saved student.</p><button type="button" class="uni-primary" (click)="openOfferComposer()">Create offer</button></section></ng-template>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='catalog'">
-          <header class="uni-page-title"><div><span>{{cfg.catalogEyebrow}}</span><h1>{{cfg.catalogTitle}}</h1><p>{{cfg.catalogIntro}}</p></div><button class="uni-primary" (click)="openCatalogModal()">Add {{role==='BANK' ? 'loan product' : 'programme'}}</button></header>
-
-          <div class="catalog-note"><span>i</span><div><strong>Feeds AI Matching</strong><p>{{role==='BANK' ? 'Loan products define the rate, tenure and country limits eligibility scoring checks against.' : 'Programmes define the course, intake and tuition scoring checks against.'}}</p></div></div>
-
-          <section class="uni-card">
-            <div class="program-catalog">
-              <ng-container *ngIf="role==='UNIVERSITY'">
-                <article *ngFor="let p of programs">
-                  <span class="program-mark">{{p.course.charAt(0)}}</span>
-                  <div class="program-name"><small>{{p.degreeLevel}} · {{p.country}}</small><h2>{{p.name}}</h2><p>{{p.course}} · {{p.durationYears}}yr · Intakes: {{p.intakes.join(', ')}}</p></div>
-                  <div><strong>{{p.tuitionFee}}</strong><small>Tuition / year</small></div>
-                  <span>{{p.scholarshipRange}}</span>
-                  <small>{{p.seats}} seats</small>
-                  <button type="button" (click)="openCatalogModal(p)">Edit</button>
-                </article>
-                <div class="empty-state" *ngIf="!programs.length"><strong>No programmes yet</strong><p>Add your first programme to start receiving matched students.</p></div>
-              </ng-container>
-              <ng-container *ngIf="role==='BANK'">
-                <article *ngFor="let p of loanProducts">
-                  <span class="program-mark">{{p.name.charAt(0)}}</span>
-                  <div class="program-name"><small>{{p.collateralRequired ? 'Secured' : 'Unsecured'}} · {{p.eligibleCountries.join(', ')}}</small><h2>{{p.name}}</h2><p>{{p.interestRateMin}}–{{p.interestRateMax}}% p.a. · up to {{p.currency}} {{p.maxAmount}}</p></div>
-                  <div><strong>{{p.interestRateMin}}–{{p.interestRateMax}}%</strong><small>Interest rate</small></div>
-                  <span>up to {{p.currency}} {{p.maxAmount}}</span>
-                  <small>{{p.tenureOptions.join('/')}}mo</small>
-                  <button type="button" (click)="openCatalogModal(p)">Edit</button>
-                </article>
-                <div class="empty-state" *ngIf="!loanProducts.length"><strong>No loan products yet</strong><p>Add your first product to start receiving matched students.</p></div>
-              </ng-container>
-            </div>
-          </section>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='templates'">
-          <header class="uni-page-title"><div><span>{{cfg.templatesEyebrow}}</span><h1>{{cfg.templatesTitle}}</h1><p>{{cfg.templatesIntro}}</p></div></header>
-          <div class="template-grid">
-            <article *ngFor="let t of templates">
-              <span>{{role==='BANK'?'LOAN TEMPLATE':'ADMISSION TEMPLATE'}}</span>
-              <h2>{{t.name}}</h2>
-              <p>{{t.description}}</p>
-              <small>Used {{t.usedCount}} time{{t.usedCount===1?'':'s'}}</small>
-              <button type="button" (click)="useTemplate(t)">Use template</button>
-            </article>
-            <div class="new-template" (click)="openTemplateModal()"><b>+</b><span>New template</span></div>
-          </div>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='criteria'">
-          <header class="uni-page-title"><div><span>{{cfg.criteriaEyebrow}}</span><h1>{{cfg.criteriaTitle}}</h1><p>{{cfg.criteriaIntro}}</p></div></header>
-
-          <section class="uni-card">
-            <header><div><span>THRESHOLDS</span><h2>Your {{role==='BANK'?'eligibility':'admission'}} rules</h2><p>These drive the match score and eligibility badges students see in Search.</p></div></header>
-            <ng-container *ngIf="role==='UNIVERSITY'">
-              <div class="criteria-grid" style="padding:0 22px 22px">
-                <label>Minimum CGPA / marks (out of 10)<input type="number" step="0.1" min="0" max="10" [(ngModel)]="uniCriteria.minCgpa" (ngModelChange)="persistCriteria()"></label>
-                <label>Minimum English test<select [(ngModel)]="uniCriteria.englishTest" (ngModelChange)="persistCriteria()"><option *ngFor="let t of englishTestOptions" [value]="t">{{t}}</option></select></label>
-                <label>Minimum English score<input type="number" step="0.5" min="0" [(ngModel)]="uniCriteria.minEnglishScore" (ngModelChange)="persistCriteria()"></label>
-                <label>Preferred curricula<input [(ngModel)]="uniCriteria.preferredCurricula" (ngModelChange)="persistCriteria()" placeholder="e.g. STEM, Business"></label>
-                <label class="wide">Target countries<input [(ngModel)]="uniCriteria.targetCountries" (ngModelChange)="persistCriteria()" placeholder="e.g. Canada, United Kingdom"></label>
-              </div>
-            </ng-container>
-            <ng-container *ngIf="role==='BANK'">
-              <div class="bank-eval-options">
-                <label *ngFor="let option of bankEvaluationModeOptions" [class.selected]="bankEvaluationMode===option.value">
-                  <input type="radio" name="bankEvaluationMode" [value]="option.value" [checked]="bankEvaluationMode===option.value" (change)="setBankEvaluationMode(option.value)">
-                  <strong>{{option.label}}</strong>
-                  <p>{{option.description}}</p>
-                </label>
-              </div>
-              <div class="criteria-grid" style="padding:0 22px 22px">
-                <label class="filter-checkbox"><input type="checkbox" [(ngModel)]="bankCriteria.guarantorRequired" (ngModelChange)="persistCriteria()"> Require a verified guarantor</label>
-                <label>Max family income for subsidy eligibility (₹/yr)<input type="number" [(ngModel)]="bankCriteria.maxFamilyIncome" (ngModelChange)="persistCriteria()"></label>
-                <label class="wide">Eligible countries<input [(ngModel)]="bankCriteria.eligibleCountries" (ngModelChange)="persistCriteria()" placeholder="e.g. Canada, United Kingdom"></label>
-              </div>
-            </ng-container>
-          </section>
-
-          <section class="uni-card" style="margin-top:16px">
-            <header><div><span>AI MATCHING WEIGHTS</span><h2>How Match Score is calculated</h2><p>Set platform-wide by Super Admin — shown here so you understand what drives ranking.</p></div></header>
-            <div class="criteria-weights" style="padding:0 22px 22px">
-              <span *ngFor="let f of cfg.weightFactors"><b [style.width.%]="f.weight*2.2"></b>{{f.label}}<strong>{{f.weight}}%</strong></span>
-            </div>
-          </section>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='reports'">
-          <header class="uni-page-title"><div><span>{{cfg.reportsEyebrow}}</span><h1>{{cfg.reportsTitle}}</h1><p>{{cfg.reportsIntro}}</p></div></header>
-
-          <div class="uni-report-summary">
-            <article><span>TOTAL INVITATIONS</span><strong>{{offers.length}}</strong></article>
-            <article><span>ACCEPTANCE RATE</span><strong>{{acceptanceRate}}%</strong></article>
-            <article><span>AVG. RESPONSE TIME</span><strong>{{avgResponseTime}}</strong></article>
-          </div>
-
-          <section class="uni-card uni-funnel-chart">
-            <header><div><span>FUNNEL</span><h2>Sent → Viewed → Negotiating → Accepted</h2></div></header>
-            <div *ngFor="let stage of funnelStages"><span>{{stage.label}}</span><i><b>{{stage.count}}</b></i><small>{{stage.percent}}%</small></div>
-          </section>
-
-          <div class="report-grid">
-            <article class="uni-card">
-              <div><h2>{{role==='BANK' ? 'Rate sensitivity' : 'Programme performance'}}</h2><span>Acceptance rate by {{role==='BANK'?'interest rate band':'programme'}}</span></div>
-              <div class="bar-chart">
-                <span *ngFor="let bar of performanceBars"><i [style.height.%]="bar.percent"></i><b>{{bar.percent}}%</b><small>{{bar.label}}</small></span>
-              </div>
-            </article>
-            <article class="uni-card">
-              <div><h2>{{role==='BANK' ? 'Terms vs. acceptance' : 'Best converting match bands'}}</h2></div>
-              <ol>
-                <li *ngFor="let row of rankedInsights"><b>{{row.icon}}</b><p><strong>{{row.label}}</strong><small>{{row.detail}}</small></p><span>{{row.value}}</span></li>
-              </ol>
-            </article>
-          </div>
-        </section>
 
         <section class="uni-view" *ngIf="view==='notifications'">
           <header class="uni-page-title"><div><span>NOTIFICATIONS</span><h1>Notifications</h1><p>Recent activity on your offers and student discovery.</p></div></header>
@@ -522,60 +464,89 @@ const ROLE_CONFIG: Record<Role, any> = {
           <ng-template #noNotifications><section class="uni-card empty-state"><strong>You're all caught up</strong><p>New offer and student activity will appear here.</p></section></ng-template>
         </section>
 
-        <section class="uni-view" *ngIf="view==='subscription'">
-          <header class="uni-page-title"><div><span>SUBSCRIPTION &amp; ACCESS</span><h1>Reach more qualified students</h1><p>{{cfg.subscriptionIntro}}</p></div></header>
-          <div class="current-usage"><div><span>CURRENT PLAN</span><strong>{{currentPlan}}</strong><small>{{profilesViewed}} of {{planQuotaLabel}} student profiles viewed</small></div><div><b>{{quotaPercent}}%</b><i><span [style.width.%]="quotaPercent"></span></i><small>{{remainingCredits}} profile views available</small></div></div>
-          <div class="plan-options">
-            <article *ngFor="let plan of planOptions" [class.recommended]="plan.recommended"><span *ngIf="plan.recommended">RECOMMENDED</span><h3>{{plan.name}}</h3><strong>{{plan.profiles}}</strong><small>student profile views / cycle</small>
-              <ul class="plan-feature-list">
-                <li *ngFor="let feature of plan.features">✓ {{feature}}</li>
-                <li *ngFor="let feature of advancedFeatures" [class.plan-feature-unlocked]="plan.unlocks.includes(feature)" [class.plan-feature-locked]="!plan.unlocks.includes(feature)">{{plan.unlocks.includes(feature) ? '✓' : '🔒'}} {{feature}}</li>
-              </ul>
-              <button type="button" [class.uni-primary]="plan.name!==currentPlan" [class.uni-secondary]="plan.name===currentPlan" [disabled]="plan.name===currentPlan" (click)="choosePlan(plan.name)">{{plan.name===currentPlan?'Current plan':'Choose '+plan.name}}</button>
-            </article>
-          </div>
-          <p class="subscription-note">Plan changes are mock frontend interactions until subscription billing is connected.</p>
-        </section>
-
-        <section class="uni-view" *ngIf="view==='profile' || view==='settings'">
-          <header class="uni-page-title"><div><span>ORGANISATION</span><h1>{{cfg.profileTabLabel}} &amp; Settings</h1><p>Manage your organisation profile and account settings.</p></div><span class="org-verified">✓ Verified organisation</span></header>
+        <section class="uni-view" *ngIf="view==='profile' || view==='settings' || view==='subscription'">
+          <header class="uni-page-title">
+            <div>
+              <span>ORGANISATION</span>
+              <h1>{{cfg.profileTabLabel}} &amp; Settings</h1>
+              <p>Manage your organisation profile, subscription plans, team and account preferences.</p>
+            </div>
+            <span class="org-verified">✓ Verified organisation</span>
+          </header>
 
           <div class="settings-rail">
-            <button *ngFor="let tab of settingsTabs" type="button" [class.active]="settingsTab===tab.id" (click)="settingsTab=tab.id">{{tab.label}}</button>
+            <button *ngFor="let tab of settingsTabs" type="button" [class.active]="settingsTab===tab.id" (click)="setSettingsTab(tab.id)">{{tab.label}}</button>
           </div>
 
+          <!-- Tab 1: Org Profile -->
           <section class="uni-card uni-org-settings" *ngIf="settingsTab==='org'">
             <header><h2>{{cfg.profileTabLabel}}</h2><p>Manage your organisation profile details.</p></header>
             <div class="settings-form"><label>{{cfg.orgFieldLabel}}<input [(ngModel)]="orgName"></label><label>Official domain<input [(ngModel)]="orgDomain"></label><label>Organisation type<select><option *ngFor="let t of cfg.orgTypeOptions">{{t}}</option></select></label><label>Head office / campus<input [(ngModel)]="orgCity"></label><label class="wide">Organisation description<textarea [(ngModel)]="orgDescription"></textarea></label></div>
             <footer><button class="uni-primary" (click)="notify('Organisation profile saved')">Save changes</button></footer>
           </section>
 
+          <!-- Tab 2: Subscription & Plans -->
+          <section class="uni-card uni-org-settings" *ngIf="settingsTab==='subscription'">
+            <header><h2>Subscription &amp; Plans</h2><p>{{cfg.subscriptionIntro}}</p></header>
+            <div class="current-usage">
+              <div>
+                <span>CURRENT PLAN</span>
+                <strong>{{currentPlan}}</strong>
+                <small>{{profilesViewed}} of {{planQuotaLabel}} student profiles viewed</small>
+              </div>
+              <div>
+                <b>{{quotaPercent}}%</b>
+                <i><span [style.width.%]="quotaPercent"></span></i>
+                <small>{{remainingCredits}} profile views available</small>
+              </div>
+            </div>
+            <div class="plan-options">
+              <article *ngFor="let plan of planOptions" [class.recommended]="plan.recommended">
+                <span *ngIf="plan.recommended">RECOMMENDED</span>
+                <h3>{{plan.name}}</h3>
+                <strong>{{plan.profiles}}</strong>
+                <small>student profile views / cycle</small>
+                <ul class="plan-feature-list">
+                  <li *ngFor="let feature of plan.features">✓ {{feature}}</li>
+                  <li *ngFor="let feature of advancedFeatures" [class.plan-feature-unlocked]="plan.unlocks.includes(feature)" [class.plan-feature-locked]="!plan.unlocks.includes(feature)">
+                    {{plan.unlocks.includes(feature) ? '✓' : '🔒'}} {{feature}}
+                  </li>
+                </ul>
+                <button type="button" [class.uni-primary]="plan.name!==currentPlan" [class.uni-secondary]="plan.name===currentPlan" [disabled]="plan.name===currentPlan" (click)="choosePlan(plan.name)">
+                  {{plan.name===currentPlan?'Current plan':'Choose '+plan.name}}
+                </button>
+              </article>
+            </div>
+            <p class="subscription-note">Plan changes are mock frontend interactions until subscription billing is connected.</p>
+          </section>
+
+          <!-- Tab 3: Accreditation -->
           <section class="uni-card uni-org-settings" *ngIf="settingsTab==='accreditation'">
             <header><h2>Accreditation</h2><p>{{role==='BANK' ? 'License and registration documents on file.' : 'Accreditation documents on file.'}}</p></header>
             <div class="accreditation-row"><span>✓</span><div><strong>{{role==='BANK' ? 'NBFC registration certificate' : 'University accreditation certificate'}}</strong><p>Verified · on file with SuperOffer</p></div><button type="button" (click)="notify('Re-upload flow is not connected in this preview')">Re-upload</button></div>
           </section>
 
+          <!-- Tab 4: Team -->
           <section class="uni-card uni-org-settings" *ngIf="settingsTab==='team'">
-            <header><div><h2>Team</h2><p>Officers under {{orgName}}.</p></div><button *ngIf="currentPlan==='Enterprise'" type="button" (click)="openInviteModal()">+ Invite officer</button></header>
-            <ng-container *ngIf="currentPlan==='Enterprise'; else teamLocked">
-              <div class="team-row" *ngFor="let member of teamMembers">
-                <span>{{member.initials}}</span>
-                <p><strong>{{member.name}}{{member.isSelf ? ' (you)' : ''}}</strong><small>{{member.email}} · {{member.role}}</small></p>
-                <b [class.status-invited]="member.status==='Invited'">{{member.status}}</b>
-                <div class="team-row-actions">
-                  <button type="button" *ngIf="member.status==='Invited'" (click)="resendInvite(member)">Resend</button>
-                  <button type="button" *ngIf="!member.isSelf" (click)="removeOfficer(member)">Remove</button>
-                </div>
+            <header><div><h2>Team</h2><p>Officers under {{orgName}}.</p></div><button type="button" (click)="openInviteModal()">+ Invite officer</button></header>
+            <div class="team-row" *ngFor="let member of teamMembers">
+              <span>{{member.initials}}</span>
+              <p><strong>{{member.name}}{{member.isSelf ? ' (you)' : ''}}</strong><small>{{member.email}} · {{member.role}}</small></p>
+              <b [class.status-invited]="member.status==='Invited'">{{member.status}}</b>
+              <div class="team-row-actions">
+                <button type="button" *ngIf="member.status==='Invited'" (click)="resendInvite(member)">Resend</button>
+                <button type="button" *ngIf="!member.isSelf" (click)="removeOfficer(member)">Remove</button>
               </div>
-            </ng-container>
-            <ng-template #teamLocked><div class="empty-state"><strong>Team management is an Enterprise feature</strong><p>Upgrade your plan to invite other officers under {{orgName}}.</p><button type="button" class="uni-secondary" (click)="go('subscription')">View plans</button></div></ng-template>
+            </div>
           </section>
 
+          <!-- Tab 5: Notifications -->
           <section class="uni-card uni-org-settings" *ngIf="settingsTab==='notifications'">
             <header><h2>Notification preferences</h2><p>Choose how you're notified about invitation and account activity.</p></header>
             <div class="notification-setting" *ngFor="let pref of notificationPrefs"><p><strong>{{pref.label}}</strong><small>{{pref.detail}}</small></p><select [(ngModel)]="pref.frequency" (ngModelChange)="persistNotificationPrefs()"><option>Instant</option><option>Daily digest</option><option>Off</option></select></div>
           </section>
 
+          <!-- Tab 6: Security -->
           <ng-container *ngIf="settingsTab==='security'">
             <section class="uni-card uni-org-settings">
               <header><h2>Change Password</h2><p>Update the password used to sign in to your workspace.</p></header>
@@ -594,13 +565,79 @@ const ROLE_CONFIG: Record<Role, any> = {
 
       <div class="uni-toast" *ngIf="toast">{{toast}}</div>
 
-      <div class="university-panel-backdrop program-modal-backdrop" *ngIf="offerDraft" (click)="offerDraft=null">
+      <div class="university-panel-backdrop product-modal-backdrop" *ngIf="productInviteDraft" (click)="productInviteDraft=null">
+        <form class="right-side-drawer" (ngSubmit)="sendProductInvite()" (click)="$event.stopPropagation()">
+          <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+            <div><h2 style="margin: 4px 0; font-size: 24px;">Invite to Product</h2><p style="margin: 0; color: #526059; font-size: 13px;">Select a product to invite this candidate.</p></div>
+            <button type="button" (click)="productInviteDraft=null" style="background: transparent; border: none; padding: 0; font-size: 28px; line-height: 1; color: #697a70; cursor: pointer;">×</button>
+          </header>
+          <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 800; color: #3f4d46;">Product
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border: 1px solid #d7d4cc; border-radius: 9px; background: #fbfcfb; min-height: 42px; align-items: center;">
+                <span *ngFor="let p of productInviteDraft.productNames" style="background: #edf6f1; color: #087a50; padding: 4px 10px; border-radius: 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                  {{p}}
+                  <button type="button" (click)="removeProductFromInvite(p)" style="background: transparent; border: none; color: #087a50; cursor: pointer; font-size: 16px; line-height: 1; padding: 0;">&times;</button>
+                </span>
+                <select (change)="addProductToInvite($event)" style="flex: 1; border: none; background: transparent; outline: none; font-size: 14px; color: #172019; min-width: 140px;">
+                  <option value="" disabled selected>Select a product...</option>
+                  <option *ngFor="let p of getAvailableProductsForInvite()" [value]="p.name">{{p.name}}</option>
+                </select>
+              </div>
+            </label>
+
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 800; color: #3f4d46;">Notes
+              <textarea id="custom-cond-textarea" name="conditions" [(ngModel)]="productInviteDraft.conditions" (input)="autoResizeTextarea($event.target)" placeholder="e.g. Additional requirements..." style="width: 100%; min-height: 120px; padding: 10px 12px; border: 1px solid #d7d4cc; border-radius: 9px; background: #fbfcfb; font-size: 14px; color: #172019; resize: none; overflow: hidden; field-sizing: content; line-height: 1.5;"></textarea>
+            </label>
+
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 800; color: #3f4d46;">Quick Conditions
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                <ng-container *ngFor="let cat of activePresetCategories">
+                  <div style="background: #fff; border: 1px solid #e1e3e1; border-radius: 8px; overflow: hidden;">
+                    <!-- Category Header -->
+                    <div style="padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fbfcfb;"
+                         (click)="productInviteDraft.expandedCategory = (productInviteDraft.expandedCategory === cat ? null : cat)">
+                      <div style="font-size: 13.5px; font-weight: 700; color: #172019;">{{cat}}</div>
+                      <div style="font-size: 16px; color: #697a70; font-weight: 400; line-height: 1;">
+                        {{ productInviteDraft.expandedCategory === cat ? '−' : '+' }}
+                      </div>
+                    </div>
+                    <!-- Expanded Items -->
+                    <div *ngIf="productInviteDraft.expandedCategory === cat" style="padding: 8px; border-top: 1px solid #e1e3e1; display: flex; flex-direction: column; gap: 6px;">
+                      <ng-container *ngFor="let p of getPresetsByCategory(cat)">
+                        <div [style.background]="productInviteDraft.selectedPresetByCategory[cat] === p.id ? '#edf6f1' : 'transparent'"
+                             [style.border]="productInviteDraft.selectedPresetByCategory[cat] === p.id ? '1px solid #087a50' : '1px solid transparent'"
+                             style="border-radius: 6px; padding: 10px; cursor: pointer; transition: all 0.2s;"
+                             (click)="selectPreset(cat, p.id, p.text)">
+                          <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <div [style.border]="productInviteDraft.selectedPresetByCategory[cat] === p.id ? '5px solid #087a50' : '2px solid #c2c9c5'"
+                                 style="width: 18px; height: 18px; border-radius: 50%; background: #fff; margin-top: 1px; flex-shrink: 0; transition: all 0.15s ease-in-out; box-sizing: border-box;">
+                            </div>
+                            <div style="flex: 1; font-size: 13px; font-weight: 500; color: #172019; line-height: 1.4;">
+                              {{p.text}}
+                            </div>
+                          </div>
+                        </div>
+                      </ng-container>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </label>
+          </div>
+          <footer style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="uni-secondary" type="button" (click)="productInviteDraft=null">Cancel</button>
+            <button class="uni-primary" type="submit">Send Invite</button>
+          </footer>
+        </form>
+      </div>
+
+      <div class="university-panel-backdrop product-modal-backdrop" *ngIf="offerDraft" (click)="offerDraft=null">
         <form class="university-offer-composer" (ngSubmit)="saveOffer()" (click)="$event.stopPropagation()">
           <header><div><small>NEW OFFER</small><h2>Create offer</h2><p>Prepare a clear {{cfg.offerNoun}}.</p></div><button type="button" (click)="offerDraft=null">×</button></header>
           <div class="composer-grid">
             <label>Student<select name="offerStudent" required [(ngModel)]="offerDraft.student"><option value="" disabled>Select a student</option><option *ngFor="let s of students" [value]="s.name">{{s.name}}</option></select></label>
             <ng-container *ngIf="role==='UNIVERSITY'">
-              <label>Programme<select name="offerCourse" required [(ngModel)]="offerDraft.course" (ngModelChange)="onOfferCourseChange()"><option value="" disabled>Select a programme</option><option *ngFor="let p of programs" [value]="p.name">{{p.name}}</option></select></label>
+              <label>Product<select name="offerCourse" required [(ngModel)]="offerDraft.course" (ngModelChange)="onOfferCourseChange()"><option value="" disabled>Select a product</option><option *ngFor="let p of products" [value]="p.name">{{p.name}}</option></select></label>
               <label>Scholarship<input name="offerScholarship" [(ngModel)]="offerDraft.scholarship" placeholder="e.g. 40% tuition scholarship"></label>
               <label>Tuition fee<input name="offerTuition" required [(ngModel)]="offerDraft.tuition" placeholder="e.g. CAD 42,000 / year"></label>
               <label>Accommodation<input name="offerAccommodation" [(ngModel)]="offerDraft.accommodation" placeholder="e.g. Campus residence available"></label>
@@ -629,60 +666,56 @@ const ROLE_CONFIG: Record<Role, any> = {
         </form>
       </div>
 
-      <div class="university-panel-backdrop program-modal-backdrop" *ngIf="catalogDraft" (click)="catalogDraft=null">
-        <form class="university-offer-composer" (ngSubmit)="saveCatalogItem()" (click)="$event.stopPropagation()">
-          <header><div><small>{{catalogDraft.id ? 'EDIT' : 'NEW'}} {{role==='BANK'?'LOAN PRODUCT':'PROGRAMME'}}</small><h2>{{catalogDraft.id ? 'Edit' : 'Add'}} {{role==='BANK'?'loan product':'programme'}}</h2><p>{{cfg.catalogIntro}}</p></div><button type="button" (click)="catalogDraft=null">×</button></header>
-          <div class="composer-grid">
-            <ng-container *ngIf="role==='UNIVERSITY'">
-              <label>Programme name<input name="pName" required [(ngModel)]="catalogDraft.name" placeholder="e.g. MSc Data Science"></label>
-              <label>Course/major<input name="pCourse" required [(ngModel)]="catalogDraft.course" placeholder="e.g. Data Science"></label>
-              <label>Degree level<select name="pDegree" [(ngModel)]="catalogDraft.degreeLevel"><option>Postgraduate</option><option>Undergraduate</option></select></label>
-              <label>Country<input name="pCountry" required [(ngModel)]="catalogDraft.country" placeholder="e.g. Canada"></label>
-              <label>Intakes (comma separated)<input name="pIntakes" [(ngModel)]="catalogDraft.intakesText" placeholder="e.g. Fall 2027, Winter 2028"></label>
-              <label>Duration (years)<input name="pDuration" type="number" min="1" [(ngModel)]="catalogDraft.durationYears"></label>
-              <label>Tuition fee<input name="pTuition" required [(ngModel)]="catalogDraft.tuitionFee" placeholder="e.g. CAD 42,000 / year"></label>
-              <label>Scholarship range<input name="pScholarship" [(ngModel)]="catalogDraft.scholarshipRange" placeholder="e.g. 0–40% tuition"></label>
-              <label>Seats (or 'Rolling')<input name="pSeats" [(ngModel)]="catalogDraft.seatsText" placeholder="e.g. 60 or Rolling"></label>
-            </ng-container>
-            <ng-container *ngIf="role==='BANK'">
+      <div class="university-panel-backdrop product-modal-backdrop" *ngIf="catalogDraft" (click)="catalogDraft=null">
+        <form class="university-offer-composer" (ngSubmit)="saveCatalogItem()" (click)="$event.stopPropagation()" style="max-width: 500px; padding: 32px;">
+          <header style="margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid #e7efe9; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1; margin-right: 16px;">
+              <small style="color: #087a50; font-weight: 800; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em;">
+                {{catalogDraft.id ? 'EDIT' : 'NEW'}} {{role==='BANK' ? 'LOAN PRODUCT' : 'PRODUCT'}}
+              </small>
+              <h2 style="margin: 4px 0 0; font-size: 24px; font-weight: 900; letter-spacing: -0.04em;">{{catalogDraft.id ? 'Edit Details' : 'Add Details'}}</h2>
+            </div>
+            <button type="button" (click)="catalogDraft=null" style="font-size: 22px; cursor: pointer; border: none; background: transparent; color: #88968f;">×</button>
+          </header>
+
+          <ng-container *ngIf="role==='UNIVERSITY'">
+            <div class="composer-grid" style="margin: 0; display: flex; flex-direction: column; gap: 12px;">
+              <label>Product Category
+                <select name="pCategoryUni" required [(ngModel)]="catalogDraft.category" style="-webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23172019%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 11px auto;">
+                  <option value="" disabled selected>Select a category...</option>
+                  <option value="Academic Product">Academic Product</option>
+                  <option value="Financial Product">Financial Product</option>
+                </select>
+              </label>
+              <label>Product name<input name="pName" required [(ngModel)]="catalogDraft.name" placeholder="e.g. MSc Data Science"></label>
+              <label>Product web link (URL)<input type="url" name="pUrl" [(ngModel)]="catalogDraft.url" placeholder="https://"></label>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="role==='BANK'">
+            <div class="composer-grid" style="margin: 0; display: flex; flex-direction: column; gap: 12px;">
+              <label>Product Category
+                <select name="pCategoryBank" required [(ngModel)]="catalogDraft.category" style="-webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23172019%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 11px auto;">
+                  <option value="" disabled selected>Select a category...</option>
+                  <option value="Academic Product">Academic Product</option>
+                  <option value="Financial Product">Financial Product</option>
+                </select>
+              </label>
               <label>Product name<input name="lName" required [(ngModel)]="catalogDraft.name" placeholder="e.g. Unsecured Study Loan"></label>
-              <label>Min interest rate (%)<input name="lRateMin" type="number" step="0.1" required [(ngModel)]="catalogDraft.interestRateMin"></label>
-              <label>Max interest rate (%)<input name="lRateMax" type="number" step="0.1" required [(ngModel)]="catalogDraft.interestRateMax"></label>
-              <label>Currency<input name="lCurrency" [(ngModel)]="catalogDraft.currency" placeholder="e.g. INR"></label>
-              <label>Max loan amount<input name="lMaxAmount" required [(ngModel)]="catalogDraft.maxAmount" placeholder="e.g. 50,00,000"></label>
-              <label>Tenure options in months (comma separated)<input name="lTenure" [(ngModel)]="catalogDraft.tenureText" placeholder="e.g. 60, 84, 120"></label>
-              <label class="wide">Eligible countries (comma separated)<input name="lCountries" [(ngModel)]="catalogDraft.countriesText" placeholder="e.g. Canada, United Kingdom"></label>
-              <label class="filter-checkbox"><input type="checkbox" name="lCollateral" [(ngModel)]="catalogDraft.collateralRequired"> Collateral required</label>
-            </ng-container>
-          </div>
-          <footer><button class="uni-secondary" type="button" (click)="catalogDraft=null">Cancel</button><button class="uni-primary" type="submit">Save {{role==='BANK'?'product':'programme'}}</button></footer>
+              <label>Product web link (URL)<input type="url" name="lUrl" [(ngModel)]="catalogDraft.url" placeholder="https://"></label>
+            </div>
+          </ng-container>
+
+          <footer style="margin-top: 8px; padding-top: 12px; border-top: 1px solid #e7efe9; display: flex; justify-content: flex-end; gap: 10px;">
+            <button class="uni-secondary" type="button" (click)="catalogDraft=null">Cancel</button>
+            <button class="uni-primary" type="submit">Save</button>
+          </footer>
         </form>
       </div>
 
-      <div class="university-panel-backdrop program-modal-backdrop" *ngIf="templateDraft" (click)="templateDraft=null">
-        <form class="university-offer-composer" (ngSubmit)="saveTemplate()" (click)="$event.stopPropagation()">
-          <header><div><small>NEW TEMPLATE</small><h2>Save an offer template</h2><p>Reuse these terms next time you start an invitation.</p></div><button type="button" (click)="templateDraft=null">×</button></header>
-          <div class="composer-grid">
-            <label class="wide">Template name<input name="tName" required [(ngModel)]="templateDraft.name" placeholder="e.g. 40% Merit Scholarship"></label>
-            <label class="wide">Description<input name="tDescription" [(ngModel)]="templateDraft.description" placeholder="When should officers use this template?"></label>
-            <ng-container *ngIf="role==='UNIVERSITY'">
-              <label>Scholarship<input name="tScholarship" [(ngModel)]="templateDraft.scholarship" placeholder="e.g. 40% tuition scholarship"></label>
-              <label>Tuition fee<input name="tTuition" [(ngModel)]="templateDraft.tuition" placeholder="e.g. CAD 42,000 / year"></label>
-              <label>Accommodation<input name="tAccommodation" [(ngModel)]="templateDraft.accommodation" placeholder="e.g. Campus residence available"></label>
-            </ng-container>
-            <ng-container *ngIf="role==='BANK'">
-              <label>Loan amount<input name="tLoanAmount" [(ngModel)]="templateDraft.loanAmount" placeholder="e.g. ₹25,00,000"></label>
-              <label>Interest rate<input name="tInterestRate" [(ngModel)]="templateDraft.interestRate" placeholder="e.g. 10.5% p.a."></label>
-              <label>Processing fee<input name="tProcessingFee" [(ngModel)]="templateDraft.processingFee" placeholder="e.g. 1% waived"></label>
-              <label>Repayment tenure<input name="tTenure" [(ngModel)]="templateDraft.tenure" placeholder="e.g. 10 years"></label>
-              <label class="wide">Conditions<input name="tConditions" [(ngModel)]="templateDraft.conditions" placeholder="e.g. Subject to guarantor verification"></label>
-            </ng-container>
-          </div>
-          <footer><button class="uni-secondary" type="button" (click)="templateDraft=null">Cancel</button><button class="uni-primary" type="submit">Save template</button></footer>
-        </form>
-      </div>
 
-      <div class="university-panel-backdrop program-modal-backdrop" *ngIf="negotiationOffer" (click)="negotiationOffer=null">
+
+      <div class="university-panel-backdrop product-modal-backdrop" *ngIf="negotiationOffer" (click)="negotiationOffer=null">
         <form class="university-offer-composer" (ngSubmit)="sendNegotiationReply()" (click)="$event.stopPropagation()">
           <header><div><small>NEGOTIATION</small><h2>{{negotiationOffer.student}}</h2><p>{{offerPrimary(negotiationOffer)}} · {{offerSecondary(negotiationOffer)}}</p></div><button type="button" (click)="negotiationOffer=null">×</button></header>
           <div class="composer-warning"><span>!</span><p>The student's counter-request is one-time; you may reply with revised terms or hold firm, any number of times — only the student can accept or reject.</p></div>
@@ -692,7 +725,7 @@ const ROLE_CONFIG: Record<Role, any> = {
         </form>
       </div>
 
-      <div class="university-panel-backdrop program-modal-backdrop" *ngIf="inviteDraft" (click)="inviteDraft=null">
+      <div class="university-panel-backdrop product-modal-backdrop" *ngIf="inviteDraft" (click)="inviteDraft=null">
         <form class="university-offer-composer" (ngSubmit)="sendInvite()" (click)="$event.stopPropagation()">
           <header><div><small>NEW INVITE</small><h2>Invite an officer</h2><p>They'll get email access to {{orgName}}'s workspace once they accept.</p></div><button type="button" (click)="inviteDraft=null">×</button></header>
           <div class="composer-grid">
@@ -715,8 +748,85 @@ export class OrganizationWorkspaceComponent {
   studentPanelOpen = false;
   filtersOpen = false;
   offerDraft: any = null;
-  offerFilter = 'All';
+  productInviteDraft: any = null;
+
+  rawPresets = [
+    { cat: 'Application', text: "Use code [CODE] for a full waiver on your application fee." },
+    { cat: 'Application', text: "Use code [CODE] for [PERCENT]% off your application fee." },
+    { cat: 'Application', text: "Use code [CODE] for [AMOUNT] off your application fee." },
+    { cat: 'Tuition', text: "This invitation comes with a full tuition scholarship." },
+    { cat: 'Tuition', text: "Based on your profile, a [PERCENT]% tuition scholarship upon admission." },
+    { cat: 'Tuition', text: "Based on your profile, a tuition scholarship of [AMOUNT] upon admission." },
+    { cat: 'Tuition', text: "This invitation makes you eligible for the reduced in-state tuition rate." },
+    { cat: 'Tuition', text: "A scholarship covering [PERCENT]% of tuition across all years." },
+    { cat: 'Accommodation', text: "A [PERCENT]% discount on first-year accommodation fees." },
+    { cat: 'Accommodation', text: "This invitation comes with fully subsidized on-campus accommodation." },
+    { cat: 'Accommodation', text: "A monthly living stipend of [AMOUNT]." },
+    { cat: 'Competitive Test', text: "The [Exam] requirement waived for this product." },
+    { cat: 'English Proficiency', text: "The [Exam] requirement waived based on your academic background." },
+    { cat: 'Admission', text: "Priority/fast-track review, with a decision within [DAYS] days." },
+    { cat: 'RA/TA', text: "A Research/Teaching Assistantship, including a tuition waiver and monthly stipend of [AMOUNT]." },
+    { cat: 'Placement', text: "A guaranteed on-campus work-study position for up to [HOURS] hours/week." },
+    { cat: 'Placement', text: "A guaranteed internship placement through our industry partners." },
+    { cat: 'Interest Rate', text: "A reduced interest rate of [RATE]% p.a. on your education loan." },
+    { cat: 'Interest Rate', text: "Your interest rate locked at [RATE]% for the full loan tenure, protected from future hikes." },
+    { cat: 'Processing Charges', text: "A full waiver on your loan processing fee." },
+    { cat: 'Processing Charges', text: "Use code [CODE] for [PERCENT]% off your loan processing fee." },
+    { cat: 'Processing Charges', text: "A full waiver on loan documentation charges." },
+    { cat: 'Processing Charges', text: "Complimentary loan protection/insurance cover, with the premium waived." },
+    { cat: 'Collateral', text: "Eligibility for an unsecured loan with no collateral required, up to [AMOUNT]." },
+    { cat: 'Co-Applicant/Guarantor', text: "Eligibility for a loan without a co-applicant/guarantor." },
+    { cat: 'Repayment Terms', text: "An extended moratorium period of [MONTHS] months after course completion before repayment begins." },
+    { cat: 'Repayment Terms', text: "A flexible repayment tenure of up to [YEARS] years." },
+    { cat: 'Repayment Terms', text: "An EMI holiday of [MONTHS] months in case of financial hardship during repayment." },
+    { cat: 'Repayment Terms', text: "An interest-only repayment option during your study period, deferring principal repayment." },
+    { cat: 'Higher Loan Coverage', text: "Loan coverage of up to [PERCENT]% of your total cost of attendance, including tuition, living, and travel." },
+    { cat: 'Risk Protection', text: "Complimentary cover that pauses EMIs for up to [MONTHS] months in case of job loss." },
+    { cat: 'Risk Protection', text: "Loan waiver for the borrower in case of death or permanent disability during the loan tenure." },
+    { cat: 'Risk Protection', text: "Protection against currency fluctuation on your loan amount during disbursement." }
+  ];
+
+  get activePresetCategories() {
+    let isFinancial = this.role === 'BANK';
+    if (this.productInviteDraft && this.productInviteDraft.productNames && this.productInviteDraft.productNames.length > 0) {
+      const name = this.productInviteDraft.productNames[0];
+      const product = this.getAvailableProductsForInvite().find((p: any) => p.name === name);
+      if (product && product.category) {
+        isFinancial = product.category === 'Financial Product';
+      }
+    }
+
+    if (isFinancial) {
+      return [...new Set(this.rawPresets.filter(p => ['Interest Rate', 'Processing Charges', 'Collateral', 'Co-Applicant/Guarantor', 'Repayment Terms', 'Higher Loan Coverage', 'Risk Protection'].includes(p.cat)).map(p => p.cat))];
+    } else {
+      return [...new Set(this.rawPresets.filter(p => ['Application', 'Tuition', 'Accommodation', 'Competitive Test', 'English Proficiency', 'Admission', 'RA/TA', 'Placement'].includes(p.cat)).map(p => p.cat))];
+    }
+  }
+
+  presetConditions = this.rawPresets.map((p, idx) => {
+    const vars = [];
+    const regex = /\[(.*?)\]/g;
+    let match;
+    while ((match = regex.exec(p.text)) !== null) {
+      vars.push(match[1]);
+    }
+    return { id: 'preset_' + idx, category: p.cat, text: p.text, vars };
+  });
+
+  // To store selected conditions string before appending
+  getResolvedPresetText(preset: any, values: any): string {
+    let text = preset.text;
+    for (const v of preset.vars) {
+      text = text.replace(`[${v}]`, values[v] || `[${v}]`);
+    }
+    return text;
+  }  offerFilter = 'All';
   shortlistedNames = new Set(['Aarav Mehta', 'Sara Khan', 'Daniel Okafor']);
+  workspaceFilter: 'All' | 'Accepted' | 'Shortlisted' | 'Rejected' | 'Discover' | 'Offers' | 'Negotiating' = 'All';
+  candidateSearch = '';
+  selectedCandidateName = 'Aarav Mehta';
+  chatDraft = '';
+
   bankEvaluationMode: BankEvaluationMode = 'ACADEMIC_AND_OFFER';
   bankEvaluationModeOptions: Array<{ value: BankEvaluationMode; label: string; description: string }> = [
     { value: 'ACADEMIC_ONLY', label: 'Academic Profile Only', description: 'Pre-approve students before admission, based on academic and financial profile alone.' },
@@ -726,22 +836,33 @@ export class OrganizationWorkspaceComponent {
 
   navigation: Array<{id:OrganizationView;label:string;icon:string}> = [
     {id:'dashboard',label:'Dashboard',icon:'▦'},
-    {id:'students',label:'Students',icon:'⌕'},
-    {id:'shortlists',label:'Shortlists',icon:'★'},
-    {id:'invitations',label:'Invitations',icon:'◇'},
-    {id:'catalog',label:'Catalog',icon:'▤'},
-    {id:'templates',label:'Templates',icon:'▧'},
-    {id:'criteria',label:'Criteria',icon:'◎'},
-    {id:'reports',label:'Reports',icon:'▥'},
-    {id:'notifications',label:'Notifications',icon:'◌'},
-    {id:'subscription',label:'Subscription',icon:'✦'},
-    {id:'profile',label:'Profile & Settings',icon:'◈'}
+    {id:'students',label:'Candidates & Offers',icon:'⌕'},
+    {id:'templates',label:'Templates & Criteria',icon:'▧'},
+    {id:'notifications',label:'Notifications',icon:'◌'}
   ];
 
   navLabel(id: OrganizationView): string {
+    if (id === 'students' || id === 'shortlists' || id === 'invitations') return 'Candidates & Offers';
+    if (id === 'templates') return 'Templates & Criteria';
     if (id === 'catalog') return this.cfg.catalogTitle;
     if (id === 'criteria') return this.cfg.criteriaTitle;
     return this.navigation.find(n => n.id === id)?.label || '';
+  }
+
+  setWorkspaceFilter(filter: 'All' | 'Discover' | 'Shortlisted' | 'Offers' | 'Negotiating' | 'Accepted') {
+    this.workspaceFilter = filter;
+  }
+
+  templatesTab: 'templates' | 'catalog' | 'criteria' = 'templates';
+
+  setTemplatesTab(tab: 'templates' | 'catalog' | 'criteria') {
+    this.templatesTab = tab;
+    this.view = 'templates';
+    if (tab === 'templates') {
+      this.router.navigate(['/organization', 'templates']);
+    } else {
+      this.router.navigate(['/organization', 'templates'], { queryParams: { tab } });
+    }
   }
 
   currentPlan = 'Professional';
@@ -749,7 +870,7 @@ export class OrganizationWorkspaceComponent {
   planCapacity: Record<string, number> = {Basic:50,Professional:200,Enterprise:Infinity};
   advancedFeatures = ['Advanced Filters','Priority Discovery','AI Recommendations'];
   planOptions = [
-    {name:'Basic',profiles:'50',recommended:false,features:['Core student search','Save student profiles','Create offers'],unlocks:[] as string[]},
+    {name:'Basic',profiles:'50',recommended:false,features:['Core student search','Save student profiles','Create offers','Team management'],unlocks:[] as string[]},
     {name:'Professional',profiles:'200',recommended:true,features:['Everything in Basic'],unlocks:['Advanced Filters','Priority Discovery']},
     {name:'Enterprise',profiles:'Unlimited',recommended:false,features:['Everything in Professional'],unlocks:['Advanced Filters','Priority Discovery','AI Recommendations']}
   ];
@@ -759,12 +880,18 @@ export class OrganizationWorkspaceComponent {
   offers: Offer[] = [];
 
   // Catalog, templates and criteria — populated per role in applyRole().
-  programs: Program[] = [];
+  products: Product[] = [];
   loanProducts: LoanProduct[] = [];
   templates: OfferTemplate[] = [];
   uniCriteria: UniversityCriteria = { minCgpa: 7.5, minEnglishScore: 6.5, englishTest: 'IELTS', preferredCurricula: 'STEM, Business', targetCountries: 'Canada, United Kingdom' };
   bankCriteria: BankCriteria = { guarantorRequired: true, maxFamilyIncome: 2000000, eligibleCountries: 'Canada, United Kingdom, Australia' };
   catalogDraft: any = null;
+  selectedAppFeeType: string | null = null;
+  selectedAccommType: string | null = null;
+  selectedTuitionType: string | null = null;
+  selectedProfileCGPA = false;
+  selectedProfileTest = false;
+  selectedProfileBg = false;
   templateDraft: any = null;
   negotiationOffer: Offer | null = null;
   negotiationReply = '';
@@ -772,11 +899,22 @@ export class OrganizationWorkspaceComponent {
   settingsTab: SettingsTab = 'org';
   settingsTabs: Array<{id:SettingsTab;label:string}> = [
     {id:'org',label:'Org Profile'},
+    {id:'subscription',label:'Subscription & Plans'},
     {id:'accreditation',label:'Accreditation'},
     {id:'team',label:'Team'},
     {id:'notifications',label:'Notifications'},
     {id:'security',label:'Security'}
   ];
+
+  setSettingsTab(tab: SettingsTab) {
+    this.settingsTab = tab;
+    this.view = 'profile';
+    if (tab === 'org') {
+      this.router.navigate(['/organization', 'profile']);
+    } else {
+      this.router.navigate(['/organization', 'profile'], { queryParams: { tab } });
+    }
+  }
   notificationPrefs: Array<{key:string;label:string;detail:string;frequency:string}> = [];
 
   countryOptions = ['Canada','United Kingdom','Germany','Australia','United States'];
@@ -796,7 +934,7 @@ export class OrganizationWorkspaceComponent {
     {name:'Aarav Mehta',initials:'AM',photo:'/intelligent-matching-students.png',course:'Data Science',country:'Canada',degree:'Postgraduate',cgpa:'8.9 / 10',cgpaValue:8.9,ielts:7.5,englishTest:'IELTS' as const,englishScore:7.5,backlogs:0,workExperienceYears:0,visaRefused:false,documentsVerified:5,examScore:'IELTS 7.5 · GRE 323',budget:'₹38,00,000',budgetValue:3800000,financialSummary:'Family income ₹18L/yr · Savings ₹12L',skills:['Python','SQL','Machine Learning','Tableau'],factor:'Strong academic fit',intake:'Fall 2027',scholarshipSeeking:true,bio:'Data-focused engineering graduate building responsible machine-learning products for education.',color:'#0f6f54',eligible:true,eligibilityNote:'Co-applicant income and collateral cover the requested amount within standard lending limits.',
       toefl:100,gre:323,familyIncome:1800000,requiredLoanAmount:2600000,
       universityInterests:[{university:'Northbridge University',country:'Canada',course:'MSc Data Science',status:'Admitted' as UniversityOfferStatus,scholarship:'40% tuition',tuitionFee:'CAD 42,000 / year',remainingTuition:'CAD 25,200 / year',livingCost:'CAD 14,000 / year',logo:'/logos/northbridge.png'}]},
-    {name:'Sara Khan',initials:'SK',photo:'/intelligent-matching-students.png',course:'Artificial Intelligence',country:'Canada',degree:'Postgraduate',cgpa:'9.1 / 10',cgpaValue:9.1,ielts:8.0,englishTest:'IELTS' as const,englishScore:8.0,backlogs:0,workExperienceYears:1,visaRefused:false,documentsVerified:5,examScore:'IELTS 8.0 · GMAT 710',budget:'₹42,00,000',budgetValue:4200000,financialSummary:'Sponsored · Income proof verified',skills:['R','Excel','Econometrics','Power BI'],factor:'Excellent programme fit',intake:'Fall 2027',scholarshipSeeking:false,bio:'Quantitative graduate with internships in fintech research and market strategy.',color:'#315d88',eligible:true,eligibilityNote:'Strong sponsor income and complete documentation support the full requested amount.',
+    {name:'Sara Khan',initials:'SK',photo:'/intelligent-matching-students.png',course:'Artificial Intelligence',country:'Canada',degree:'Postgraduate',cgpa:'9.1 / 10',cgpaValue:9.1,ielts:8.0,englishTest:'IELTS' as const,englishScore:8.0,backlogs:0,workExperienceYears:1,visaRefused:false,documentsVerified:5,examScore:'IELTS 8.0 · GMAT 710',budget:'₹42,00,000',budgetValue:4200000,financialSummary:'Sponsored · Income proof verified',skills:['R','Excel','Econometrics','Power BI'],factor:'Excellent product fit',intake:'Fall 2027',scholarshipSeeking:false,bio:'Quantitative graduate with internships in fintech research and market strategy.',color:'#315d88',eligible:true,eligibilityNote:'Strong sponsor income and complete documentation support the full requested amount.',
       toefl:110,gmat:710,requiredLoanAmount:0,
       universityInterests:[{university:'Northbridge University',country:'Canada',course:'MSc Artificial Intelligence',status:'Selected' as UniversityOfferStatus,scholarship:'—',tuitionFee:'CAD 39,500 / year',remainingTuition:'CAD 39,500 / year',livingCost:'CAD 13,500 / year',logo:'/logos/northbridge.png'}]},
     {name:'Daniel Okafor',initials:'DO',photo:'/intelligent-matching-students.png',course:'Business Analytics',country:'Canada',degree:'Postgraduate',cgpa:'3.7 / 4.0',cgpaValue:9.25,ielts:7.0,englishTest:'IELTS' as const,englishScore:7.0,backlogs:2,workExperienceYears:0,visaRefused:false,documentsVerified:3,examScore:'IELTS 7.0 · GRE 318',budget:'₹35,00,000',budgetValue:3500000,financialSummary:'Savings ₹11L · Loan required ₹24L',skills:['C++','ROS','Python','Embedded Systems'],factor:'High intent signal',intake:'Fall 2027',scholarshipSeeking:true,bio:'Robotics enthusiast with hands-on work in perception and autonomous navigation.',color:'#8a5b35',eligible:false,eligibilityNote:'Existing loan obligation and incomplete income documentation require manual underwriting review.',
@@ -873,6 +1011,427 @@ export class OrganizationWorkspaceComponent {
     }
     return badges;
   }
+  workspaceOffers: Array<{
+    id: string;
+    name: string;
+    initials: string;
+    avatarColor: string;
+    avatarUrl?: string;
+    email: string;
+    mobile: string;
+    currentCity: string;
+    originCountry: string;
+    futureInterests: string;
+    degree: string;
+    course: string;
+    targetCountry: string;
+    cgpa: string;
+    examScore: string;
+    budget: string;
+    documentsVerified: number;
+    skills: string[];
+    bio: string;
+    intake: string;
+    headline: string;
+    matchScore: number;
+    matchBadge: string;
+    offerType: string;
+    offerValueLabel: string;
+    offerValue: string;
+    deadline: string;
+    received: string;
+    status: 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
+    conditions: string;
+    nextSteps: string[];
+    messages: Array<{ from: 'student' | 'institution'; author: string; body: string; time: string }>;
+  }> = [
+    {
+      id: 'cand-1',
+      name: 'Aarav Mehta',
+      initials: 'AM',
+      avatarColor: '#0f6f54',
+      avatarUrl: '/intelligent-matching-students.png',
+      email: 'aarav.m@example.com',
+      mobile: '+91 98765 43210',
+      currentCity: 'Mumbai',
+      originCountry: 'India',
+      futureInterests: 'AI Ethics, EdTech, Research',
+      degree: 'Postgraduate',
+      course: 'MSc Data Science',
+      targetCountry: 'Canada',
+      cgpa: '8.9 / 10',
+      examScore: 'IELTS 7.5 · GRE 323',
+      budget: '₹38,00,000',
+      documentsVerified: 5,
+      skills: ['Python', 'SQL', 'Machine Learning', 'Tableau'],
+      bio: 'Data-focused engineering graduate building responsible machine-learning products for education. 1st Class Honours with undergraduate research paper published.',
+      intake: 'Fall 2027',
+      headline: '40% Global Excellence Scholarship candidate',
+      matchScore: 94,
+      matchBadge: '94% AI MATCH',
+      offerType: 'Scholarship & Admission',
+      offerValueLabel: 'Scholarship',
+      offerValue: '40% tuition (CAD 16,800/yr)',
+      deadline: '15 August 2026',
+      received: '24 Jul',
+      status: 'Pending',
+      conditions: 'Admission and scholarship are conditional on final degree certificate verification and meeting the product English-language requirement.',
+      nextSteps: [
+        'Review uploaded undergraduate transcripts and GRE score report',
+        'Issue formal scholarship award letter and conditional offer',
+        'Assist student with visa compliance documents and seat deposit'
+      ],
+      messages: [
+        { from: 'institution', author: 'Admissions Office', body: 'Hi Aarav! We were impressed by your 8.9 CGPA and GRE 323 score. We are pleased to extend admission for MSc Data Science with our 40% Global Excellence Scholarship.', time: '24 Jul, 10:12' },
+        { from: 'student', author: 'Aarav Mehta', body: 'Thank you very much! I am thrilled to receive this offer. Could you please confirm whether the scholarship applies to both years of the product?', time: '24 Jul, 11:03' },
+        { from: 'institution', author: 'Admissions Office', body: 'Yes, Aarav! It is automatically renewable for year 2 provided you maintain a minimum 3.5 GPA.', time: '24 Jul, 11:18' }
+      ]
+    },
+    {
+      id: 'cand-2',
+      name: 'Sara Khan',
+      initials: 'SK',
+      avatarColor: '#315d88',
+      email: 'sara.khan@example.com',
+      mobile: '+91 91234 56789',
+      currentCity: 'New Delhi',
+      originCountry: 'India',
+      futureInterests: 'Fintech, Quantitative Analysis',
+      degree: 'Postgraduate',
+      course: 'MSc Artificial Intelligence',
+      targetCountry: 'Canada',
+      cgpa: '9.1 / 10',
+      examScore: 'IELTS 8.0 · GMAT 710',
+      budget: '₹42,00,000',
+      documentsVerified: 5,
+      skills: ['R', 'Excel', 'Econometrics', 'Power BI'],
+      bio: 'Quantitative graduate with internships in fintech research and market strategy. Strong sponsor backing and verified proof of income.',
+      intake: 'Fall 2027',
+      headline: 'Pre-qualified education loan up to ₹35 lakh',
+      matchScore: 96,
+      matchBadge: 'PRE-APPROVED',
+      offerType: 'Study Abroad Loan',
+      offerValueLabel: 'Max Loan',
+      offerValue: '₹35,00,000 @ 8.9% p.a.',
+      deadline: '20 August 2026',
+      received: '23 Jul',
+      status: 'Pending',
+      conditions: 'Pre-approved loan assessment conditional on verified guarantor income documents and university admission confirmation.',
+      nextSteps: [
+        'Review indicative interest rate and flexible repayment tenure',
+        'Submit co-applicant KYC and last 6 months bank statements',
+        'Issue sanction letter upon university admission confirmation'
+      ],
+      messages: [
+        { from: 'institution', author: 'Admissions & Finance', body: 'Hello Sara! Your profile has been pre-approved for an education loan of up to ₹35 lakh at 8.9% p.a. with zero processing fee.', time: '23 Jul, 14:00' },
+        { from: 'student', author: 'Sara Khan', body: 'Thank you! Could you let me know if the repayment holiday covers the full course period?', time: '23 Jul, 15:30' },
+        { from: 'institution', author: 'Admissions & Finance', body: 'Yes, full moratorium is provided during your 2 years of study plus 6 months post-course grace period.', time: '23 Jul, 16:15' }
+      ]
+    },
+    {
+      id: 'cand-3',
+      name: 'Daniel Okafor',
+      initials: 'DO',
+      avatarColor: '#84572b',
+      email: 'daniel.o@example.com',
+      mobile: '+234 801 234 5678',
+      currentCity: 'Lagos',
+      originCountry: 'Nigeria',
+      futureInterests: 'Business Strategy, Operations',
+      degree: 'Postgraduate',
+      course: 'MSc Business Analytics',
+      targetCountry: 'United Kingdom',
+      cgpa: '3.7 / 4.0',
+      examScore: 'IELTS 7.0 · GRE 318',
+      budget: '₹35,00,000',
+      documentsVerified: 4,
+      skills: ['C++', 'ROS', 'Python', 'Embedded Systems'],
+      bio: 'Robotics and analytics enthusiast with hands-on work in perception, autonomous systems, and data pipelines.',
+      intake: 'Spring 2027',
+      headline: 'Priority admission with £6,000 award',
+      matchScore: 91,
+      matchBadge: 'SHORTLISTED',
+      offerType: 'Direct Admission',
+      offerValueLabel: 'Award',
+      offerValue: '£6,000 Dean\'s Award',
+      deadline: '10 August 2026',
+      received: '21 Jul',
+      status: 'Shortlisted',
+      conditions: 'Subject to completion of bachelor degree with 1st Class Honours and CAS interview verification.',
+      nextSteps: [
+        'Review student SOP and academic references',
+        'Schedule 15-minute admissions interview',
+        'Issue CAS statement for UK student visa'
+      ],
+      messages: [
+        { from: 'institution', author: 'Admissions Office', body: 'Hi Daniel, pleased to extend conditional admission for MSc Business Analytics with our £6,000 Dean’s Merit Award.', time: '21 Jul, 09:30' },
+        { from: 'student', author: 'Daniel Okafor', body: 'Thank you! I have reviewed the curriculum and will submit my final semester marks next week.', time: '21 Jul, 10:45' }
+      ]
+    },
+    {
+      id: 'cand-4',
+      name: 'Mei Lin',
+      initials: 'ML',
+      avatarColor: '#5c458a',
+      email: 'mei.lin@example.com',
+      mobile: '+86 138 1234 5678',
+      currentCity: 'Shanghai',
+      originCountry: 'China',
+      futureInterests: 'Software Engineering, Systems',
+      degree: 'Postgraduate',
+      course: 'MSc Computer Science',
+      targetCountry: 'Canada',
+      cgpa: '3.8 / 4.0',
+      examScore: 'IELTS 6.5 · PTE 74',
+      budget: '₹40,00,000',
+      documentsVerified: 5,
+      skills: ['Java', 'Distributed Systems', 'Cloud', 'Kubernetes'],
+      bio: 'Systems-focused computer science graduate with cloud infrastructure internship experience. Fully documented and verified.',
+      intake: 'Spring 2027',
+      headline: 'Collateral-free funding & fast-track admission',
+      matchScore: 95,
+      matchBadge: 'PRE-APPROVED',
+      offerType: 'Collateral-Free Loan',
+      offerValueLabel: 'Max Loan',
+      offerValue: '₹40,00,000',
+      deadline: '18 August 2026',
+      received: '18 Jul',
+      status: 'Accepted',
+      conditions: 'Unsecured education loan with flexible moratorium period during study duration.',
+      nextSteps: [
+        'Verify GRE and undergraduate transcripts',
+        'Confirm student acceptance on portal',
+        'Disburse tuition deposit directly to university portal'
+      ],
+      messages: [
+        { from: 'institution', author: 'Finance Office', body: 'Hello Mei! We are delighted to confirm your collateral-free education loan sanction for computer science studies.', time: '18 Jul, 11:20' },
+        { from: 'student', author: 'Mei Lin', body: 'Thank you so much! I have accepted the sanction and will upload the fee invoice today.', time: '18 Jul, 12:45' }
+      ]
+    },
+    {
+      id: 'cand-5',
+      name: 'Riya Patel',
+      initials: 'RP',
+      avatarColor: '#95495b',
+      email: 'riya.p@example.com',
+      mobile: '+91 99887 76655',
+      currentCity: 'Ahmedabad',
+      originCountry: 'India',
+      futureInterests: 'International Trade, Logistics',
+      degree: 'Postgraduate',
+      course: 'MSc International Business',
+      targetCountry: 'Germany',
+      cgpa: '8.4 / 10',
+      examScore: 'IELTS 7.5 · GMAT 680',
+      budget: '₹30,00,000',
+      documentsVerified: 4,
+      skills: ['Market Research', 'Excel', 'Negotiation', 'Power BI'],
+      bio: 'International-business graduate with export-consulting internship experience across two global markets.',
+      intake: 'Fall 2027',
+      headline: '35% Merit scholarship with fast-track visa support',
+      matchScore: 88,
+      matchBadge: '88% MATCH',
+      offerType: 'Merit Scholarship',
+      offerValueLabel: 'Scholarship',
+      offerValue: '35% tuition',
+      deadline: '25 August 2026',
+      received: '15 Jul',
+      status: 'Pending',
+      conditions: 'Requires minimum 8.0 CGPA and verified GMAT Quantitative score of 650+.',
+      nextSteps: [
+        'Review department curriculum and research labs',
+        'Submit statement of purpose and verified references',
+        'Confirm offer acceptance and issue visa assistance'
+      ],
+      messages: [
+        { from: 'institution', author: 'Admissions Office', body: 'We are pleased to invite you to join our international business cohort with dedicated scholarship support.', time: '15 Jul, 16:45' }
+      ]
+    }
+  ];
+
+  selectedOfferId = 'cand-1';
+
+  get selectedOfferItem() {
+    return this.workspaceOffers.find(o => o.id === this.selectedOfferId) || this.workspaceOffers[0];
+  }
+
+  selectOffer(offer: any) {
+    this.selectedOfferId = offer.id;
+  }
+
+  get filteredWorkspaceOffers() {
+    if (this.workspaceFilter === 'All') return this.workspaceOffers;
+    return this.workspaceOffers.filter(o => o.status === this.workspaceFilter);
+  }
+
+  countWorkspaceOffers(status: string): number {
+    return this.workspaceOffers.filter(o => o.status === status).length;
+  }
+
+  setOfferStatus(offer: any, status: 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected') {
+    offer.status = status;
+    if (status === 'Shortlisted') {
+      this.notify(`Candidate ${offer.name} shortlisted`);
+    } else if (status === 'Rejected') {
+      this.notify(`Candidate ${offer.name} rejected`);
+    } else {
+      this.notify(`Status updated to ${status}`);
+    }
+  }
+
+  sendCandidateInvite(offer: any) {
+    offer.status = 'Accepted';
+    this.notify(`Invitation sent to ${offer.name}`);
+    if (offer.messages) {
+      offer.messages.push({
+        from: 'institution',
+        author: this.cfg.userName,
+        body: `We are pleased to formally invite you to connect with our admissions team regarding ${offer.course}!`,
+        time: 'Just now'
+      });
+    }
+  }
+
+  get selectedStudent(): any {
+    const list = this.filteredCandidateList;
+    if (!list.length) return null;
+    return list.find(s => s.name === this.selectedCandidateName) || list[0];
+  }
+
+  selectCandidate(student: any) {
+    this.selectedCandidateName = student.name;
+  }
+
+  get filteredCandidateList(): any[] {
+    const q = (this.candidateSearch || '').trim().toLowerCase();
+    return this.filteredStudents.filter(s => {
+      if (this.workspaceFilter === 'Discover' && this.hasOffer(s)) return false;
+      if (this.workspaceFilter === 'Shortlisted' && !this.isShortlisted(s.name)) return false;
+      if (this.workspaceFilter === 'Offers' && !this.hasOffer(s)) return false;
+      if (this.workspaceFilter === 'Negotiating') {
+        const off = this.getOffer(s.name);
+        if (!off || off.status !== 'Negotiating') return false;
+      }
+      if (this.workspaceFilter === 'Accepted') {
+        const off = this.getOffer(s.name);
+        if (!off || off.status !== 'Accepted') return false;
+      }
+      if (q) {
+        const matchName = s.name.toLowerCase().includes(q);
+        const matchCourse = (s.course || '').toLowerCase().includes(q);
+        const matchCountry = (s.country || '').toLowerCase().includes(q);
+        const matchDegree = (s.degree || '').toLowerCase().includes(q);
+        const matchSkills = (s.skills || []).some((sk: string) => sk.toLowerCase().includes(q));
+        if (!matchName && !matchCourse && !matchCountry && !matchDegree && !matchSkills) return false;
+      }
+      return true;
+    });
+  }
+
+  get allCandidatesCount(): number { return this.students.length; }
+  get discoverCount(): number { return this.students.filter(s => !this.hasOffer(s)).length; }
+  get shortlistedCount(): number { return this.students.filter(s => this.isShortlisted(s.name)).length; }
+  get offersCount(): number { return this.offers.length; }
+  get negotiatingCount(): number { return this.offers.filter(o => o.status === 'Negotiating').length; }
+  get acceptedCount(): number { return this.offers.filter(o => o.status === 'Accepted').length; }
+
+  getOffer(studentName: string): Offer | undefined {
+    return this.offers.find(o => o.student === studentName);
+  }
+
+  hasOffer(student: any): boolean {
+    return !!this.getOffer(student.name);
+  }
+
+  candidateBadge(student: any): string {
+    const off = this.getOffer(student.name);
+    if (off) {
+      return this.role === 'BANK' ? `BANK OFFER · ${off.status.toUpperCase()}` : `UNIVERSITY OFFER · ${off.status.toUpperCase()}`;
+    }
+    if (this.isShortlisted(student.name)) return 'SHORTLISTED CANDIDATE';
+    if (this.role === 'BANK' && student.eligible) return 'PRE-APPROVED LOAN MATCH';
+    return `${this.overallScore(student)}% AI MATCH`;
+  }
+
+  candidateHeadline(student: any): string {
+    const off = this.getOffer(student.name);
+    if (off) {
+      if (this.role === 'BANK') {
+        return `${off.loanAmount} Education Loan @ ${off.interestRate}`;
+      }
+      return off.scholarship || `${off.course} Direct Admission`;
+    }
+    if (this.role === 'BANK') {
+      return student.eligible ? 'Pre-Approved Study Loan up to ₹50 Lakh' : `Indicative Study Loan · ${student.course}`;
+    }
+    return `${this.overallScore(student)}% Match · 40% Global Excellence Scholarship`;
+  }
+
+  candidateDate(student: any): string {
+    const off = this.getOffer(student.name);
+    return off ? off.sent : 'Today';
+  }
+
+  offerKeyTermValue(student: any): string {
+    const off = this.getOffer(student.name);
+    if (off) {
+      return this.role === 'BANK' ? `${off.loanAmount} @ ${off.interestRate}` : (off.scholarship || '40% tuition');
+    }
+    if (this.role === 'BANK') {
+      return student.eligible ? 'Up to ₹50,00,000' : 'Needs Review';
+    }
+    return student.scholarshipSeeking ? '40% tuition' : 'Full tuition';
+  }
+
+  offerDeadline(student: any): string {
+    const off = this.getOffer(student.name);
+    return off?.deadline || '15 August 2026';
+  }
+
+  candidateConditions(student: any): string {
+    const off = this.getOffer(student.name);
+    if (off?.conditions && off.conditions !== 'None') return off.conditions;
+    if (this.role === 'BANK') {
+      return 'Pre-qualified loan assessment conditional on confirmed admission transcript and co-applicant income verification.';
+    }
+    return 'Your admission and scholarship are conditional on final transcript verification and meeting the product English-language requirement.';
+  }
+
+  candidateMessages(student: any): Array<{ from: 'institution' | 'student'; author: string; body: string; time: string }> {
+    const off = this.getOffer(student.name);
+    if (off?.negotiationMessages && off.negotiationMessages.length) {
+      return off.negotiationMessages;
+    }
+    return [
+      { from: 'institution', author: this.cfg.userName, body: `Hi ${student.name.split(' ')[0]}! We were impressed by your academic profile and would like to connect regarding ${student.course}.`, time: '24 Jul, 10:12' }
+    ];
+  }
+
+  sendChatMessage() {
+    if (!this.chatDraft.trim()) return;
+    const text = this.chatDraft.trim();
+    const item = this.selectedOfferItem;
+    if (item) {
+      item.messages.push({
+        from: 'institution',
+        author: this.cfg.userName,
+        body: text,
+        time: 'Just now'
+      });
+      this.chatDraft = '';
+      this.notify(`Message sent to ${item.name}`);
+      setTimeout(() => {
+        item.messages.push({
+          from: 'student',
+          author: item.name,
+          body: 'Thank you for the update! I will review the documents and submit the required paperwork promptly.',
+          time: 'Just now'
+        });
+      }, 1200);
+      return;
+    }
+  }
+
   get currentStudent(){
     const list=this.filteredStudents;
     if(!list.length) return null;
@@ -1093,15 +1652,15 @@ export class OrganizationWorkspaceComponent {
       if (s.gre) testScoreFit = this.clamp((testScoreFit + (s.gre >= 310 ? 90 : 70)) / 2);
       if (s.gmat) testScoreFit = this.clamp((testScoreFit + (s.gmat >= 650 ? 90 : 70)) / 2);
 
-      const matchingProgram = this.programs.find(p => p.course === s.course);
-      const courseAlignment = matchingProgram ? 92 : 55;
+      const matchingProduct = this.products.find(p => p.course === s.course);
+      const courseAlignment = matchingProduct ? 92 : 55;
 
       const targetCountries = this.uniTargetCountriesList;
       const inTargetCountry = !targetCountries.length || targetCountries.includes(s.country);
-      const intakeMatches = matchingProgram ? matchingProgram.intakes.includes(s.intake) : false;
+      const intakeMatches = matchingProduct ? matchingProduct.intakes.includes(s.intake) : false;
       const countryIntakeAlignment = inTargetCountry && intakeMatches ? 95 : inTargetCountry ? 65 : 35;
 
-      const scholarshipAvailable = !!matchingProgram && !!matchingProgram.scholarshipRange && matchingProgram.scholarshipRange !== '—';
+      const scholarshipAvailable = !!matchingProduct && !!matchingProduct.scholarshipRange && matchingProduct.scholarshipRange !== '—';
       const budgetScholarshipFit = s.scholarshipSeeking ? (scholarshipAvailable ? 88 : 45) : 90;
 
       scores = [academicFit, testScoreFit, courseAlignment, countryIntakeAlignment, budgetScholarshipFit];
@@ -1114,37 +1673,284 @@ export class OrganizationWorkspaceComponent {
     return Math.round(factors.reduce((sum, f) => sum + f.score * f.weight, 0) / totalWeight);
   }
 
-  // --- Catalog CRUD ---
-  openCatalogModal(item?: Program | LoanProduct){
+  getPresetsByCategory(category: string) {
+    return this.presetConditions.filter(p => p.category === category);
+  }
+
+  openProductInviteModal() {
+    this.productInviteDraft = {
+      productNames: [],
+      conditions: '',
+      expandedCategory: null,
+      selectedPresetByCategory: {},
+      insertedTextByCategory: {}
+    };
+  }
+
+  addProductToInvite(event: any) {
+    const val = event.target.value;
+    if (val && !this.productInviteDraft.productNames.includes(val)) {
+      this.productInviteDraft.productNames.push(val);
+    }
+    event.target.value = '';
+  }
+
+  removeProductFromInvite(name: string) {
+    this.productInviteDraft.productNames = this.productInviteDraft.productNames.filter((p: string) => p !== name);
+  }
+
+  getAvailableProductsForInvite() {
+    return this.products.filter(p => !this.productInviteDraft.productNames.includes(p.name));
+  }
+
+  selectPreset(cat: string, presetId: string, text: string) {
+    const oldId = this.productInviteDraft.selectedPresetByCategory[cat];
+    const oldText = this.productInviteDraft.insertedTextByCategory[cat];
+
+    if (oldId === presetId) {
+      // Deselect
+      this.productInviteDraft.selectedPresetByCategory[cat] = null;
+      if (oldText && this.productInviteDraft.conditions.includes(oldText)) {
+        this.productInviteDraft.conditions = this.productInviteDraft.conditions.replace(oldText, '').trim();
+      }
+      this.productInviteDraft.insertedTextByCategory[cat] = null;
+    } else {
+      // Select or swap
+      this.productInviteDraft.selectedPresetByCategory[cat] = presetId;
+      
+      let prefix = '';
+      if (oldText) {
+        const match = oldText.match(/^(\d+\.\s)/);
+        if (match) {
+          prefix = match[1];
+        }
+      } else {
+        const currentCount = Object.values(this.productInviteDraft.selectedPresetByCategory).filter(v => v).length;
+        prefix = `${currentCount}. `;
+      }
+      
+      const fullText = prefix + text;
+      
+      if (oldText && this.productInviteDraft.conditions.includes(oldText)) {
+        this.productInviteDraft.conditions = this.productInviteDraft.conditions.replace(oldText, fullText);
+      } else {
+        if (!this.productInviteDraft.conditions) {
+          this.productInviteDraft.conditions = fullText;
+        } else {
+          this.productInviteDraft.conditions = this.productInviteDraft.conditions.trim() + '\n' + fullText;
+        }
+      }
+      this.productInviteDraft.insertedTextByCategory[cat] = fullText;
+    }
+    
+    setTimeout(() => {
+      const el = document.getElementById('custom-cond-textarea');
+      if (el) this.autoResizeTextarea(el);
+    }, 0);
+  }
+
+  autoResizeTextarea(el: any) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  sendProductInvite() {
+    if (this.productInviteDraft.productNames.length === 0) {
+      this.notify('Please select at least one product');
+      return;
+    }
+    
+    let finalConditions = this.productInviteDraft.conditions;
+    const condStr = finalConditions ? ` with conditions: "${finalConditions}"` : '';
+    const productsList = this.productInviteDraft.productNames.join(', ');
+    this.notify(`Product Invite sent for ${productsList}${condStr}.`);
+    this.productInviteDraft = null;
+  }
+
+  // --- Catalog CRUD with Admission Criteria ---
+  openCatalogModal(item?: Product | LoanProduct){
+    this.selectedAppFeeType = null;
+    this.selectedAccommType = null;
+    this.selectedTuitionType = null;
+    this.selectedProfileCGPA = false;
+    this.selectedProfileTest = false;
+    this.selectedProfileBg = false;
     if(this.role==='UNIVERSITY'){
-      const p = item as Program | undefined;
-      this.catalogDraft = p ? {...p, intakesText: p.intakes.join(', '), seatsText: String(p.seats)} : {id:'', name:'', course:'', degreeLevel:'Postgraduate', country:'', intakesText:'', durationYears:2, tuitionFee:'', scholarshipRange:'', seatsText:''};
+      const p = item as Product | undefined;
+      this.catalogDraft = p
+        ? {
+            ...p,
+            intakesText: p.intakes.join(', '),
+            seatsText: String(p.seats),
+            minCgpa: p.minCgpa !== undefined ? p.minCgpa : (this.uniCriteria.minCgpa || 8.0),
+            englishTest: p.englishTest || this.uniCriteria.englishTest || 'IELTS',
+            minEnglishScore: p.minEnglishScore !== undefined ? p.minEnglishScore : (this.uniCriteria.minEnglishScore || 6.5),
+            preferredCurricula: p.preferredCurricula || this.uniCriteria.preferredCurricula || 'STEM, Business',
+            targetCountries: p.targetCountries || this.uniCriteria.targetCountries || 'Worldwide',
+            templates: p.templates ? JSON.parse(JSON.stringify(p.templates)) : [{ name: '', scholarship: '', tuition: '', accommodation: '', description: '' }],
+            url: p.url || ''
+          }
+        : {
+            id:'', name:'', category:'', course:'', degreeLevel:'Postgraduate', country:'Canada', intakesText:'Fall 2027, Spring 2028',
+            durationYears:2, tuitionFee:'CAD 40,000 / year', scholarshipRange:'0–30% tuition', seatsText:'60',
+            minCgpa: this.uniCriteria.minCgpa || 8.0,
+            englishTest: this.uniCriteria.englishTest || 'IELTS',
+            minEnglishScore: this.uniCriteria.minEnglishScore || 6.5,
+            preferredCurricula: 'STEM, Computer Science, Business',
+            targetCountries: 'Canada, United Kingdom, Worldwide',
+            templates: [{ name: '', scholarship: '', tuition: '', accommodation: '', description: '' }],
+            url: ''
+          };
     } else {
       const p = item as LoanProduct | undefined;
-      this.catalogDraft = p ? {...p, tenureText: p.tenureOptions.join(', '), countriesText: p.eligibleCountries.join(', ')} : {id:'', name:'', interestRateMin:8, interestRateMax:12, currency:'INR', maxAmount:'', tenureText:'', countriesText:'', collateralRequired:false};
+      this.catalogDraft = p
+        ? {
+            ...p,
+            tenureText: p.tenureOptions.join(', '),
+            countriesText: p.eligibleCountries.join(', '),
+            guarantorRequired: p.guarantorRequired !== undefined ? p.guarantorRequired : this.bankCriteria.guarantorRequired,
+            maxFamilyIncome: p.maxFamilyIncome !== undefined ? p.maxFamilyIncome : this.bankCriteria.maxFamilyIncome,
+            templates: p.templates ? JSON.parse(JSON.stringify(p.templates)) : [{ name: '', loanAmount: '', interestRate: '', processingFee: '', tenure: '', conditions: '' }],
+            url: p.url || ''
+          }
+        : {
+            id:'', name:'', category:'', interestRateMin:8.5, interestRateMax:11.5, currency:'INR', maxAmount:'35,00,000',
+            tenureText:'60, 84, 120', countriesText:'Canada, United Kingdom, Australia', collateralRequired:false,
+            guarantorRequired: true, maxFamilyIncome: 1800000,
+            templates: [{ name: '', loanAmount: '', interestRate: '', processingFee: '', tenure: '', conditions: '' }],
+            url: ''
+          };
     }
   }
+  addDraftTemplate() {
+    if (this.role === 'UNIVERSITY') {
+      this.catalogDraft.templates.push({ name: '', scholarship: '', tuition: '', accommodation: '', description: '' });
+    } else {
+      this.catalogDraft.templates.push({ name: '', loanAmount: '', interestRate: '', processingFee: '', tenure: '', conditions: '' });
+    }
+  }
+  removeDraftTemplate(index: number) {
+    this.catalogDraft.templates.splice(index, 1);
+  }
+
+  downloadCsvTemplate() {
+    const isBank = this.role === 'BANK';
+    const csvContent = isBank 
+      ? 'Product Name,Product URL,Product Category\nUnsecured Study Loan,https://example.com/loan,Financial Product\n' 
+      : 'Product Name,Product URL,Product Category\nMSc Data Science,https://example.com/msc-data-science,Academic Product\n';
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', isBank ? 'LoanProducts_Template.csv' : 'Products_Template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  importProducts(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const text = e.target.result;
+      if (!text) return;
+
+      const lines = text.split('\n').filter((l: string) => l.trim() !== '');
+      let importCount = 0;
+      
+      lines.forEach((line: string, index: number) => {
+        const columns = line.split(',');
+        if (columns.length >= 1) {
+          const name = columns[0].replace(/^"|"$/g, '').trim();
+          const url = columns.length >= 2 ? columns[1].replace(/^"|"$/g, '').trim() : '';
+          const category = columns.length >= 3 ? columns[2].replace(/^"|"$/g, '').trim() : '';
+          
+          if (name && name.toLowerCase() !== 'product name' && name.toLowerCase() !== 'product name' && name.toLowerCase() !== 'name') {
+            if (this.role === 'UNIVERSITY') {
+              const newProduct: Product = {
+                id: `prog-csv-${Date.now()}-${index}`,
+                name: name, url: url, category: category || 'Academic Product', course: name, degreeLevel: 'Postgraduate', country: '', intakes: [],
+                durationYears: 1, tuitionFee: '', scholarshipRange: '—', seats: 'Rolling',
+                minCgpa: 8.0, englishTest: 'IELTS', minEnglishScore: 6.5,
+                preferredCurricula: 'STEM', targetCountries: 'Worldwide', templates: [],
+                inviteNote: '', templateName: '', createdAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString()
+              };
+              this.products.push(newProduct);
+            } else {
+              const newLoan: LoanProduct = {
+                id: `loan-csv-${Date.now()}-${index}`,
+                name: name, url: url, category: category || 'Financial Product',
+                interestRateMin: 5, interestRateMax: 15, currency: 'USD', maxAmount: '50000',
+                tenureOptions: [5, 10], collateralRequired: false, eligibleCountries: ['Worldwide'],
+                templates: [], inviteNote: '', templateName: '', createdAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString()
+              };
+              this.loanProducts.push(newLoan);
+            }
+            importCount++;
+          }
+        }
+      });
+      
+      if (importCount > 0) {
+        if (this.role === 'UNIVERSITY') {
+          localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.products));
+          this.notify(`Imported ${importCount} products successfully!`);
+        } else {
+          localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.loanProducts));
+          this.notify(`Imported ${importCount} loan products successfully!`);
+        }
+      } else {
+        this.notify(`No valid items found in the CSV.`);
+      }
+      
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
   saveCatalogItem(){
     if(!this.catalogDraft?.name) return;
     if(this.role==='UNIVERSITY'){
-      const program: Program = {
+      const product: Product = {
         id: this.catalogDraft.id || `prog-${Date.now()}`,
-        name: this.catalogDraft.name, course: this.catalogDraft.course, degreeLevel: this.catalogDraft.degreeLevel,
+        name: this.catalogDraft.name, category: this.catalogDraft.category, course: this.catalogDraft.course, degreeLevel: this.catalogDraft.degreeLevel,
         country: this.catalogDraft.country, intakes: String(this.catalogDraft.intakesText||'').split(',').map((s:string)=>s.trim()).filter(Boolean),
         durationYears: Number(this.catalogDraft.durationYears)||1, tuitionFee: this.catalogDraft.tuitionFee, scholarshipRange: this.catalogDraft.scholarshipRange||'—',
-        seats: /^\d+$/.test(String(this.catalogDraft.seatsText).trim()) ? Number(this.catalogDraft.seatsText) : 'Rolling'
+        seats: /^\d+$/.test(String(this.catalogDraft.seatsText).trim()) ? Number(this.catalogDraft.seatsText) : 'Rolling',
+        minCgpa: Number(this.catalogDraft.minCgpa) || 8.0,
+        englishTest: this.catalogDraft.englishTest || 'IELTS',
+        minEnglishScore: Number(this.catalogDraft.minEnglishScore) || 6.5,
+        preferredCurricula: this.catalogDraft.preferredCurricula || 'STEM',
+        targetCountries: this.catalogDraft.targetCountries || 'Worldwide',
+        templates: this.catalogDraft.templates,
+        url: this.catalogDraft.url || '',
+        inviteNote: this.catalogDraft.inviteNote || '',
+        templateName: this.catalogDraft.templateName || '',
+        createdAt: this.catalogDraft.createdAt || new Date().toISOString(),
+        lastModifiedAt: new Date().toISOString()
       };
-      const idx = this.programs.findIndex(p=>p.id===program.id);
-      this.programs = idx>=0 ? this.programs.map(p=>p.id===program.id?program:p) : [...this.programs, program];
-      localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.programs));
+      const idx = this.products.findIndex(p=>p.id===product.id);
+      this.products = idx>=0 ? this.products.map(p=>p.id===product.id?product:p) : [...this.products, product];
+      localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.products));
     } else {
       const product: LoanProduct = {
         id: this.catalogDraft.id || `loan-${Date.now()}`,
-        name: this.catalogDraft.name, interestRateMin: Number(this.catalogDraft.interestRateMin)||0, interestRateMax: Number(this.catalogDraft.interestRateMax)||0,
+        name: this.catalogDraft.name, category: this.catalogDraft.category, interestRateMin: Number(this.catalogDraft.interestRateMin)||0, interestRateMax: Number(this.catalogDraft.interestRateMax)||0,
         currency: this.catalogDraft.currency||'INR', maxAmount: this.catalogDraft.maxAmount,
         tenureOptions: String(this.catalogDraft.tenureText||'').split(',').map((s:string)=>Number(s.trim())).filter((n:number)=>!!n),
         collateralRequired: !!this.catalogDraft.collateralRequired,
-        eligibleCountries: String(this.catalogDraft.countriesText||'').split(',').map((s:string)=>s.trim()).filter(Boolean)
+        eligibleCountries: String(this.catalogDraft.countriesText||'').split(',').map((s:string)=>s.trim()).filter(Boolean),
+        guarantorRequired: !!this.catalogDraft.guarantorRequired,
+        maxFamilyIncome: Number(this.catalogDraft.maxFamilyIncome) || undefined,
+        templates: this.catalogDraft.templates,
+        url: this.catalogDraft.url || '',
+        inviteNote: this.catalogDraft.inviteNote || '',
+        templateName: this.catalogDraft.templateName || '',
+        createdAt: this.catalogDraft.createdAt || new Date().toISOString(),
+        lastModifiedAt: new Date().toISOString()
       };
       const idx = this.loanProducts.findIndex(p=>p.id===product.id);
       this.loanProducts = idx>=0 ? this.loanProducts.map(p=>p.id===product.id?product:p) : [...this.loanProducts, product];
@@ -1152,6 +1958,169 @@ export class OrganizationWorkspaceComponent {
     }
     this.notify(`${this.catalogDraft.name} saved`);
     this.catalogDraft = null;
+  }
+
+  removeAppFeeText(note: string): string {
+    let result = note;
+    result = result.replace(/We are pleased to offer a full application fee waiver for this product\. ?/gi, '');
+    result = result.replace(/Use code .*? to receive a .*?% waiver on your application fee\. ?/gi, '');
+    result = result.replace(/Use code .*? to receive a .*? discount on your application fee\. ?/gi, '');
+    return result.trim();
+  }
+
+  removeAccommText(note: string): string {
+    let result = note;
+    result = result.replace(/Guaranteed on-campus accommodation is available for your first year\. ?/gi, '');
+    result = result.replace(/You are eligible for a .*?% discount on your first-year accommodation\. ?/gi, '');
+    result = result.replace(/We are pleased to offer fully subsidized on-campus accommodation\. ?/gi, '');
+    return result.trim();
+  }
+
+  removeTuitionText(note: string): string {
+    let result = note;
+    result = result.replace(/We are thrilled to offer you a full tuition scholarship for this product\. ?/gi, '');
+    result = result.replace(/Based on your academic profile, you have been awarded a .*?% tuition fee scholarship\. ?/gi, '');
+    result = result.replace(/Based on your academic profile, you have been awarded a .*? tuition fee scholarship\. ?/gi, '');
+    result = result.replace(/You are eligible for the reduced in-state tuition fee rate\. ?/gi, '');
+    return result.trim();
+  }
+
+  toggleProfileNote(type: string) {
+    if (!this.catalogDraft) return;
+    let currentNote = this.catalogDraft.inviteNote || '';
+    
+    if (type === 'CGPA') {
+      const txt = 'Your exceptional CGPA of [CGPA] makes you a standout candidate for this product. ';
+      if (this.selectedProfileCGPA) {
+        currentNote = currentNote.replace(txt, '');
+        this.selectedProfileCGPA = false;
+      } else {
+        currentNote += (currentNote && !currentNote.endsWith(' ') ? ' ' : '') + txt;
+        this.selectedProfileCGPA = true;
+      }
+    }
+    else if (type === 'Test') {
+      const txt = 'Your strong test scores ([TEST_SCORES]) align perfectly with our rigorous academic standards. ';
+      if (this.selectedProfileTest) {
+        currentNote = currentNote.replace(txt, '');
+        this.selectedProfileTest = false;
+      } else {
+        currentNote += (currentNote && !currentNote.endsWith(' ') ? ' ' : '') + txt;
+        this.selectedProfileTest = true;
+      }
+    }
+    else if (type === 'Background') {
+      const txt = 'Your unique background and experience in [FIELD] make you a great fit for our cohort. ';
+      if (this.selectedProfileBg) {
+        currentNote = currentNote.replace(txt, '');
+        this.selectedProfileBg = false;
+      } else {
+        currentNote += (currentNote && !currentNote.endsWith(' ') ? ' ' : '') + txt;
+        this.selectedProfileBg = true;
+      }
+    }
+    this.catalogDraft.inviteNote = currentNote;
+  }
+
+  appendInviteNote(type: string) {
+    if (!this.catalogDraft) return;
+
+    let currentNote = this.catalogDraft.inviteNote || '';
+
+    if (type.startsWith('App Fee')) {
+      if (this.selectedAppFeeType === type) {
+        this.selectedAppFeeType = null;
+        this.catalogDraft.inviteNote = this.removeAppFeeText(currentNote);
+        return; 
+      } else {
+        this.selectedAppFeeType = type;
+        currentNote = this.removeAppFeeText(currentNote);
+      }
+    } else if (type.startsWith('Accomm')) {
+      if (this.selectedAccommType === type) {
+        this.selectedAccommType = null;
+        this.catalogDraft.inviteNote = this.removeAccommText(currentNote);
+        return; 
+      } else {
+        this.selectedAccommType = type;
+        currentNote = this.removeAccommText(currentNote);
+      }
+    } else if (type.startsWith('Tuition')) {
+      if (this.selectedTuitionType === type) {
+        this.selectedTuitionType = null;
+        this.catalogDraft.inviteNote = this.removeTuitionText(currentNote);
+        return; 
+      } else {
+        this.selectedTuitionType = type;
+        currentNote = this.removeTuitionText(currentNote);
+      }
+    }
+
+    let textToAppend = '';
+    let templateTitle = 'Invite';
+    switch (type) {
+      case 'App Fee - Full':
+        textToAppend = 'We are pleased to offer a full application fee waiver for this product. ';
+        templateTitle = 'Application Fee';
+        break;
+      case 'App Fee - %':
+        textToAppend = 'Use code [CODE] to receive a [PERCENT]% waiver on your application fee. ';
+        templateTitle = 'Application Fee';
+        break;
+      case 'App Fee - Amount':
+        textToAppend = 'Use code [CODE] to receive a [AMOUNT] discount on your application fee. ';
+        templateTitle = 'Application Fee';
+        break;
+      case 'Accomm - Guaranteed':
+        textToAppend = 'Guaranteed on-campus accommodation is available for your first year. ';
+        templateTitle = 'Accommodation';
+        break;
+      case 'Accomm - Discount':
+        textToAppend = 'You are eligible for a [PERCENT]% discount on your first-year accommodation. ';
+        templateTitle = 'Accommodation';
+        break;
+      case 'Accomm - Free':
+        textToAppend = 'We are pleased to offer fully subsidized on-campus accommodation. ';
+        templateTitle = 'Accommodation';
+        break;
+      case 'Tuition - Full':
+        textToAppend = 'We are thrilled to offer you a full tuition scholarship for this product. ';
+        templateTitle = 'Tuition Scholarship';
+        break;
+      case 'Tuition - %':
+        textToAppend = 'Based on your academic profile, you have been awarded a [PERCENT]% tuition fee scholarship. ';
+        templateTitle = 'Tuition Scholarship';
+        break;
+      case 'Tuition - Amount':
+        textToAppend = 'Based on your academic profile, you have been awarded a [AMOUNT] tuition fee scholarship. ';
+        templateTitle = 'Tuition Scholarship';
+        break;
+      case 'Tuition - In-State':
+        textToAppend = 'You are eligible for the reduced in-state tuition fee rate. ';
+        templateTitle = 'Tuition Scholarship';
+        break;
+    }
+    this.catalogDraft.inviteNote = currentNote + (currentNote && !currentNote.endsWith(' ') ? ' ' : '') + textToAppend;
+    
+    if (!this.catalogDraft.templateName) {
+      this.catalogDraft.templateName = `${templateTitle} Offer Template`;
+    }
+  }
+
+  archiveProduct(p: Product) {
+    if (confirm(`Are you sure you want to archive ${p.name}? This will remove it from the directory.`)) {
+      this.products = this.products.filter(x => x.id !== p.id);
+      localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.products));
+      this.notify(`${p.name} archived`);
+    }
+  }
+
+  archiveLoanProduct(p: LoanProduct) {
+    if (confirm(`Are you sure you want to archive ${p.name}? This will remove it from the directory.`)) {
+      this.loanProducts = this.loanProducts.filter(x => x.id !== p.id);
+      localStorage.setItem(`superoffer_${this.role}_catalog`, JSON.stringify(this.loanProducts));
+      this.notify(`${p.name} archived`);
+    }
   }
 
   // --- Offer templates ---
@@ -1222,8 +2191,8 @@ export class OrganizationWorkspaceComponent {
   }
   onOfferCourseChange(){
     if(!this.offerDraft) return;
-    const program = this.programs.find(p=>p.name===this.offerDraft.course);
-    if(program) this.offerDraft.tuition = program.tuitionFee;
+    const product = this.products.find(p=>p.name===this.offerDraft.course);
+    if(product) this.offerDraft.tuition = product.tuitionFee;
   }
   onOfferProductChange(){
     if(!this.offerDraft) return;
@@ -1235,11 +2204,15 @@ export class OrganizationWorkspaceComponent {
   }
   saveOffer(){
     if(!this.offerDraft?.student) return;
-    const initials=this.offerDraft.student.split(' ').map((x:string)=>x[0]).join('').slice(0,2).toUpperCase();
+    const studentName = this.offerDraft.student;
+    const initials=studentName.split(' ').map((x:string)=>x[0]).join('').slice(0,2).toUpperCase();
     this.offers=[{...this.offerDraft,initials,status:'Sent' as OfferStatus,sent:'Today',sentAt:Date.now()},...this.offers];
-    this.notify('Offer created');
+    this.notify('Offer created and dispatched');
     this.offerDraft=null;
-    this.go('invitations');
+    this.workspaceFilter='Offers';
+    this.selectedCandidateName=studentName;
+    this.view='students';
+    this.router.navigate(['/organization', 'students']);
   }
   changePassword(){
     if(!this.passwordForm.next||this.passwordForm.next!==this.passwordForm.confirm){this.notify('New passwords do not match');return;}
@@ -1247,7 +2220,56 @@ export class OrganizationWorkspaceComponent {
     this.notify('Password updated');
   }
   choosePlan(name:string){this.currentPlan=name;this.notify(`${name} selected as your subscription plan`);}
-  go(view: OrganizationView){this.view=view;this.router.navigate(['/organization',view]);}
+  go(view: OrganizationView){
+    if (view === 'students') {
+      this.view = 'students';
+      this.workspaceFilter = 'All';
+      this.router.navigate(['/organization', 'students']);
+      return;
+    }
+    if (view === 'shortlists') {
+      this.view = 'students';
+      this.workspaceFilter = 'Shortlisted';
+      this.router.navigate(['/organization', 'students'], { queryParams: { tab: 'shortlisted' } });
+      return;
+    }
+    if (view === 'invitations') {
+      this.view = 'students';
+      this.workspaceFilter = 'Offers';
+      this.router.navigate(['/organization', 'students'], { queryParams: { tab: 'offers' } });
+      return;
+    }
+    if (view === 'catalog') {
+      this.view = 'templates';
+      this.templatesTab = 'catalog';
+      this.router.navigate(['/organization', 'templates'], { queryParams: { tab: 'catalog' } });
+      return;
+    }
+    if (view === 'criteria') {
+      this.view = 'templates';
+      this.templatesTab = 'criteria';
+      this.router.navigate(['/organization', 'templates'], { queryParams: { tab: 'criteria' } });
+      return;
+    }
+    if (view === 'reports') {
+      this.view = 'dashboard';
+      this.router.navigate(['/organization', 'dashboard']);
+      return;
+    }
+    if (view === 'subscription') {
+      this.view = 'profile';
+      this.settingsTab = 'subscription';
+      this.router.navigate(['/organization', 'profile'], { queryParams: { tab: 'subscription' } });
+      return;
+    }
+    if (view === 'settings') {
+      this.view = 'profile';
+      this.router.navigate(['/organization', 'profile']);
+      return;
+    }
+    this.view = view;
+    this.router.navigate(['/organization', view]);
+  }
   notify(message:string){
     this.toast=message;
     window.setTimeout(()=>{if(this.toast===message)this.toast='';},2400);
@@ -1276,7 +2298,7 @@ export class OrganizationWorkspaceComponent {
       {student:'Daniel Okafor',initials:'DO',course:'MSc Business Analytics',loanAmount:'₹35,00,000',interestRate:'10.1% p.a.',processingFee:'1% of loan amount',tenure:'10 years',conditions:'Subject to guarantor verification',deadline:'2026-08-04',status:'Viewed',sent:'21 Jul',sentAt:this.daysAgoTs(4)},
       {student:'Mei Lin',initials:'ML',course:'MSc Computer Science',loanAmount:'₹40,00,000',interestRate:'9.0% p.a.',processingFee:'Waived',tenure:'10 years',conditions:'None',deadline:'2026-08-03',status:'Sent',sent:'20 Jul',sentAt:this.daysAgoTs(1)}
     ] : [
-      {student:'Aarav Mehta',initials:'AM',course:'MSc Data Science',scholarship:'40% tuition scholarship',tuition:'CAD 42,000 / year',accommodation:'Campus residence available',deadline:'2026-08-15',status:'Negotiating',sent:'24 Jul',sentAt:this.daysAgoTs(12),negotiationMessages:[{from:'student',author:'Aarav Mehta',body:'Could you match this with a 45% scholarship given my test scores?',time:'2 days ago'}]},
+      {student:'Aarav Mehta',initials:'AM',course:'MSc Data Science',scholarship:'40% tuition scholarship',tuition:'CAD 42,00,000 / year',accommodation:'Campus residence available',deadline:'2026-08-15',status:'Negotiating',sent:'24 Jul',sentAt:this.daysAgoTs(12),negotiationMessages:[{from:'student',author:'Aarav Mehta',body:'Could you match this with a 45% scholarship given my test scores?',time:'2 days ago'}]},
       {student:'Sara Khan',initials:'SK',course:'MSc Artificial Intelligence',scholarship:'40% tuition scholarship',tuition:'CAD 39,500 / year',accommodation:'Off-campus support',deadline:'2026-08-05',status:'Accepted',sent:'22 Jul',sentAt:this.daysAgoTs(9),responseHours:36},
       {student:'Daniel Okafor',initials:'DO',course:'MSc Business Analytics',scholarship:'£6,000 award',tuition:'£24,000 / year',accommodation:'Not included',deadline:'2026-08-04',status:'Viewed',sent:'21 Jul',sentAt:this.daysAgoTs(4)},
       {student:'Mei Lin',initials:'ML',course:'MSc Computer Science',scholarship:'Fast-track admission',tuition:'CAD 41,000 / year',accommodation:'Campus residence available',deadline:'2026-08-03',status:'Sent',sent:'20 Jul',sentAt:this.daysAgoTs(1)}
@@ -1290,21 +2312,27 @@ export class OrganizationWorkspaceComponent {
       this.bankEvaluationMode = storedMode || 'ACADEMIC_AND_OFFER';
     }
 
-    const defaultPrograms: Program[] = [
-      {id:'prog-1', name:'MSc Data Science', course:'Data Science', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027','Winter 2028'], durationYears:2, tuitionFee:'CAD 42,000 / year', scholarshipRange:'0–40% tuition', seats:60},
-      {id:'prog-2', name:'MSc Artificial Intelligence', course:'Artificial Intelligence', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027'], durationYears:2, tuitionFee:'CAD 39,500 / year', scholarshipRange:'—', seats:40},
-      {id:'prog-3', name:'MSc Business Analytics', course:'Business Analytics', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027','Spring 2027'], durationYears:2, tuitionFee:'CAD 37,000 / year', scholarshipRange:'0–25% tuition', seats:'Rolling'},
-      {id:'prog-4', name:'MSc Computer Science', course:'Computer Science', degreeLevel:'Postgraduate', country:'Canada', intakes:['Spring 2027'], durationYears:2, tuitionFee:'CAD 41,000 / year', scholarshipRange:'—', seats:50},
-      {id:'prog-5', name:'MSc International Business', course:'International Business', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027'], durationYears:1, tuitionFee:'CAD 35,500 / year', scholarshipRange:'0–20% tuition', seats:'Rolling'}
+    const defaultProducts: Product[] = [
+      {id:'prog-1', name:'MSc Data Science', course:'Data Science', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027','Winter 2028'], durationYears:2, tuitionFee:'CAD 42,00,000 / year', scholarshipRange:'0–40% tuition', seats:60, minCgpa:8.0, englishTest:'IELTS', minEnglishScore:6.5, preferredCurricula:'STEM, Computer Science', targetCountries:'Worldwide', createdAt:'2026-07-15T08:00:00Z', lastModifiedAt:'2026-08-01T12:00:00Z'},
+      {id:'prog-2', name:'MSc Artificial Intelligence', course:'Artificial Intelligence', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027'], durationYears:2, tuitionFee:'CAD 39,500 / year', scholarshipRange:'—', seats:40, minCgpa:8.5, englishTest:'IELTS', minEnglishScore:7.0, preferredCurricula:'Computer Science, Mathematics', targetCountries:'Worldwide', createdAt:'2026-07-20T09:30:00Z', lastModifiedAt:'2026-08-02T15:45:00Z'},
+      {id:'prog-3', name:'MSc Business Analytics', course:'Business Analytics', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027','Spring 2027'], durationYears:2, tuitionFee:'CAD 37,000 / year', scholarshipRange:'0–25% tuition', seats:'Rolling', minCgpa:7.5, englishTest:'IELTS', minEnglishScore:6.5, preferredCurricula:'Business, Economics, STEM', targetCountries:'Worldwide', createdAt:'2026-07-25T11:15:00Z', lastModifiedAt:'2026-08-03T10:20:00Z'},
+      {id:'prog-4', name:'MSc Computer Science', course:'Computer Science', degreeLevel:'Postgraduate', country:'Canada', intakes:['Spring 2027'], durationYears:2, tuitionFee:'CAD 41,000 / year', scholarshipRange:'—', seats:50, minCgpa:8.0, englishTest:'PTE', minEnglishScore:65, preferredCurricula:'Computer Science, IT', targetCountries:'Worldwide', createdAt:'2026-07-28T14:00:00Z', lastModifiedAt:'2026-08-04T16:10:00Z'},
+      {id:'prog-5', name:'MSc International Business', course:'International Business', degreeLevel:'Postgraduate', country:'Canada', intakes:['Fall 2027'], durationYears:1, tuitionFee:'CAD 35,500 / year', scholarshipRange:'0–20% tuition', seats:'Rolling', minCgpa:7.0, englishTest:'IELTS', minEnglishScore:6.5, preferredCurricula:'Business, Commerce', targetCountries:'Worldwide', createdAt:'2026-08-01T10:30:00Z', lastModifiedAt:'2026-08-05T09:05:00Z'}
     ];
     const defaultLoanProducts: LoanProduct[] = [
-      {id:'loan-1', name:'Unsecured Study Loan', interestRateMin:10.5, interestRateMax:13, currency:'INR', maxAmount:'25,00,000', tenureOptions:[60,84], collateralRequired:false, eligibleCountries:['Canada','United Kingdom','Australia']},
-      {id:'loan-2', name:'Secured Study Loan', interestRateMin:8.5, interestRateMax:10.5, currency:'INR', maxAmount:'50,00,000', tenureOptions:[84,120,144], collateralRequired:true, eligibleCountries:['Canada','United Kingdom','Germany','Australia','United States']}
+      {id:'loan-1', name:'Unsecured Study Loan', interestRateMin:10.5, interestRateMax:13, currency:'INR', maxAmount:'25,00,000', tenureOptions:[60,84], collateralRequired:false, eligibleCountries:['Canada','United Kingdom','Australia'], guarantorRequired:true, maxFamilyIncome:1800000, createdAt:'2026-07-10T08:00:00Z', lastModifiedAt:'2026-07-28T11:00:00Z'},
+      {id:'loan-2', name:'Secured Study Loan', interestRateMin:8.5, interestRateMax:10.5, currency:'INR', maxAmount:'50,00,000', tenureOptions:[84,120,144], collateralRequired:true, eligibleCountries:['Canada','United Kingdom','Germany','Australia','United States'], guarantorRequired:false, createdAt:'2026-07-12T09:00:00Z', lastModifiedAt:'2026-08-02T13:30:00Z'}
     ];
     if(role==='UNIVERSITY'){
-      try{ const saved = JSON.parse(localStorage.getItem(`superoffer_${role}_catalog`)||'null'); this.programs = Array.isArray(saved)&&saved.length ? saved : defaultPrograms; }catch{ this.programs = defaultPrograms; }
+      try{ 
+        const saved = JSON.parse(localStorage.getItem(`superoffer_${role}_catalog`)||'null'); 
+        this.products = Array.isArray(saved)&&saved.length ? saved.map(p => ({ ...p, createdAt: p.createdAt || '2026-07-15T08:00:00Z', lastModifiedAt: p.lastModifiedAt || '2026-08-01T12:00:00Z' })) : defaultProducts; 
+      }catch{ this.products = defaultProducts; }
     } else {
-      try{ const saved = JSON.parse(localStorage.getItem(`superoffer_${role}_catalog`)||'null'); this.loanProducts = Array.isArray(saved)&&saved.length ? saved : defaultLoanProducts; }catch{ this.loanProducts = defaultLoanProducts; }
+      try{ 
+        const saved = JSON.parse(localStorage.getItem(`superoffer_${role}_catalog`)||'null'); 
+        this.loanProducts = Array.isArray(saved)&&saved.length ? saved.map(p => ({ ...p, createdAt: p.createdAt || '2026-07-10T08:00:00Z', lastModifiedAt: p.lastModifiedAt || '2026-07-28T11:00:00Z' })) : defaultLoanProducts; 
+      }catch{ this.loanProducts = defaultLoanProducts; }
     }
 
     const defaultUniTemplates: OfferTemplate[] = [
@@ -1359,7 +2387,43 @@ export class OrganizationWorkspaceComponent {
     const storedRole = (sessionStorage.getItem('superoffer_org_type') as Role) || 'UNIVERSITY';
     this.applyRole(storedRole);
     this.route.data.subscribe(data=>{
-      if(data['page']) this.view=data['page'] as OrganizationView;
+      const page = data['page'] as OrganizationView;
+      if (page === 'catalog') {
+        this.view = 'templates';
+        this.templatesTab = 'catalog';
+      } else if (page === 'criteria') {
+        this.view = 'templates';
+        this.templatesTab = 'criteria';
+      } else if (page === 'reports') {
+        this.view = 'dashboard';
+      } else if (page === 'shortlists') {
+        this.view = 'students';
+        this.workspaceFilter = 'Shortlisted';
+      } else if (page === 'invitations') {
+        this.view = 'students';
+        this.workspaceFilter = 'Offers';
+      } else if (page === 'subscription') {
+        this.view = 'profile';
+        this.settingsTab = 'subscription';
+      } else if (page === 'settings') {
+        this.view = 'profile';
+      } else if (page) {
+        this.view = page;
+      }
+    });
+    this.route.queryParamMap.subscribe(params=>{
+      const tab = params.get('tab');
+      if (tab === 'catalog' || tab === 'criteria' || tab === 'templates') {
+        this.templatesTab = tab;
+      }
+      if (tab === 'shortlisted' || tab === 'Shortlisted') this.workspaceFilter = 'Shortlisted';
+      if (tab === 'offers' || tab === 'Offers') this.workspaceFilter = 'Offers';
+      if (tab === 'negotiating' || tab === 'Negotiating') this.workspaceFilter = 'Negotiating';
+      if (tab === 'accepted' || tab === 'Accepted') this.workspaceFilter = 'Accepted';
+      if (tab === 'discover' || tab === 'Discover') this.workspaceFilter = 'Discover';
+      if (tab === 'subscription' || tab === 'org' || tab === 'accreditation' || tab === 'team' || tab === 'notifications' || tab === 'security') {
+        this.settingsTab = tab as SettingsTab;
+      }
     });
     this.route.paramMap.subscribe(params=>{
       const id = params.get('id');

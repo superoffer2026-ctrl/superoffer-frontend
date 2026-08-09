@@ -26,7 +26,13 @@ const STAGES = ['Assigned','Profile Review','Documents','Recommend','Application
       <aside class="cons-rail">
         <button class="cons-logo" type="button" (click)="go('dashboard')">S</button>
         <nav>
-          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="go(item.id)" [title]="item.label" [attr.aria-label]="item.label"><span>{{item.icon}}</span><small>{{item.label}}</small></button>
+          <button *ngFor="let item of navigation" type="button" [class.active]="view===item.id" (click)="go(item.id)" [title]="item.label" [attr.aria-label]="item.label">
+            <span [ngSwitch]="item.id">
+              <svg *ngSwitchCase="'dashboard'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+              <svg *ngSwitchCase="'students'" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="11" r="3"/><line x1="21.5" y1="13.5" x2="23" y2="15"/></svg>
+            </span>
+            <small>{{item.label}}</small>
+          </button>
         </nav>
         <button class="cons-avatar" type="button" (click)="go('settings')" title="Settings" aria-label="Settings">{{userInitials}}</button>
       </aside>
