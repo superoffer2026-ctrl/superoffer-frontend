@@ -71,13 +71,28 @@ export const PROGRAM_OPTIONS: string[] = [
   'Foundation', 'International Year 1'
 ];
 
-export const ALSO_INTERESTED_OPTIONS: string[] = ['MBA', 'PG Diploma', 'Certificate'];
+// Countries where only an MBBS pathway is offered — selecting one of these restricts
+// "What do you want to study?" down to MBBS. Keep this in sync with STUDY_COUNTRIES.
+export const MBBS_ONLY_COUNTRIES: string[] = [
+  'Armenia', 'Belarus', 'Bosnia and Herzegovina', 'Bulgaria', 'Caribbean', 'China', 'Croatia',
+  'Czech Republic', 'Estonia', 'Georgia', 'Greece', 'Japan', 'Kazakhstan', 'Latvia', 'Norway',
+  'Philippines', 'Portugal', 'Romania', 'Russia', 'Slovakia', 'Turkey', 'Uzbekistan'
+];
+
+export const STUDY_COUNTRIES: string[] = [
+  ...MBBS_ONLY_COUNTRIES,
+  'Australia', 'Austria', 'Belgium', 'Canada', 'Cyprus', 'Denmark', 'Dubai', 'Finland', 'France',
+  'Germany', 'Hungary', 'Ireland', 'Italy', 'Lithuania', 'Luxembourg', 'Malaysia', 'Malta', 'Mauritius',
+  'Netherlands', 'New Zealand', 'Poland', 'Singapore', 'South Korea', 'Spain', 'Sweden', 'Switzerland',
+  'UK', 'USA'
+];
+
 
 export const INTAKE_OPTIONS: string[] = [
-  'Spring (Mar, Apr, May)',
-  'Summer (Jun, Jul, Aug)',
-  'Fall (Sep, Oct, Nov)',
-  'Winter (Dec, Jan, Feb)'
+  'Spring (Mar–May)',
+  'Summer (Jun–Aug)',
+  'Fall (Sep–Nov)',
+  'Winter (Dec–Feb)'
 ];
 
 // Easy to extend — add future admission years here.

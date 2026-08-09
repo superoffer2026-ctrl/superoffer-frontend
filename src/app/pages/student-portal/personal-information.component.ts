@@ -11,34 +11,15 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
   styleUrl: './personal-information.css',
   template: `
     <section class="step-page">
-      <div class="step-heading">
-        <span>STEP 1 OF 7</span>
-        <h1>Personal Information</h1>
-        <p>Tell us who you are and how institutions and lenders can reach you. This information is used across your SuperOffer profile.</p>
-      </div>
-
       <div class="profile-form-card">
-        <div class="placeholder-copy">
-          <div class="placeholder-icon" aria-hidden="true">ID</div>
-          <div>
-            <h2>Personal Information details</h2>
-            <p>Your information is securely saved to your student profile.</p>
-          </div>
-        </div>
-
-        <div class="photo-field">
-          <div class="photo-preview">
-            <img *ngIf="store.photo" [src]="store.photo" alt="Student profile">
-            <span *ngIf="!store.photo">{{initials}}</span>
-          </div>
-          <div>
-            <strong>Profile photo</strong>
-            <p>Optional. This photo will appear across your student profile and Offers workspace.</p>
-            <div class="photo-actions">
-              <label class="upload-button">{{store.photo ? 'Change photo' : 'Upload photo'}}<input type="file" accept="image/png,image/jpeg,image/webp" (change)="choosePhoto($event)"></label>
-              <button type="button" class="remove-photo-btn" *ngIf="store.photo" (click)="removePhoto()">Remove photo</button>
+        <div class="card-head">
+          <div class="placeholder-copy">
+            <div>
+              <h2>Personal Information details</h2>
+              <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
+          <span class="step-badge">STEP 1 OF 8</span>
         </div>
 
         <div class="field-grid">
@@ -56,60 +37,61 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
             <small class="field-error" *ngIf="showError('email')">{{emailError}}</small>
           </label>
 
-          <label [class.field-invalid]="showError('mobile')">
-            <span class="field-label">Mobile Number <span class="required-mark">*</span>
-              <button type="button" class="add-alt-btn" *ngIf="!showAltMobile" (click)="showAltMobile=true" title="Add another mobile number" aria-label="Add additional mobile number">+</button>
-            </span>
-            <div class="phone-group">
-              <select class="dial-select" name="mobileCountry" [(ngModel)]="store.values['mobileCountry']" (blur)="markTouched('mobile')" (change)="markTouched('mobile')">
-                <option value="" disabled>+</option>
-                <option *ngFor="let c of countries" [value]="c.iso2" [title]="c.name">{{c.dial}}</option>
+          <div class="field-pair-row">
+            <label>
+              <span class="field-label">Mobile Number <span class="required-mark">*</span></span>
+              <div class="phone-group">
+                <select class="dial-select" name="mobileCountry" [(ngModel)]="store.values['mobileCountry']" disabled>
+                  <option value="" disabled>+</option>
+                  <option *ngFor="let c of countries" [value]="c.iso2" [title]="c.name">{{c.dial}}</option>
+                </select>
+                <input type="tel" name="mobileNumber" autocomplete="tel-national" placeholder="98765 43210"
+                  [(ngModel)]="store.values['mobileNumber']" disabled>
+              </div>
+              <small class="field-hint">Verified via OTP at sign-in — can't be changed here.</small>
+            </label>
+
+            <label [class.field-invalid]="showError('altMobile')">
+              <span class="field-label">Additional Mobile Number</span>
+              <div class="phone-group">
+                <select class="dial-select" name="altMobileCountry" [(ngModel)]="store.values['altMobileCountry']" (blur)="markTouched('altMobile')" (change)="markTouched('altMobile')">
+                  <option value="" disabled>+</option>
+                  <option *ngFor="let c of countries" [value]="c.iso2" [title]="c.name">{{c.dial}}</option>
+                </select>
+                <input type="tel" name="altMobileNumber" autocomplete="tel-national" placeholder="Optional"
+                  [(ngModel)]="store.values['altMobileNumber']" (blur)="markTouched('altMobile')">
+              </div>
+              <small class="field-error" *ngIf="showError('altMobile')">{{altMobileError}}</small>
+              <small class="field-hint" *ngIf="!showError('altMobile')">&nbsp;</small>
+            </label>
+          </div>
+
+          <div class="field-pair-row">
+            <label class="combo-field" [class.field-invalid]="showError('country')">
+              <span class="field-label">Country <span class="required-mark">*</span></span>
+              <input type="text" name="country" autocomplete="country-name" placeholder="Search for your country"
+                [(ngModel)]="store.values['country']"
+                (focus)="countryOpen=true" (input)="onCountryInput()" (blur)="onCountryBlur()">
+              <ul class="combo-list" *ngIf="countryOpen">
+                <li *ngFor="let c of filteredCountries" (mousedown)="selectCountry(c)">{{c.name}}</li>
+                <li class="combo-empty" *ngIf="!filteredCountries.length">No matching country</li>
+              </ul>
+              <small class="field-error" *ngIf="showError('country')">{{countryError}}</small>
+            </label>
+
+            <label [class.field-invalid]="showError('city')">
+              <span class="field-label">Current City <span class="required-mark">*</span></span>
+              <select *ngIf="hasCityOptions" name="city" [(ngModel)]="store.values['city']" (blur)="markTouched('city')" (change)="markTouched('city')">
+                <option value="" disabled>Select city</option>
+                <option *ngFor="let city of cityOptions" [value]="city">{{city}}</option>
               </select>
-              <input type="tel" name="mobileNumber" autocomplete="tel-national" placeholder="98765 43210"
-                [(ngModel)]="store.values['mobileNumber']" (blur)="markTouched('mobile')">
-            </div>
-            <small class="field-error" *ngIf="showError('mobile')">{{mobileError}}</small>
-          </label>
-
-          <label [class.field-invalid]="showError('altMobile')" *ngIf="showAltMobile">
-            <span class="field-label">Additional Mobile Number
-              <button type="button" class="remove-alt-btn" (click)="removeAltMobile()" title="Remove additional mobile number" aria-label="Remove additional mobile number">×</button>
-            </span>
-            <div class="phone-group">
-              <select class="dial-select" name="altMobileCountry" [(ngModel)]="store.values['altMobileCountry']" (blur)="markTouched('altMobile')" (change)="markTouched('altMobile')">
-                <option value="" disabled>+</option>
-                <option *ngFor="let c of countries" [value]="c.iso2" [title]="c.name">{{c.dial}}</option>
-              </select>
-              <input type="tel" name="altMobileNumber" autocomplete="tel-national" placeholder="Optional"
-                [(ngModel)]="store.values['altMobileNumber']" (blur)="markTouched('altMobile')">
-            </div>
-            <small class="field-error" *ngIf="showError('altMobile')">{{altMobileError}}</small>
-          </label>
-
-          <label class="combo-field" [class.field-invalid]="showError('country')">
-            <span class="field-label">Country <span class="required-mark">*</span></span>
-            <input type="text" name="country" autocomplete="country-name" placeholder="Search for your country"
-              [(ngModel)]="store.values['country']"
-              (focus)="countryOpen=true" (input)="onCountryInput()" (blur)="onCountryBlur()">
-            <ul class="combo-list" *ngIf="countryOpen">
-              <li *ngFor="let c of filteredCountries" (mousedown)="selectCountry(c)">{{c.name}}</li>
-              <li class="combo-empty" *ngIf="!filteredCountries.length">No matching country</li>
-            </ul>
-            <small class="field-error" *ngIf="showError('country')">{{countryError}}</small>
-          </label>
-
-          <label [class.field-invalid]="showError('city')">
-            <span class="field-label">Current City <span class="required-mark">*</span></span>
-            <select *ngIf="hasCityOptions" name="city" [(ngModel)]="store.values['city']" (blur)="markTouched('city')" (change)="markTouched('city')">
-              <option value="" disabled>Select city</option>
-              <option *ngFor="let city of cityOptions" [value]="city">{{city}}</option>
-            </select>
-            <input *ngIf="!hasCityOptions" type="text" name="city" placeholder="Enter your current city"
-              [(ngModel)]="store.values['city']" [disabled]="!countryValid" (blur)="markTouched('city')">
-            <small class="field-hint" *ngIf="!countryValid">Select a valid country first</small>
-            <small class="field-hint" *ngIf="countryValid && !hasCityOptions">City list not available for this country — type your city</small>
-            <small class="field-error" *ngIf="showError('city')">{{cityError}}</small>
-          </label>
+              <input *ngIf="!hasCityOptions" type="text" name="city" placeholder="Enter your current city"
+                [(ngModel)]="store.values['city']" [disabled]="!countryValid" (blur)="markTouched('city')">
+              <small class="field-hint" *ngIf="!countryValid">Select a valid country first</small>
+              <small class="field-hint" *ngIf="countryValid && !hasCityOptions">City list not available for this country — type your city</small>
+              <small class="field-error" *ngIf="showError('city')">{{cityError}}</small>
+            </label>
+          </div>
         </div>
 
         <p class="save-message error" *ngIf="submitted && !isValid">Please fix the highlighted fields before continuing.</p>
@@ -127,28 +109,31 @@ export class PersonalInformationComponent {
   countryOpen = false;
   touched: Record<string, boolean> = {};
   submitted = false;
-  showAltMobile = false;
 
   private returnToReview = false;
 
   constructor(public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
-    this.showAltMobile = !!(this.store.values['altMobileNumber'] || this.store.values['altMobileCountry']);
-    if (!this.store.values['mobileCountry']) this.store.values['mobileCountry'] = 'IN';
+    this.lockMobileFromLogin();
+    if (!this.store.values['altMobileCountry']) this.store.values['altMobileCountry'] = 'IN';
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
   }
 
-  get initials() {
-    return (this.store.values['fullName'] || 'Student').split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
-  }
-
-  choosePhoto(event: Event) { this.store.setFile('photo', (event.target as HTMLInputElement).files?.[0]); }
-  removePhoto() { this.store.photo = ''; this.store.values['photo'] = ''; }
-
-  removeAltMobile() {
-    this.showAltMobile = false;
-    this.store.values['altMobileCountry'] = '';
-    this.store.values['altMobileNumber'] = '';
-    this.touched['altMobile'] = false;
+  /** The mobile number was already OTP-verified at login — pull it from that session instead of asking again. */
+  private lockMobileFromLogin() {
+    if (this.store.values['mobileNumber']) return;
+    try {
+      const user = JSON.parse(sessionStorage.getItem('superoffer_user') || 'null');
+      const mobile: string = user?.mobile || '';
+      const [dial, ...rest] = mobile.trim().split(/\s+/);
+      const number = rest.join(' ');
+      const matched = this.countries.find(c => c.dial === dial);
+      if (matched && number) {
+        this.store.values['mobileCountry'] = matched.iso2;
+        this.store.values['mobileNumber'] = number;
+        return;
+      }
+    } catch { /* no valid login session — fall through to default */ }
+    if (!this.store.values['mobileCountry']) this.store.values['mobileCountry'] = 'IN';
   }
 
   markTouched(key: string) { this.touched[key] = true; }

@@ -144,9 +144,9 @@ export class AuthPageComponent implements OnInit {
       if(digits.length<7){this.error='Enter a valid mobile number.';this.loading=false;return;}
     }
 
-    // Organization login skips the account-match check — frontend-only testing of the university/bank
-    // workspace shouldn't require registering an org account first. Sign up still validates normally.
-    const skipAccountCheck=this.portal==='organization'&&this.mode==='login';
+    // Login skips the account-match check on every portal — frontend-only testing shouldn't require
+    // registering an account first. Sign up still validates normally.
+    const skipAccountCheck=this.mode==='login';
 
     const existing=skipAccountCheck?undefined:findAccount(this.portal,identifier);
     if(this.mode==='register'&&existing){

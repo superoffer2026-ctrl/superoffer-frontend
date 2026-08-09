@@ -9,11 +9,10 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
     <nav class="workspace-rail" aria-label="Student workspace navigation">
-      <span class="workspace-logo" aria-label="SuperOffer">S</span>
+      <img class="workspace-logo" src="/superoffer-brand-mark.png" alt="SuperOffer">
       <div class="workspace-links">
         <a routerLink="/student/dashboard" routerLinkActive="active" title="Dashboard" aria-label="Dashboard"><span>▦</span><small>Dashboard</small></a>
         <a routerLink="/student/offers" routerLinkActive="active" title="Offers" aria-label="Offers"><span>◇</span><small>Offers</small></a>
-        <a routerLink="/student/profile" routerLinkActive="active" title="Profile" aria-label="Profile"><span>○</span><small>Profile</small></a>
         <a routerLink="/student/settings" routerLinkActive="active" title="Settings" aria-label="Settings"><span>⚙</span><small>Settings</small></a>
       </div>
       <a class="workspace-avatar" routerLink="/student/profile" aria-label="Open complete student profile">
@@ -25,7 +24,7 @@ import { StudentProfileUiStore } from './student-profile-ui.store';
   styles: [`
     :host{display:contents}
     .workspace-rail{position:fixed;inset:0 auto 0 0;z-index:30;width:68px;display:flex;flex-direction:column;align-items:center;padding:16px 0;background:#f8faf9;border-right:1px solid #d7e0dc;box-sizing:border-box}
-    .workspace-logo{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:#102f45;color:#67d0b2;text-decoration:none;font-size:20px;font-weight:900}
+    .workspace-logo{width:40px;height:40px;border-radius:12px;object-fit:cover}
     .workspace-links{width:100%;display:grid;gap:8px;margin-top:28px;padding:0 8px;box-sizing:border-box}
     .workspace-links a{min-height:48px;display:grid;place-items:center;border-radius:11px;color:#6a7770;text-decoration:none;transition:.18s}
     .workspace-links a:hover{background:#edf2ef;color:#087a50}.workspace-links a.active{background:#e4f2e9;color:#087a50}

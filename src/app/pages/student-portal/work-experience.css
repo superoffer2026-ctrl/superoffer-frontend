@@ -31,36 +31,6 @@
   padding: 36px 20px 48px;
 }
 
-.step-heading {
-  margin-bottom: 24px;
-}
-
-.step-heading > span {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 99px;
-  background: var(--slate-900);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.step-heading h1 {
-  margin: 10px 0 4px;
-  color: var(--slate-900);
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.step-heading p {
-  margin: 0;
-  color: var(--slate-500);
-  font-size: 14px;
-}
-
 .profile-form-card {
   padding: 32px;
   border: 1px solid var(--border);
@@ -97,7 +67,6 @@
   gap: 14px;
 }
 
-
 .placeholder-copy h2 {
   margin: 0;
   font-size: 17px;
@@ -111,89 +80,38 @@
   color: var(--slate-500);
 }
 
-/* Qualification Selection Cards */
-.qualification-question h2 {
-  margin: 20px 0 12px;
+.section-title {
+  margin: 24px 0 12px;
   font-size: 16px;
   font-weight: 700;
   color: var(--slate-900);
 }
 
-.qualification-grid {
+.toggle-group {
   display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.qualification-card {
-  position: relative;
+.toggle-option {
+  flex: 1;
   display: flex;
-  flex: 0 1 150px;
-  min-width: 0;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 68px;
-  padding: 10px;
+  gap: 8px;
+  padding: 12px 16px;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--slate-50);
-  color: var(--slate-700);
-  font-size: 12.5px;
-  font-weight: 700;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.qualification-card:hover {
-  border-color: var(--slate-900);
+  border-radius: 12px;
   background: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--slate-700);
+  cursor: pointer;
 }
 
-.qualification-card.selected {
+.toggle-option.active {
   border-color: var(--slate-900);
   background: var(--slate-900);
   color: #ffffff;
-}
-
-.qual-check {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  font-size: 9px;
-  display: grid;
-  place-items: center;
-  background: var(--slate-200);
-  color: transparent;
-}
-
-.qualification-card.selected .qual-check {
-  background: var(--primary);
-  color: #ffffff;
-}
-
-.section-title {
-  margin: 0 0 12px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--slate-900);
-}
-
-.level-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.level-section:first-child {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
 }
 
 .reveal-section {
@@ -204,15 +122,9 @@
 }
 
 .reveal-section.open {
-  max-height: 3000px;
+  max-height: 4000px;
   opacity: 1;
-  margin-top: 24px;
-}
-
-.field-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 16px;
+  margin-top: 20px;
 }
 
 .dynamic-fields {
@@ -221,33 +133,24 @@
   gap: 16px;
 }
 
-.field-grid label, .dynamic-fields label {
+.dynamic-fields label {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1 1 200px;
+  min-width: 200px;
   color: var(--slate-700);
   font-size: 12.5px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
-.dynamic-fields label {
-  flex: 1 1 150px;
-  min-width: 150px;
-}
-
-.field-grid label.wide {
-  grid-column: 1 / -1;
-}
-
 .dynamic-fields label.wide {
   flex: 1 1 100%;
 }
 
-.field-grid input, .field-grid select,
-.dynamic-fields input, .dynamic-fields select {
+.dynamic-fields input, .dynamic-fields select, .dynamic-fields textarea {
   width: 100%;
-  height: 48px;
   padding: 0 16px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -260,101 +163,93 @@
   transition: all 0.15s ease;
 }
 
-.field-grid select, .dynamic-fields select {
+.dynamic-fields input, .dynamic-fields select {
+  height: 48px;
+}
+
+.dynamic-fields select {
   appearance: auto;
   cursor: pointer;
 }
 
-.field-grid input:focus, .field-grid select:focus,
-.dynamic-fields input:focus, .dynamic-fields select:focus {
+.dynamic-fields textarea {
+  padding: 12px 16px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.dynamic-fields input:focus, .dynamic-fields select:focus, .dynamic-fields textarea:focus {
   background: #ffffff;
   border-color: var(--slate-900);
   box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-/* Document Dropzone Attachment Capsule */
-.upload-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  grid-column: 1 / -1;
-}
-
-.upload-dropzone {
+.experience-entry {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  border: 1px dashed var(--slate-300);
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid var(--slate-200);
   border-radius: 14px;
   background: var(--slate-50);
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.upload-dropzone:hover {
-  border-color: var(--slate-900);
-  background: #ffffff;
-}
-
-.upload-dz-icon {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--slate-200);
-  color: var(--slate-700);
-  font-size: 15px;
-}
-
-.upload-dz-copy strong {
-  display: block;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--slate-900);
-}
-
-.upload-dz-copy small {
-  font-size: 12px;
-  color: var(--slate-500);
-}
-
-.upload-dropzone input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.uploaded-file {
+.experience-entry-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #ffffff;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
-.file-name {
-  flex: 1;
-  font-size: 13.5px;
-  font-weight: 600;
+.experience-entry-head strong {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--slate-900);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.file-remove {
-  width: 20px;
-  height: 20px;
+.experience-remove {
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--slate-100);
+  background: var(--slate-200);
   color: var(--error);
   cursor: pointer;
+}
+
+.add-experience-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 18px;
+  border: 1px dashed var(--slate-300);
+  border-radius: 12px;
+  background: var(--slate-50);
+  color: var(--slate-800);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-experience-btn:hover {
+  border-color: var(--slate-900);
+  background: #ffffff;
+}
+
+.required-mark {
+  color: var(--error);
+}
+
+.field-error {
+  display: block;
+  margin-top: 6px;
+  color: var(--error);
+  font-size: 12px;
 }
 
 .step-actions {
@@ -400,16 +295,7 @@
   .step-page {
     padding: 20px 16px;
   }
-  .field-grid {
-    grid-template-columns: 1fr;
-  }
   .dynamic-fields label {
     flex: 1 1 100%;
-  }
-  .qualification-grid {
-    flex-wrap: wrap;
-  }
-  .qualification-card {
-    flex: 1 1 100px;
   }
 }
