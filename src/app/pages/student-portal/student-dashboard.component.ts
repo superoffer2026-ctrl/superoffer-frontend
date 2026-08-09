@@ -1,21 +1,36 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { StudentWorkspaceRailComponent } from './student-workspace-rail.component';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { OfferWalletStore } from './offer-wallet.models';
-import { StudentCardComponent } from './student-card.component';
 import { OfferMarketplaceCardComponent } from './offer-marketplace-card.component';
 import { StatCounterComponent } from '../landing/stat-counter.component';
 import { RevealOnScrollDirective } from '../landing/reveal-on-scroll.directive';
 import { FINANCIAL_DOCUMENT_FIELDS } from './financial-options';
 
+const PROFILE_NUDGE_SEEN_KEY = 'superoffer_profile_nudge_seen';
+
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent, StudentCardComponent, OfferMarketplaceCardComponent, StatCounterComponent, RevealOnScrollDirective],
+  imports: [CommonModule, RouterLink, StudentWorkspaceRailComponent, OfferMarketplaceCardComponent, StatCounterComponent, RevealOnScrollDirective],
   styleUrl: './student-workspace-pages.css',
   template: `
     <app-student-workspace-rail />
+
+    <div class="profile-nudge-backdrop" *ngIf="showProfileNudge" (click)="dismissNudge()">
+      <div class="profile-nudge-card" (click)="$event.stopPropagation()">
+        <button type="button" class="profile-nudge-close" (click)="dismissNudge()" aria-label="Close">×</button>
+        <div class="profile-nudge-icon">✓</div>
+        <h2>Complete your profile</h2>
+        <p>Your profile is {{completionPct}}% complete. Finish every section so universities, banks and consultants can discover and match you with the right offers.</p>
+        <div class="profile-nudge-actions">
+          <a class="profile-nudge-primary" routerLink="/student/personal-information" (click)="dismissNudge()">Continue profile <b>→</b></a>
+          <button type="button" class="profile-nudge-secondary" (click)="dismissNudge()">Maybe later</button>
+        </div>
+      </div>
+    </div>
+
     <section class="student-home">
       <header class="student-home-header">
         <div>
@@ -29,16 +44,6 @@ import { FINANCIAL_DOCUMENT_FIELDS } from './financial-options';
           <a class="header-primary" routerLink="/student/offers">My offers <b>{{walletStore.totalCount}}</b></a>
         </div>
       </header>
-
-      <app-student-card
-        [fullName]="store.values['fullName']"
-        [photo]="store.photo"
-        [cgpa]="store.values['score']"
-        [ielts]="store.values['englishScore']"
-        [preferredCountry]="store.values['countries']"
-        [preferredCourse]="store.values['fieldOfInterest']"
-        [completionPct]="completionPct"
-        [verified]="isSubmitted" />
 
       <section class="wallet-stat-row" soReveal>
         <article><so-stat-counter [compact]="true" [value]="walletStore.totalCount" label="Total offers" /></article>
@@ -164,7 +169,9 @@ import { FINANCIAL_DOCUMENT_FIELDS } from './financial-options';
     </section>
   `
 })
-export class StudentDashboardComponent {
+export class StudentDashboardComponent implements OnInit {
+  showProfileNudge = false;
+
   tasks = [
     {title:'Upload your academic transcript',description:'Required to verify your academic history',time:'5 min',route:'/student/documents'},
     {title:'Review your study preferences',description:'Confirm destinations, courses, and preferred intake',time:'3 min',route:'/student/study-preferences'},
@@ -176,6 +183,17 @@ export class StudentDashboardComponent {
     {title:'Account settings',description:'Privacy and notifications',icon:'⚙',route:'/student/settings'}
   ];
   constructor(public store:StudentProfileUiStore, public walletStore:OfferWalletStore, private router:Router){}
+
+  /** Nudges an incomplete profile once per session — dismissing it (or continuing) shouldn't re-pop on every dashboard visit. */
+  ngOnInit() {
+    if (!this.isSubmitted && !sessionStorage.getItem(PROFILE_NUDGE_SEEN_KEY)) this.showProfileNudge = true;
+  }
+
+  dismissNudge() {
+    this.showProfileNudge = false;
+    sessionStorage.setItem(PROFILE_NUDGE_SEEN_KEY, '1');
+  }
+
   get firstName(){return (this.store.values['fullName']||'Student').split(/\s+/)[0];}
   goToOffers(){this.router.navigate(['/student/offers']);}
 

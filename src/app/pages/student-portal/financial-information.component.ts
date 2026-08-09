@@ -21,19 +21,15 @@ const EARNER_INCOME_FIELDS: Record<string, 'fatherIncome' | 'motherIncome' | 'gu
   styleUrl: './financial-information.css',
   template: `
     <section class="step-page">
-      <div class="step-heading">
-        <span>STEP 5 OF 7</span>
-        <h1>Financial Information</h1>
-        <p>Share an indicative affordability profile so verified universities and finance partners can match you accurately.</p>
-      </div>
-
       <form class="profile-form-card" [formGroup]="form" (ngSubmit)="saveAndContinue()">
-        <div class="placeholder-copy">
-          <div class="placeholder-icon" aria-hidden="true">FI</div>
-          <div>
-            <h2>Financial Information details</h2>
-            <p>Your information is securely saved to your student profile.</p>
+        <div class="card-head">
+          <div class="placeholder-copy">
+            <div>
+              <h2>Financial Information details</h2>
+              <p>Your information is securely saved to your student profile.</p>
+            </div>
           </div>
+          <span class="step-badge">STEP 7 OF 9</span>
         </div>
 
         <h3 class="section-title">Education Funding</h3>
@@ -157,7 +153,7 @@ const EARNER_INCOME_FIELDS: Record<string, 'fatherIncome' | 'motherIncome' | 'gu
       </form>
 
       <div class="step-actions">
-        <a class="button secondary" routerLink="/student/entrance-exams">Previous</a>
+        <a class="button secondary" routerLink="/student/work-experience">Previous</a>
         <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
       </div>
     </section>

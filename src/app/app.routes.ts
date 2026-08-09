@@ -10,7 +10,8 @@ import { StudentPortalShellComponent } from './pages/student-portal/student-port
 import { PersonalInformationComponent } from './pages/student-portal/personal-information.component';
 import { AcademicInformationComponent } from './pages/student-portal/academic-information.component';
 import { StudyPreferencesComponent } from './pages/student-portal/study-preferences.component';
-import { EntranceExamsComponent } from './pages/student-portal/entrance-exams.component';
+import { EnglishExamComponent } from './pages/student-portal/english-exam.component';
+import { CompetitiveExamComponent } from './pages/student-portal/competitive-exam.component';
 import { ProjectsAchievementsComponent } from './pages/student-portal/projects-achievements.component';
 import { ReviewProfileComponent } from './pages/student-portal/review-profile.component';
 import { StudentDashboardComponent } from './pages/student-portal/student-dashboard.component';
@@ -21,7 +22,7 @@ import { OrganizationWorkspaceComponent } from './pages/organization-portal/orga
 import { StudentOnboardingComponent } from './pages/student-onboarding/student-onboarding.component';
 import { StudentExtraPageComponent } from './pages/student-portal/student-extra-page.component';
 import { ConsultancyWorkspaceComponent } from './pages/consultancy-portal/consultancy-workspace.component';
-import { FinancialInformationComponent } from './pages/student-portal/financial-information.component';
+import { WorkExperienceComponent } from './pages/student-portal/work-experience.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
@@ -36,8 +37,12 @@ export const appRoutes: Routes = [
       { path: 'personal-information', component: PersonalInformationComponent },
       { path: 'academic-information', component: AcademicInformationComponent },
       { path: 'study-preferences', component: StudyPreferencesComponent },
-      { path: 'entrance-exams', component: EntranceExamsComponent },
-      { path: 'financial-information', component: FinancialInformationComponent },
+      { path: 'entrance-exams', pathMatch: 'full', redirectTo: 'english-exam' },
+      { path: 'entrance-exam', pathMatch: 'full', redirectTo: 'english-exam' },
+      { path: 'english-exam', component: EnglishExamComponent },
+      { path: 'competitive-exam', component: CompetitiveExamComponent },
+      { path: 'work-experience', component: WorkExperienceComponent },
+      { path: 'financial-information', pathMatch: 'full', redirectTo: 'projects' },
       { path: 'skills', pathMatch: 'full', redirectTo: 'projects' },
       { path: 'projects', component: ProjectsAchievementsComponent },
       { path: 'documents', pathMatch: 'full', redirectTo: 'review' },

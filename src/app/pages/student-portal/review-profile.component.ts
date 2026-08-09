@@ -13,12 +13,6 @@ interface ProjectEntry { title: string; role: string; description: string; }
   styleUrl: './review-profile.css',
   template: `
     <section class="step-page">
-      <div class="step-heading">
-        <span>STEP 7 OF 7</span>
-        <h1>Review Profile</h1>
-        <p>Check everything looks right before submitting your profile to our partner universities, banks and consultants.</p>
-      </div>
-
       <div class="completion-banner">
         <div class="completion-ring" [style.--pct]="completionPct">
           <b>{{completionPct}}%</b>
@@ -99,7 +93,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>English Language Tests</h2>
               <span class="section-status ok" *ngIf="englishExams().length">✓ {{englishExams().length}} added</span>
             </div>
-            <a class="edit-btn" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">Edit</a>
+            <a class="edit-btn" routerLink="/student/english-exam" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="entry-list" *ngIf="englishExams().length">
             <div class="entry-row" *ngFor="let e of englishExams()">
@@ -110,7 +104,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
           <div class="empty-state" *ngIf="!englishExams().length">
             <span class="empty-icon">📝</span>
             <p>No English test recorded yet.</p>
-            <a class="empty-cta" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">+ Add now</a>
+            <a class="empty-cta" routerLink="/student/english-exam" [queryParams]="{from:'review'}">+ Add now</a>
           </div>
         </div>
 
@@ -122,7 +116,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
               <h2>Standardized Tests</h2>
               <span class="section-status ok" *ngIf="competitiveExams().length">✓ {{competitiveExams().length}} added</span>
             </div>
-            <a class="edit-btn" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">Edit</a>
+            <a class="edit-btn" routerLink="/student/competitive-exam" [queryParams]="{from:'review'}">Edit</a>
           </div>
           <div class="entry-list" *ngIf="competitiveExams().length">
             <div class="entry-row" *ngFor="let e of competitiveExams()">
@@ -133,7 +127,7 @@ interface ProjectEntry { title: string; role: string; description: string; }
           <div class="empty-state" *ngIf="!competitiveExams().length">
             <span class="empty-icon">🧮</span>
             <p>No standardized test recorded yet.</p>
-            <a class="empty-cta" routerLink="/student/entrance-exams" [queryParams]="{from:'review'}">+ Add now</a>
+            <a class="empty-cta" routerLink="/student/competitive-exam" [queryParams]="{from:'review'}">+ Add now</a>
           </div>
         </div>
 

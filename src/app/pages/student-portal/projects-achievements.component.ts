@@ -11,23 +11,19 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
   styleUrl: './projects-achievements.css',
   template: `
     <section class="step-page">
-      <div class="step-heading">
-        <span>STEP 6 OF 7</span>
-        <h1>Projects &amp; Achievements</h1>
-        <p>Showcase the projects, experience and recognition that set your profile apart. This step is optional.</p>
-      </div>
-
       <form class="profile-form-card" [formGroup]="form" (ngSubmit)="saveAndContinue()">
-        <div class="placeholder-copy">
-          <div class="placeholder-icon" aria-hidden="true">PA</div>
-          <div>
-            <h2>Projects &amp; Achievements details</h2>
-            <p>Your information is securely saved to your student profile.</p>
+        <div class="card-head">
+          <div class="placeholder-copy">
+            <div>
+              <h2>Projects &amp; Achievements details</h2>
+              <p>Your information is securely saved to your student profile.</p>
+            </div>
           </div>
+          <span class="step-badge">STEP 7 OF 8</span>
         </div>
 
-        <h3 class="section-title">Projects</h3>
-        <p class="section-hint">Add any academic, personal or professional projects you're proud of.</p>
+        <h3 class="section-title">Social Presence</h3>
+        <p class="section-hint">Share links to your GitHub, LinkedIn or portfolio.</p>
 
         <div class="tag-input-row">
           <input type="text" placeholder="Paste a GitHub, LinkedIn or portfolio link" [(ngModel)]="linkDraft" [ngModelOptions]="{standalone:true}"
@@ -38,6 +34,9 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
         <div class="tag-chip-row" *ngIf="links.length">
           <span class="tag-chip" *ngFor="let l of links"><span class="tag-chip-text">{{linkLabel(l)}}: {{l}}</span><button type="button" (click)="removeLink(l)" [attr.aria-label]="'Remove '+l">×</button></span>
         </div>
+
+        <h3 class="section-title">Projects</h3>
+        <p class="section-hint">Add any academic, personal or professional projects you're proud of.</p>
 
         <div class="project-entry" *ngFor="let grp of projectsArray.controls; let i=index" [formGroup]="asGroup(grp)">
           <div class="project-entry-head">
@@ -66,24 +65,21 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
 
         <h3 class="section-title">Achievements</h3>
         <p class="section-hint">Optional. Awards, leadership, competitions or other recognition.</p>
-        <div class="tag-input-row">
+        <div class="tag-input-box">
+          <span class="tag-chip" *ngFor="let a of achievements">{{a}}<button type="button" (click)="removeAchievement(a)" [attr.aria-label]="'Remove '+a">×</button></span>
           <input type="text" placeholder="e.g. Hackathon Winner" [(ngModel)]="achievementDraft" [ngModelOptions]="{standalone:true}"
             (keydown.enter)="addAchievementDraft(); $event.preventDefault()">
-          <button type="button" class="tag-add-btn" [disabled]="!achievementDraft.trim()" (click)="addAchievementDraft()">Add</button>
         </div>
         <div class="tag-suggestions">
           <button type="button" class="tag-suggestion" *ngFor="let s of unpickedSuggestions()" (click)="addAchievement(s)">+ {{s}}</button>
         </div>
-        <div class="tag-chip-row" *ngIf="achievements.length">
-          <span class="tag-chip" *ngFor="let a of achievements">{{a}}<button type="button" (click)="removeAchievement(a)" [attr.aria-label]="'Remove '+a">×</button></span>
-        </div>
-        <p class="tag-empty-hint" *ngIf="!achievements.length">No achievements added yet.</p>
+        <p class="tag-empty-hint" *ngIf="!achievements.length">No achievements added yet — type your own or pick a suggestion above.</p>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
       </form>
 
       <div class="step-actions">
-        <a class="button secondary" routerLink="/student/financial-information">Previous</a>
+        <a class="button secondary" routerLink="/student/work-experience">Previous</a>
         <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
       </div>
     </section>
