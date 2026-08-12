@@ -15,7 +15,7 @@ export class AuthApiService {
   async login(identifier: string, password: string): Promise<any> {
     return this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({ email: identifier, password })
     });
   }
 

@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PortalKey } from '../../core/auth-api.service';
-import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, rememberOrganizationType } from '../../core/organization.models';
+import { AuthApiService, PortalKey } from '../../core/auth-api.service';
+import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, organizationTypeFromRole, rememberOrganizationType } from '../../core/organization.models';
 import { createAccount, findAccount } from '../../core/accounts.store';
 
 @Component({
@@ -81,7 +81,7 @@ export class AuthPageComponent implements OnInit {
   portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   orgTypeOptions = ORG_TYPE_OPTIONS;
   form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
-  constructor(private route:ActivatedRoute,private router:Router){}
+  constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService){}
   ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});}
   get buttonLabel(){
     if(this.portal==='student')return 'Send OTP via WhatsApp';
@@ -112,9 +112,11 @@ export class AuthPageComponent implements OnInit {
     const orgType = this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email);
     return organizationRole(orgType);
   }
-  private async openPortal(session:any){
-    const expected=this.role();
-    if(session.role!==expected)throw new Error('This account belongs to a different SuperOffer portal.');
+  private async openPortal(session:any,trustBackend=false){
+    if(!trustBackend){
+      const expected=this.role();
+      if(session.role!==expected)throw new Error('This account belongs to a different SuperOffer portal.');
+    }
     localStorage.removeItem('superoffer_access_token');
     sessionStorage.removeItem('superoffer_access_token');
     (this.form.remember?localStorage:sessionStorage).setItem('superoffer_access_token',session.access_token);
@@ -122,7 +124,9 @@ export class AuthPageComponent implements OnInit {
     const mobile=this.portal==='student'?`${this.form.mobileCountry} ${this.form.mobileNumber}`:undefined;
     sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email||undefined,mobile,organization:session.organization}));
     if(this.portal==='organization'){
-      const orgType = this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email);
+      const orgType = trustBackend
+        ? (session.organization?.organizationType || organizationTypeFromRole(session.role))
+        : (this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email));
       rememberOrganizationType(this.form.email, orgType);
       sessionStorage.setItem('superoffer_org_type', orgType);
       await this.router.navigate(['/organization/dashboard']);
@@ -135,8 +139,10 @@ export class AuthPageComponent implements OnInit {
   }
   async submit(){
     this.loading=true;this.error='';this.message='';
-    if(this.portal==='organization'&&this.mode==='register'&&this.form.password!==this.form.confirmPassword){
-      this.error='Passwords do not match.';this.loading=false;return;
+    if(this.portal==='organization'){
+      await this.submitOrganization();
+      this.loading=false;
+      return;
     }
     const identifier=this.portal==='student'?`${this.form.mobileCountry}${this.form.mobileNumber.replace(/\D/g,'')}`:this.form.email;
     if(this.portal==='student'){
@@ -185,5 +191,41 @@ export class AuthPageComponent implements OnInit {
       this.error=e instanceof Error?e.message:'Could not complete the request.';
     }
     this.loading=false;
+  }
+  private async submitOrganization(){
+    if(this.mode==='register'){
+      if(this.form.password!==this.form.confirmPassword){
+        this.error='Passwords do not match.';return;
+      }
+      try{
+        const result=await this.api.register({
+          email:this.form.email,
+          password:this.form.password,
+          role:organizationRole(this.form.orgType),
+          organizationName:this.form.organization,
+          organizationType:this.form.orgType,
+          phone:this.form.phone,
+          country:this.form.country
+        });
+        this.message=result?.message||'Your registration has been submitted for Super Admin review. You can log in once it is approved.';
+        this.mode='login';
+        this.form.password='';this.form.confirmPassword='';
+      }catch(e){
+        this.error=e instanceof Error?e.message:'Could not submit your registration.';
+      }
+      return;
+    }
+    try{
+      const result=await this.api.login(this.form.email,this.form.password);
+      const session={
+        role:result.user.role,
+        access_token:result.accessToken,
+        full_name:result.user.fullName,
+        organization:result.user.organization
+      };
+      await this.openPortal(session,true);
+    }catch(e){
+      this.error=e instanceof Error?e.message:'Could not log in.';
+    }
   }
 }
