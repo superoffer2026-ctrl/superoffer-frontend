@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-
-const EMPLOYMENT_TYPES = ['Internship', 'Full-time', 'Part-time', 'Freelance / Contract'];
+import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   standalone: true,
@@ -20,7 +19,7 @@ const EMPLOYMENT_TYPES = ['Internship', 'Full-time', 'Part-time', 'Freelance / C
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 6 OF 8</span>
+          <span class="step-badge">STEP 6 OF 9</span>
         </div>
 
         <h3 class="section-title">Do you have any work experience?</h3>
@@ -90,18 +89,19 @@ const EMPLOYMENT_TYPES = ['Internship', 'Full-time', 'Part-time', 'Freelance / C
         </div>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/competitive-exam">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class WorkExperienceComponent {
+export class WorkExperienceComponent implements OnInit {
   submitted = false;
-  employmentTypes = EMPLOYMENT_TYPES;
+  employmentTypes: string[] = [];
 
   form = this.fb.nonNullable.group({
     workStatus: this.fb.nonNullable.control<string>(''),
@@ -110,9 +110,19 @@ export class WorkExperienceComponent {
     experiences: this.fb.array<FormGroup>([])
   });
 
+  saving = false;
+  saveError = '';
+
   private returnToReview = false;
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.form.patchValue({
       workStatus: this.store.values['workStatus'] || '',
       relevantYears: this.store.values['relevantYears'] || '',
@@ -133,6 +143,61 @@ export class WorkExperienceComponent {
     } catch {
       return [];
     }
+  }
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  /** Local store already hydrated the form synchronously; this only fills in from the
+   *  server when the local store had nothing — e.g. a fresh browser/session. */
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const options = await this.api.getWorkExperienceReferenceData();
+      this.employmentTypes = options.employmentTypes;
+    } catch {
+      // Reference data endpoint unreachable — the type dropdown stays empty; existing selections still load below.
+    }
+    if (this.workStatus) {
+      this.cdr.detectChanges();
+      return;
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const work = (profile?.workExperience as Record<string, unknown>) || {};
+      const status = (work['workStatus'] as string) || '';
+      if (status) {
+        this.form.patchValue({
+          workStatus: status,
+          relevantYears: (work['relevantYears'] as string) || '',
+          nonRelevantYears: (work['nonRelevantYears'] as string) || ''
+        });
+        if (status === 'Yes') {
+          this.applyRelevantValidators(true);
+          const experiences = (work['experiences'] as Record<string, string>[]) || [];
+          if (experiences.length) experiences.forEach(entry => this.addExperience(entry));
+          else this.addExperience();
+        }
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // No saved work experience yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
   }
 
   get experiencesArray(): FormArray { return this.form.get('experiences') as FormArray; }
@@ -191,21 +256,51 @@ export class WorkExperienceComponent {
     return (control.touched || this.submitted) && control.invalid;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
     const value = this.form.getRawValue();
-    this.store.values['workStatus'] = value.workStatus;
-    this.store.values['relevantYears'] = value.relevantYears;
-    this.store.values['nonRelevantYears'] = value.nonRelevantYears;
-    this.store.values['workExperiences'] = JSON.stringify(value.experiences);
-
     const first = value.experiences[0] as Record<string, string> | undefined;
-    this.store.values['companyName'] = first ? first['companyName'] : '';
-    this.store.values['jobRole'] = first ? first['role'] : '';
+    const companyName = first ? first['companyName'] : '';
+    const jobRole = first ? first['role'] : '';
 
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/projects');
+    this.saving = true;
+    try {
+      await this.api.saveStudentWorkExperience(token, {
+        workStatus: value.workStatus || undefined,
+        relevantYears: value.relevantYears || undefined,
+        nonRelevantYears: value.nonRelevantYears || undefined,
+        experiences: value.experiences,
+        companyName,
+        jobRole
+      });
+
+      this.store.values['workStatus'] = value.workStatus;
+      this.store.values['relevantYears'] = value.relevantYears;
+      this.store.values['nonRelevantYears'] = value.nonRelevantYears;
+      this.store.values['workExperiences'] = JSON.stringify(value.experiences);
+      this.store.values['companyName'] = companyName;
+      this.store.values['jobRole'] = jobRole;
+
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/financial-information');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your work experience. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { FIELDS_OF_STUDY, INTAKE_OPTIONS, MBBS_ONLY_COUNTRIES, PROGRAM_OPTIONS, START_YEARS, STUDY_COUNTRIES } from './study-options';
+import { AuthApiService } from '../../core/auth-api.service';
 
 type MultiKey = 'countries' | 'fieldsOfStudy' | 'programs' | 'startYear' | 'intakes';
 type Which = 'country' | 'field' | 'program' | 'intake' | 'year';
@@ -26,7 +26,7 @@ function requireOne(control: AbstractControl): ValidationErrors | null {
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 2 OF 8</span>
+          <span class="step-badge">STEP 2 OF 9</span>
         </div>
 
         <div class="field-grid">
@@ -123,21 +123,25 @@ function requireOne(control: AbstractControl): ValidationErrors | null {
         </div>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/personal-information">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class StudyPreferencesComponent {
-  countryOptions = STUDY_COUNTRIES;
-  fieldOptions = PROGRAM_OPTIONS;
-  programOptions = FIELDS_OF_STUDY;
-  intakeOptions = INTAKE_OPTIONS;
-  startYearOptions = START_YEARS;
+export class StudyPreferencesComponent implements OnInit {
+  countryOptions: string[] = [];
+  mbbsOnlyCountries: string[] = [];
+  /** "What do you want to study?" — MBBS-only for MBBS-only countries, the full subject list otherwise. */
+  fieldOptions: string[] = [];
+  /** "Program of Interest" — always the full subject list. */
+  programOptions: string[] = [];
+  intakeOptions: string[] = [];
+  startYearOptions: number[] = [];
 
   countryQuery = '';
   fieldQuery = '';
@@ -150,6 +154,8 @@ export class StudyPreferencesComponent {
   intakeOpen = false;
   yearOpen = false;
   submitted = false;
+  saving = false;
+  saveError = '';
 
   form = this.fb.nonNullable.group({
     countries: this.fb.nonNullable.control<string[]>([], requireOne),
@@ -161,7 +167,14 @@ export class StudyPreferencesComponent {
 
   private returnToReview = false;
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.form.patchValue({
       countries: this.splitList(this.store.values['countries']),
       fieldsOfStudy: this.splitList(this.store.values['studyLevel']),
@@ -172,8 +185,64 @@ export class StudyPreferencesComponent {
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
   }
 
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const options = await this.api.getStudyPreferencesReferenceData();
+      this.countryOptions = options.studyCountries;
+      this.mbbsOnlyCountries = options.mbbsOnlyCountries;
+      this.fieldOptions = options.fieldsOfStudy;
+      this.programOptions = options.fieldsOfStudy;
+      this.intakeOptions = options.intakeOptions;
+      this.startYearOptions = options.startYears.map(Number);
+    } catch {
+      // Reference data endpoint unreachable — dropdowns stay empty; existing selections still load below.
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const prefs = (profile?.studyPreferences as Record<string, string[]>) || {};
+      if (!this.selectedOf('countries').length && prefs['countries']?.length) {
+        this.form.patchValue({
+          countries: prefs['countries'] || [],
+          fieldsOfStudy: prefs['studyLevel'] || [],
+          programs: prefs['fieldOfInterest'] || [],
+          startYear: prefs['startYear'] || [],
+          intakes: prefs['intake'] || []
+        });
+        this.syncStoreFromForm();
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        localStorage.removeItem('superoffer_access_token');
+        sessionStorage.removeItem('superoffer_access_token');
+        this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+        return;
+      }
+      // No saved preferences yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
+  }
+
   private splitList(value?: string): string[] {
     return (value || '').split(',').map(item => item.trim()).filter(Boolean);
+  }
+
+  /** Keeps the flat local store (read by review-profile/dashboard) in sync with the form's arrays. */
+  private syncStoreFromForm() {
+    const value = this.form.getRawValue();
+    this.store.values['countries'] = value.countries.join(', ');
+    this.store.values['studyLevel'] = value.fieldsOfStudy.join(', ');
+    this.store.values['fieldOfInterest'] = value.programs.join(', ');
+    this.store.values['startYear'] = value.startYear.join(', ');
+    this.store.values['intake'] = value.intakes.join(', ');
   }
 
   selectedOf(key: MultiKey): string[] { return this.form.get(key)!.value as string[]; }
@@ -193,7 +262,7 @@ export class StudyPreferencesComponent {
 
   /** True once one of the selected countries only offers an MBBS pathway. */
   isMbbsOnlyCountrySelected(): boolean {
-    return this.selectedOf('countries').some(country => MBBS_ONLY_COUNTRIES.includes(country));
+    return this.selectedOf('countries').some(country => this.mbbsOnlyCountries.includes(country));
   }
 
   /** "What do you want to study?" narrows to MBBS only once an MBBS-only country is picked. */
@@ -280,16 +349,43 @@ export class StudyPreferencesComponent {
     return (control.touched || this.submitted) && control.invalid;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
+
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
     const value = this.form.getRawValue();
-    this.store.values['countries'] = value.countries.join(', ');
-    this.store.values['studyLevel'] = value.fieldsOfStudy.join(', ');
-    this.store.values['fieldOfInterest'] = value.programs.join(', ');
-    this.store.values['startYear'] = value.startYear.join(', ');
-    this.store.values['intake'] = value.intakes.join(', ');
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/academic-information');
+    const payload = {
+      countries: value.countries,
+      studyLevel: value.fieldsOfStudy,
+      fieldOfInterest: value.programs,
+      startYear: value.startYear,
+      intake: value.intakes
+    };
+
+    this.saving = true;
+    try {
+      await this.api.saveStudentStudyPreferences(token, payload);
+      this.syncStoreFromForm();
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/academic-information');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        localStorage.removeItem('superoffer_access_token');
+        sessionStorage.removeItem('superoffer_access_token');
+        this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your preferences. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

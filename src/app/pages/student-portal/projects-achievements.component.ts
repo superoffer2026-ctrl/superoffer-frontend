@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
+import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   standalone: true,
@@ -19,7 +19,7 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 7 OF 8</span>
+          <span class="step-badge">STEP 8 OF 9</span>
         </div>
 
         <h3 class="section-title">Social Presence</h3>
@@ -76,21 +76,24 @@ import { ACHIEVEMENT_SUGGESTIONS } from './projects-options';
         <p class="tag-empty-hint" *ngIf="!achievements.length">No achievements added yet — type your own or pick a suggestion above.</p>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
-        <a class="button secondary" routerLink="/student/work-experience">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
+        <a class="button secondary" routerLink="/student/financial-information">Previous</a>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class ProjectsAchievementsComponent {
-  achievementSuggestions = ACHIEVEMENT_SUGGESTIONS;
+export class ProjectsAchievementsComponent implements OnInit {
+  achievementSuggestions: string[] = [];
   achievementDraft = '';
   linkDraft = '';
   linkError = '';
   submitted = false;
+  saving = false;
+  saveError = '';
 
   form = this.fb.group({
     projects: this.fb.array<FormGroup>([]),
@@ -98,7 +101,60 @@ export class ProjectsAchievementsComponent {
     links: this.fb.nonNullable.control<string[]>([])
   });
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router) {}
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const options = await this.api.getProjectsAchievementsReferenceData();
+      this.achievementSuggestions = options.achievementSuggestions;
+    } catch {
+      // Reference data endpoint unreachable — suggestion chips stay empty; free-text entry still works.
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const data = (profile?.projects as Record<string, unknown>) || {};
+      const projects = (data['projects'] as Record<string, string>[]) || [];
+      const achievements = (data['achievements'] as string[]) || [];
+      const links = (data['links'] as string[]) || [];
+      if (!this.projectsArray.length && !this.achievements.length && !this.links.length && (projects.length || achievements.length || links.length)) {
+        projects.forEach(p => this.projectsArray.push(this.fb.group({
+          title: [p['title'] || '', Validators.required],
+          role: [p['role'] || '', Validators.required],
+          description: [p['description'] || '']
+        })));
+        this.form.get('achievements')!.setValue(achievements);
+        this.form.get('links')!.setValue(links);
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // No saved projects yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
+  }
 
   get projectsArray(): FormArray { return this.form.get('projects') as FormArray; }
   asGroup(control: AbstractControl): FormGroup { return control as FormGroup; }
@@ -169,22 +225,55 @@ export class ProjectsAchievementsComponent {
     return (control.touched || this.submitted) && control.invalid;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
     const value = this.form.getRawValue();
-    this.store.values['projects'] = JSON.stringify(value.projects);
-    this.store.values['achievements'] = value.achievements.join(', ');
-    this.store.values['links'] = value.links.join(', ');
-    this.store.values['githubLink'] = value.links.find(l => this.linkLabel(l) === 'GitHub') || '';
-    this.store.values['linkedinLink'] = value.links.find(l => this.linkLabel(l) === 'LinkedIn') || '';
-
+    const githubLink = value.links.find(l => this.linkLabel(l) === 'GitHub') || '';
+    const linkedinLink = value.links.find(l => this.linkLabel(l) === 'LinkedIn') || '';
     const first = value.projects[0] as Record<string, string> | undefined;
-    this.store.values['projectTitle'] = first ? first['title'] : '';
-    this.store.values['projectRole'] = first ? first['role'] : '';
+    const projectTitle = first ? first['title'] : '';
+    const projectRole = first ? first['role'] : '';
 
-    this.router.navigateByUrl('/student/review');
+    this.saving = true;
+    try {
+      await this.api.saveStudentProjectsAchievements(token, {
+        projects: value.projects,
+        achievements: value.achievements,
+        links: value.links,
+        githubLink,
+        linkedinLink,
+        projectTitle,
+        projectRole
+      });
+
+      this.store.values['projects'] = JSON.stringify(value.projects);
+      this.store.values['achievements'] = value.achievements.join(', ');
+      this.store.values['links'] = value.links.join(', ');
+      this.store.values['githubLink'] = githubLink;
+      this.store.values['linkedinLink'] = linkedinLink;
+      this.store.values['projectTitle'] = projectTitle;
+      this.store.values['projectRole'] = projectRole;
+
+      this.router.navigateByUrl('/student/review');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your projects. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }
