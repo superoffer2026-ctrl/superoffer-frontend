@@ -134,6 +134,20 @@ export class AuthPageComponent implements OnInit {
     }
 
     // Every portal is backed by the real SuperOffer API (email + password).
+    if(this.mode==='register'&&this.portal==='student'){
+      try{
+        await this.api.register({email:this.form.email,password:this.form.password,role:this.role()});
+        this.message='Account created. Please log in to continue.';
+        this.mode='login';
+        this.form.password='';
+      }catch(e){
+        this.error=e instanceof Error?e.message:'Could not complete the request.';
+      }
+      this.loading=false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     try{
       const response=this.mode==='register'
         ?await this.api.register({email:this.form.email,password:this.form.password,role:this.role()})
