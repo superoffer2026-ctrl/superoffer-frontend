@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
 import { SubmittedStudentsStore, mapProfileToOrgStudent } from '../../core/submitted-students.store';
+import { AuthApiService } from '../../core/auth-api.service';
 
 interface ExamEntry { exam: string; status: string; score: string; expectedScore: string; currentScore: string; }
 interface ProjectEntry { title: string; role: string; description: string; }
@@ -158,17 +159,97 @@ interface ProjectEntry { title: string; role: string; description: string; }
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/projects">Back</a>
-        <button class="button primary" type="button" [disabled]="completionPct<100" (click)="submitProfile()">Submit Profile</button>
+        <p class="save-message error" *ngIf="submitError">{{submitError}}</p>
+        <button class="button primary" type="button" [disabled]="completionPct<100 || submitting" (click)="submitProfile()">{{submitting ? 'Submitting…' : 'Submit Profile'}}</button>
       </div>
     </section>
   `
 })
-export class ReviewProfileComponent {
+export class ReviewProfileComponent implements OnInit {
+  submitting = false;
+  submitError = '';
+
   constructor(
     public store: StudentProfileUiStore,
     private router: Router,
-    private submittedStudentsStore: SubmittedStudentsStore
+    private submittedStudentsStore: SubmittedStudentsStore,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
   ) {}
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  /** Fills in the local store from the server for any field not already present locally —
+   *  keeps the review page accurate even on a fresh browser/session where nothing has been typed yet. */
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const set = (key: string, value: string | undefined) => {
+        if (!this.store.values[key] && value) this.store.values[key] = value;
+      };
+
+      const personal = (profile?.personal as Record<string, string>) || {};
+      ['fullName', 'email', 'mobileCountry', 'mobileNumber', 'altMobileCountry', 'altMobileNumber', 'country', 'city', 'phone', 'location']
+        .forEach(key => set(key, personal[key]));
+
+      const study = (profile?.studyPreferences as Record<string, string[]>) || {};
+      set('countries', study['countries']?.join(', '));
+      set('studyLevel', study['studyLevel']?.join(', '));
+      set('fieldOfInterest', study['fieldOfInterest']?.join(', '));
+      set('startYear', study['startYear']?.join(', '));
+      set('intake', study['intake']?.join(', '));
+
+      const academic = (profile?.academic as Record<string, unknown>) || {};
+      ['qualificationLevel', 'institution', 'score', 'graduationYear', 'qualification', 'educationGap']
+        .forEach(key => set(key, academic[key] as string));
+      if (academic['history']) set('academicHistory', JSON.stringify(academic['history']));
+
+      const exams = (profile?.entranceExams as Record<string, unknown>) || {};
+      if (exams['englishExams']) set('englishExams', JSON.stringify(exams['englishExams']));
+      set('englishExam', exams['englishExam'] as string);
+      set('englishScore', exams['englishScore'] as string);
+      if (exams['competitiveExams']) set('competitiveExams', JSON.stringify(exams['competitiveExams']));
+      set('entranceExam', exams['entranceExam'] as string);
+      set('entranceScore', exams['entranceScore'] as string);
+
+      const projects = (profile?.projects as Record<string, unknown>) || {};
+      if (projects['projects']) set('projects', JSON.stringify(projects['projects']));
+      set('achievements', (projects['achievements'] as string[])?.join(', '));
+      set('links', (projects['links'] as string[])?.join(', '));
+      set('githubLink', projects['githubLink'] as string);
+      set('linkedinLink', projects['linkedinLink'] as string);
+      set('projectTitle', projects['projectTitle'] as string);
+      set('projectRole', projects['projectRole'] as string);
+
+      const work = (profile?.workExperience as Record<string, unknown>) || {};
+      set('workStatus', work['workStatus'] as string);
+      set('relevantYears', work['relevantYears'] as string);
+      set('nonRelevantYears', work['nonRelevantYears'] as string);
+      if (work['experiences']) set('workExperiences', JSON.stringify(work['experiences']));
+      set('companyName', work['companyName'] as string);
+      set('jobRole', work['jobRole'] as string);
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // Server unreachable — fall back to whatever is already in the local store.
+    }
+    this.cdr.detectChanges();
+  }
 
   v(key: string): string { return this.store.values[key] || ''; }
 
@@ -225,10 +306,32 @@ export class ReviewProfileComponent {
     return missing;
   }
 
-  submitProfile() {
-    this.submittedStudentsStore.upsert(mapProfileToOrgStudent(this.store.values, this.store.photo));
-    this.store.values['profileStatus'] = 'SUBMITTED';
-    this.store.values['submittedAt'] = new Date().toISOString();
-    this.router.navigateByUrl('/student/dashboard');
+  async submitProfile() {
+    this.submitError = '';
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
+    this.submitting = true;
+    try {
+      await this.api.submitStudentProfile(token);
+
+      this.submittedStudentsStore.upsert(mapProfileToOrgStudent(this.store.values, this.store.photo));
+      this.store.values['profileStatus'] = 'SUBMITTED';
+      this.store.values['submittedAt'] = new Date().toISOString();
+
+      this.router.navigateByUrl('/student/dashboard');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.submitError = e instanceof Error ? e.message : 'Could not submit your profile. Please try again.';
+    } finally {
+      this.submitting = false;
+      this.cdr.detectChanges();
+    }
   }
 }

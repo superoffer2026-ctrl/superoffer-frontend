@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PortalKey } from '../../core/auth-api.service';
-import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, rememberOrganizationType } from '../../core/organization.models';
-import { createAccount, findAccount } from '../../core/accounts.store';
+import { AuthApiService, PortalKey } from '../../core/auth-api.service';
+import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizationRole, organizationTypeFromRole, rememberOrganizationType } from '../../core/organization.models';
 
 @Component({
   selector:'app-auth-page', standalone:true, imports:[CommonModule,FormsModule,RouterLink],
@@ -45,32 +44,21 @@ import { createAccount, findAccount } from '../../core/accounts.store';
             <label class="full">Password<input name="password" type="password" [(ngModel)]="form.password" minlength="8" required placeholder="8+ characters with a letter and number"></label>
           </div>
 
-          <div *ngIf="mode === 'login' && portal !== 'student'">
+          <div class="form-grid" *ngIf="mode === 'register' && portal === 'student'">
+            <label class="full">Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
+            <label class="full">Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
+            <label class="full">Password<input name="password" type="password" [(ngModel)]="form.password" minlength="8" required placeholder="8+ characters with a letter and number"></label>
+          </div>
+
+          <div *ngIf="mode === 'login'">
             <label>Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
             <label>Password<input name="password" type="password" [(ngModel)]="form.password" required placeholder="Enter your password"></label>
             <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="form.remember"> Keep me signed in</label>
           </div>
 
-          <div class="form-grid" *ngIf="portal === 'student'">
-            <label class="full" *ngIf="mode === 'register'">Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
-            <label class="full">Mobile number
-              <div class="phone-input-row">
-                <select name="mobileCountry" [(ngModel)]="form.mobileCountry" required>
-                  <option value="+91">+91 IN</option>
-                  <option value="+1">+1 US</option>
-                  <option value="+44">+44 UK</option>
-                  <option value="+971">+971 AE</option>
-                  <option value="+61">+61 AU</option>
-                </select>
-                <input name="mobileNumber" type="tel" inputmode="numeric" [(ngModel)]="form.mobileNumber" required minlength="7" placeholder="98765 43210">
-              </div>
-            </label>
-            <p class="form-message success full">We'll send a one-time code to this number on WhatsApp.</p>
-          </div>
-
           <p class="form-message success" *ngIf="message">{{message}}</p><p class="form-message error" *ngIf="error">{{error}}</p>
           <button type="submit" class="button primary wide-button" [disabled]="loading || authForm.invalid">{{loading ? 'Please wait…' : buttonLabel}}</button>
-          <p class="switch" *ngIf="portal !== 'student'">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
+          <p class="switch">{{mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}}
             <a [routerLink]="['/auth', mode === 'login' ? 'register' : 'login', portal]">{{mode === 'login' ? 'Create an account' : 'Log in'}}</a></p>
         </form>
       </section>
@@ -81,10 +69,12 @@ export class AuthPageComponent implements OnInit {
   portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   orgTypeOptions = ORG_TYPE_OPTIONS;
   form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
-  constructor(private route:ActivatedRoute,private router:Router){}
-  ngOnInit(){this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});}
+  constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService,private cdr:ChangeDetectorRef){}
+  ngOnInit(){
+    this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});
+    this.route.queryParamMap.subscribe(q=>{if(q.get('sessionExpired')==='1')this.error='Your session has expired. Please log in again.';});
+  }
   get buttonLabel(){
-    if(this.portal==='student')return 'Send OTP via WhatsApp';
     return this.mode==='login'?'Log in securely':'Create account';
   }
   get portalLabel(){return this.portal[0].toUpperCase()+this.portal.slice(1);}
@@ -109,20 +99,22 @@ export class AuthPageComponent implements OnInit {
   private role(){
     if(this.portal==='student')return 'STUDENT';
     if(this.portal==='consultancy')return 'CONSULTANT';
-    const orgType = this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email);
-    return organizationRole(orgType);
+    return organizationRole(this.form.orgType);
   }
-  private async openPortal(session:any){
-    const expected=this.role();
-    if(session.role!==expected)throw new Error('This account belongs to a different SuperOffer portal.');
+  private async openPortal(session:any,trustBackend=false){
+    if(!trustBackend){
+      const expected=this.role();
+      if(session.role!==expected)throw new Error('This account belongs to a different SuperOffer portal.');
+    }
     localStorage.removeItem('superoffer_access_token');
     sessionStorage.removeItem('superoffer_access_token');
     (this.form.remember?localStorage:sessionStorage).setItem('superoffer_access_token',session.access_token);
     sessionStorage.setItem('superoffer_role',session.role);
-    const mobile=this.portal==='student'?`${this.form.mobileCountry} ${this.form.mobileNumber}`:undefined;
-    sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email||undefined,mobile,organization:session.organization}));
+    sessionStorage.setItem('superoffer_user',JSON.stringify({full_name:session.full_name,email:this.form.email,organization:session.organization}));
     if(this.portal==='organization'){
-      const orgType = this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email);
+      const orgType = trustBackend
+        ? (session.organization?.organizationType || organizationTypeFromRole(session.role))
+        : (this.mode==='register' ? this.form.orgType : lookupOrganizationType(this.form.email));
       rememberOrganizationType(this.form.email, orgType);
       sessionStorage.setItem('superoffer_org_type', orgType);
       await this.router.navigate(['/organization/dashboard']);
@@ -135,55 +127,78 @@ export class AuthPageComponent implements OnInit {
   }
   async submit(){
     this.loading=true;this.error='';this.message='';
-    if(this.portal==='organization'&&this.mode==='register'&&this.form.password!==this.form.confirmPassword){
-      this.error='Passwords do not match.';this.loading=false;return;
-    }
-    const identifier=this.portal==='student'?`${this.form.mobileCountry}${this.form.mobileNumber.replace(/\D/g,'')}`:this.form.email;
-    if(this.portal==='student'){
-      const digits=this.form.mobileNumber.replace(/\D/g,'');
-      if(digits.length<7){this.error='Enter a valid mobile number.';this.loading=false;return;}
+    if(this.portal==='organization'){
+      await this.submitOrganization();
+      this.loading=false;
+      return;
     }
 
-    // Login skips the account-match check on every portal — frontend-only testing shouldn't require
-    // registering an account first. Sign up still validates normally.
-    const skipAccountCheck=this.mode==='login';
-
-    const existing=skipAccountCheck?undefined:findAccount(this.portal,identifier);
-    if(this.mode==='register'&&existing){
-      this.error=this.portal==='student'?'An account with this number already exists. Log in instead.':'An account with this email already exists. Log in instead.';
-      this.loading=false;return;
-    }
-    if(this.mode==='login'&&!skipAccountCheck&&!existing){
-      this.error=this.portal==='student'?"We couldn't find an account with this number. Create an account first.":"We couldn't find an account with this email. Create an account first.";
-      this.loading=false;return;
-    }
-    if(this.mode==='login'&&!skipAccountCheck&&this.portal!=='student'&&existing!.password!==this.form.password){
-      this.error='Incorrect password.';this.loading=false;return;
+    // Every portal is backed by the real SuperOffer API (email + password).
+    if(this.mode==='register'&&this.portal==='student'){
+      try{
+        await this.api.register({email:this.form.email,password:this.form.password,role:this.role()});
+        this.message='Account created. Please log in to continue.';
+        this.mode='login';
+        this.form.password='';
+      }catch(e){
+        this.error=e instanceof Error?e.message:'Could not complete the request.';
+      }
+      this.loading=false;
+      this.cdr.detectChanges();
+      return;
     }
 
-    if(this.mode==='register'){
-      createAccount(this.portal,identifier,{
-        identifier,
-        password:this.portal!=='student'?this.form.password:undefined,
-        fullName:this.form.fullName||this.form.organization||'Demo User',
-        organization:this.portal==='student'?undefined:(this.form.organization||`${this.portalLabel} Demo Organisation`)
-      });
-    }
-    const account=skipAccountCheck
-      ?{identifier,fullName:this.form.organization||'Demo User',organization:this.form.organization||`${this.portalLabel} Demo Organisation`}
-      :(this.mode==='register'?findAccount(this.portal,identifier)!:existing!);
-
-    const session={
-      role:this.role(),
-      access_token:'frontend-demo-session',
-      full_name:account.fullName,
-      organization:this.portal==='student'?null:{name:account.organization}
-    };
     try{
+      const response=this.mode==='register'
+        ?await this.api.register({email:this.form.email,password:this.form.password,role:this.role()})
+        :await this.api.login(this.form.email,this.form.password);
+      const session={
+        role:response.user.role,
+        access_token:response.accessToken,
+        full_name:this.form.fullName||this.form.organization||'Demo User',
+        organization:this.portal==='student'?null:{name:this.form.organization||`${this.portalLabel} Demo Organisation`}
+      };
       await this.openPortal(session);
     }catch(e){
       this.error=e instanceof Error?e.message:'Could not complete the request.';
     }
     this.loading=false;
+    this.cdr.detectChanges();
+  }
+  private async submitOrganization(){
+    if(this.mode==='register'){
+      if(this.form.password!==this.form.confirmPassword){
+        this.error='Passwords do not match.';return;
+      }
+      try{
+        const result=await this.api.register({
+          email:this.form.email,
+          password:this.form.password,
+          role:organizationRole(this.form.orgType),
+          organizationName:this.form.organization,
+          organizationType:this.form.orgType,
+          phone:this.form.phone,
+          country:this.form.country
+        });
+        this.message=result?.message||'Your registration has been submitted for Super Admin review. You can log in once it is approved.';
+        this.mode='login';
+        this.form.password='';this.form.confirmPassword='';
+      }catch(e){
+        this.error=e instanceof Error?e.message:'Could not submit your registration.';
+      }
+      return;
+    }
+    try{
+      const result=await this.api.login(this.form.email,this.form.password);
+      const session={
+        role:result.user.role,
+        access_token:result.accessToken,
+        full_name:result.user.fullName,
+        organization:result.user.organization
+      };
+      await this.openPortal(session,true);
+    }catch(e){
+      this.error=e instanceof Error?e.message:'Could not log in.';
+    }
   }
 }

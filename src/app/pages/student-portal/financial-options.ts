@@ -1,15 +1,13 @@
-export const FUNDING_SOURCE_OPTIONS: string[] = [
-  'Self-Funded', 'Parent/Guardian', 'Scholarship', 'Sponsor', 'Education Loan', 'Combination of the Above', 'Other'
-];
-
+/**
+ * FUNDING_SOURCE_OPTIONS / EARNING_MEMBER_OPTIONS / CURRENCY_OPTIONS used to live here
+ * too, but they're now served by the backend (`GET /api/v1/reference/financial-information`)
+ * for financial-information.component.ts — see that file. EMPLOYMENT_CATEGORY_OPTIONS and
+ * FINANCIAL_DOCUMENT_FIELDS stay here since they're also used by the separate
+ * loan-eligibility page (student-extra-page.component.ts, student-dashboard.component.ts),
+ * which hasn't been converted.
+ */
 export const EMPLOYMENT_CATEGORY_OPTIONS: string[] = [
   'Salaried', 'Self-Employed', 'Business', 'Agriculture', 'Other'
-];
-
-export const EARNING_MEMBER_OPTIONS: string[] = ['Father', 'Mother', 'Guardian'];
-
-export const CURRENCY_OPTIONS: string[] = [
-  'INR', 'USD', 'GBP', 'EUR', 'CAD', 'AUD', 'AED', 'SGD'
 ];
 
 export type FinancialDocKey =

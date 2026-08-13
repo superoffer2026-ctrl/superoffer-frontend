@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { EDUCATION_GAP_OPTIONS, EduField, Qualification, QUALIFICATION_FIELDS, QUALIFICATION_OPTIONS } from './education-options';
+import { EduField, Qualification } from './education-options';
+import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   standalone: true,
@@ -11,7 +12,11 @@ import { EDUCATION_GAP_OPTIONS, EduField, Qualification, QUALIFICATION_FIELDS, Q
   styleUrl: './academic-information.css',
   template: `
     <section class="step-page">
-      <form class="profile-form-card" [formGroup]="form" (ngSubmit)="saveAndContinue()">
+      <div class="profile-form-card" *ngIf="!loaded">
+        <p>Loading…</p>
+      </div>
+
+      <form class="profile-form-card" [formGroup]="form" (ngSubmit)="saveAndContinue()" *ngIf="loaded">
         <div class="card-head">
           <div class="placeholder-copy">
             <div>
@@ -19,7 +24,7 @@ import { EDUCATION_GAP_OPTIONS, EduField, Qualification, QUALIFICATION_FIELDS, Q
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 3 OF 8</span>
+          <span class="step-badge">STEP 3 OF 9</span>
         </div>
 
         <div class="qualification-question">
@@ -73,43 +78,155 @@ import { EDUCATION_GAP_OPTIONS, EduField, Qualification, QUALIFICATION_FIELDS, Q
         </div>
 
         <p class="save-message error" *ngIf="submitted && (form.invalid || !selectedLevels().length)">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/study-preferences">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid || !selectedLevels().length" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving || !loaded" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class AcademicInformationComponent {
-  levels = QUALIFICATION_OPTIONS;
-  educationGapOptions = EDUCATION_GAP_OPTIONS;
+export class AcademicInformationComponent implements OnInit {
+  loaded = false;
+  levels: Qualification[] = [];
+  educationGapOptions: string[] = [];
+  qualificationFields: Record<string, EduField[]> = {};
+
   submitted = false;
   selected: Partial<Record<Qualification, boolean>> = {};
 
-  form = this.fb.nonNullable.group({
-    levels: this.fb.nonNullable.group(
-      Object.fromEntries(this.levels.map(level => [level, this.buildLevelGroup(level)]))
-    ),
-    educationGap: this.fb.nonNullable.control<string>('')
-  });
+  form!: FormGroup;
+
+  saving = false;
+  saveError = '';
 
   private returnToReview = false;
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+  }
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  /** Reconstructs the same field-set-per-qualification-level structure that used to be
+   *  hardcoded, but built from the option lists fetched from the backend. */
+  private buildQualificationFields(curriculumOptions: string[], educationYears: string[], universityOptions: string[]): Record<string, EduField[]> {
+    const cgpaField: EduField = { key: 'cgpa', label: 'CGPA / Percentage', type: 'text', placeholder: 'e.g. 8.7 CGPA or 85%' };
+    const backlogsField: EduField = { key: 'backlogs', label: 'Number of Backlogs', type: 'number', placeholder: 'e.g. 0' };
+    const startedYearField: EduField = { key: 'startedYear', label: 'Started Year', type: 'select', options: educationYears };
+    const completionYearField: EduField = { key: 'completionYear', label: 'Completion Year', type: 'select', options: educationYears };
+    const yearsOfEducationField: EduField = { key: 'yearsOfEducation', label: 'Years of Education', type: 'number', placeholder: 'e.g. 10' };
+    const curriculumField: EduField = { key: 'curriculum', label: 'Curriculum', type: 'select', options: curriculumOptions };
+
+    return {
+      '11th': [curriculumField, cgpaField, startedYearField, completionYearField],
+      '12th': [curriculumField, cgpaField, startedYearField, completionYearField],
+      Diploma: [
+        { key: 'institutionName', label: 'College Name', type: 'text', placeholder: 'e.g. Government Polytechnic College', wide: true },
+        { key: 'specialization', label: 'Specialization', type: 'text', placeholder: 'e.g. Mechanical Engineering' },
+        cgpaField, backlogsField, startedYearField, completionYearField
+      ],
+      "Bachelor's Degree": [
+        { key: 'degreeName', label: 'Degree Name', type: 'text', placeholder: 'e.g. B.Tech, B.Sc, B.Com' },
+        { key: 'specialization', label: 'Specialization / Major', type: 'text', placeholder: 'e.g. Computer Science' },
+        { key: 'institutionName', label: 'University / College Name', type: 'select', options: universityOptions, wide: true, allowCustom: true },
+        cgpaField, backlogsField, startedYearField, completionYearField, yearsOfEducationField
+      ],
+      "Master's Degree": [
+        { key: 'degreeName', label: 'Degree Name', type: 'text', placeholder: 'e.g. M.Tech, M.Sc, MBA' },
+        { key: 'specialization', label: 'Specialization', type: 'text', placeholder: 'e.g. Data Science' },
+        { key: 'institutionName', label: 'University Name', type: 'select', options: universityOptions, wide: true, allowCustom: true },
+        cgpaField, backlogsField, startedYearField, completionYearField, yearsOfEducationField
+      ],
+      PhD: [
+        { key: 'degreeName', label: 'Degree Name', type: 'text', placeholder: 'e.g. PhD in Computer Science' },
+        { key: 'specialization', label: 'Research Area', type: 'text', placeholder: 'e.g. Machine Learning' },
+        { key: 'institutionName', label: 'University Name', type: 'select', options: universityOptions, wide: true, allowCustom: true },
+        cgpaField, backlogsField, startedYearField, completionYearField, yearsOfEducationField
+      ]
+    };
+  }
+
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
+    try {
+      const options = await this.api.getAcademicInformationReferenceData();
+      this.levels = options.qualificationOptions as Qualification[];
+      this.educationGapOptions = options.educationGapOptions;
+      this.qualificationFields = this.buildQualificationFields(options.curriculumOptions, options.educationYears, options.universityOptions);
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // Reference data unreachable — fall back to an empty qualification list; the student can retry later.
+    }
+
+    this.form = this.fb.nonNullable.group({
+      levels: this.fb.nonNullable.group(
+        Object.fromEntries(this.levels.map(level => [level, this.buildLevelGroup(level)]))
+      ),
+      educationGap: this.fb.nonNullable.control<string>('')
+    });
+    this.loaded = true;
+
+    try {
+      const profile = await this.api.studentProfile(token);
+      const academic = (profile?.academic as { history?: Array<Record<string, string>>; educationGap?: string }) || {};
+      const history = academic.history || [];
+      if (!this.selectedLevels().length && history.length) {
+        for (const entry of history) {
+          const level = entry['level'] as Qualification;
+          if (!this.levels.includes(level)) continue;
+          this.toggleLevel(level);
+          const group = this.levelGroup(level);
+          for (const f of this.fieldsFor(level)) {
+            if (entry[f.key] !== undefined) group.get(f.key)!.setValue(entry[f.key]);
+          }
+        }
+        if (academic.educationGap) this.form.get('educationGap')!.setValue(academic.educationGap);
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // No saved academic info yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
   }
 
   private buildLevelGroup(level: Qualification): FormGroup {
     return this.fb.nonNullable.group(
-      Object.fromEntries(QUALIFICATION_FIELDS[level].map(f => [f.key, this.fb.nonNullable.control<string>('')]))
+      Object.fromEntries(this.qualificationFields[level].map(f => [f.key, this.fb.nonNullable.control<string>('')]))
     );
   }
 
   get levelsGroup(): FormGroup { return this.form.get('levels') as FormGroup; }
   levelGroup(level: Qualification): FormGroup { return this.levelsGroup.get(level) as FormGroup; }
-  fieldsFor(level: Qualification): EduField[] { return QUALIFICATION_FIELDS[level]; }
+  fieldsFor(level: Qualification): EduField[] { return this.qualificationFields[level]; }
 
   isSelected(level: Qualification): boolean { return !!this.selected[level]; }
   selectedLevels(): Qualification[] { return this.levels.filter(lvl => this.selected[lvl]); }
@@ -119,7 +236,7 @@ export class AcademicInformationComponent {
     const nowSelected = !this.selected[level];
     this.selected[level] = nowSelected;
     const group = this.levelGroup(level);
-    QUALIFICATION_FIELDS[level].forEach(f => {
+    this.qualificationFields[level].forEach(f => {
       const control = group.get(f.key)!;
       if (nowSelected) {
         control.setValidators(Validators.required);
@@ -146,30 +263,63 @@ export class AcademicInformationComponent {
     return this.submitted && !this.selectedLevels().length;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid || !this.selectedLevels().length) return;
+
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
 
     const value = this.form.getRawValue();
     const selected = this.selectedLevels();
     const highest = selected[selected.length - 1];
     const highestFields = value.levels[highest] as Record<string, string>;
 
-    this.store.values['qualificationLevel'] = highest;
-    Object.assign(this.store.values, highestFields);
-    this.store.values['educationGap'] = value.educationGap;
-
-    this.store.values['institution'] = highestFields['institutionName'] || this.store.values['institution'];
-    this.store.values['score'] = highestFields['cgpa'] || this.store.values['score'];
-    this.store.values['graduationYear'] = highestFields['completionYear'] || this.store.values['graduationYear'];
+    const institution = highestFields['institutionName'] || this.store.values['institution'] || '';
+    const score = highestFields['cgpa'] || this.store.values['score'] || '';
+    const graduationYear = highestFields['completionYear'] || this.store.values['graduationYear'] || '';
     const degreeSummary = [highestFields['degreeName'], highestFields['specialization']].filter(Boolean).join(' ');
-    this.store.values['qualification'] = degreeSummary || highest || this.store.values['qualification'];
+    const qualification = degreeSummary || highest || this.store.values['qualification'] || '';
+    const history = selected.map(level => ({ level, ...(value.levels[level] as Record<string, string>) }));
 
-    this.store.values['academicHistory'] = JSON.stringify(
-      selected.map(level => ({ level, ...(value.levels[level] as Record<string, string>) }))
-    );
+    const payload = {
+      qualificationLevel: highest,
+      institution,
+      score,
+      graduationYear,
+      qualification,
+      educationGap: value.educationGap || undefined,
+      history
+    };
 
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/english-exam');
+    this.saving = true;
+    try {
+      await this.api.saveStudentAcademicInformation(token, payload);
+
+      this.store.values['qualificationLevel'] = highest;
+      Object.assign(this.store.values, highestFields);
+      this.store.values['educationGap'] = value.educationGap;
+      this.store.values['institution'] = institution;
+      this.store.values['score'] = score;
+      this.store.values['graduationYear'] = graduationYear;
+      this.store.values['qualification'] = qualification;
+      this.store.values['academicHistory'] = JSON.stringify(history);
+
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/english-exam');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your academic details. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

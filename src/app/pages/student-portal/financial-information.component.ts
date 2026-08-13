@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { CURRENCY_OPTIONS, EARNING_MEMBER_OPTIONS, EMPLOYMENT_CATEGORY_OPTIONS, FUNDING_SOURCE_OPTIONS } from './financial-options';
+import { AuthApiService } from '../../core/auth-api.service';
 
 function requireOne(control: AbstractControl): ValidationErrors | null {
   return Array.isArray(control.value) && control.value.length ? null : { required: true };
@@ -150,20 +150,21 @@ const EARNER_INCOME_FIELDS: Record<string, 'fatherIncome' | 'motherIncome' | 'gu
         </div>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/work-experience">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class FinancialInformationComponent {
-  fundingOptions = FUNDING_SOURCE_OPTIONS;
-  employmentOptions = EMPLOYMENT_CATEGORY_OPTIONS;
-  currencyOptions = CURRENCY_OPTIONS;
-  earningOptions = EARNING_MEMBER_OPTIONS;
+export class FinancialInformationComponent implements OnInit {
+  fundingOptions: string[] = [];
+  employmentOptions: string[] = [];
+  currencyOptions: string[] = [];
+  earningOptions: string[] = [];
   fundingQuery = '';
   fundingOpen = false;
   employmentQuery = '';
@@ -185,11 +186,87 @@ export class FinancialInformationComponent {
     declarationConsent: this.fb.nonNullable.control(false, Validators.requiredTrue)
   });
 
+  saving = false;
+  saveError = '';
+
   private returnToReview = false;
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
     this.prefillFromStore();
+  }
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  /** Local store already hydrated the form synchronously; this only fills in from the
+   *  server when the local store had nothing — e.g. a fresh browser/session. */
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const options = await this.api.getFinancialInformationReferenceData();
+      this.fundingOptions = options.fundingSourceOptions;
+      this.employmentOptions = options.employmentCategoryOptions;
+      this.currencyOptions = options.currencyOptions;
+      this.earningOptions = options.earningMemberOptions;
+    } catch {
+      // Reference data endpoint unreachable — dropdowns stay empty; existing selections still load below.
+    }
+    if (this.fundingSource) {
+      this.cdr.detectChanges();
+      return;
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const financial = (profile?.financial as Record<string, unknown>) || {};
+      if (financial['fundingSource']) {
+        this.form.patchValue({
+          fundingSource: (financial['fundingSource'] as string) || '',
+          currency: (financial['currency'] as string) || '',
+          employmentCategory: (financial['employmentCategory'] as string) || '',
+          needsLoan: (financial['needsLoan'] as string) || '',
+          fatherIncome: (financial['fatherIncome'] as string) || '',
+          motherIncome: (financial['motherIncome'] as string) || '',
+          guardianIncome: (financial['guardianIncome'] as string) || '',
+          declarationAccurate: !!financial['declarationAccurate'],
+          declarationConsent: !!financial['declarationConsent']
+        });
+        const earning = (financial['earningMembers'] as string[]) || [];
+        if (earning.length) {
+          this.form.get('earningMembers')!.setValue(earning);
+          for (const person of earning) {
+            const incomeControl = this.form.get(EARNER_INCOME_FIELDS[person]);
+            incomeControl?.setValidators(Validators.required);
+            incomeControl?.updateValueAndValidity({ emitEvent: false });
+          }
+        }
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // No saved financial info yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
   }
 
   private prefillFromStore() {
@@ -297,24 +374,59 @@ export class FinancialInformationComponent {
     return (control.touched || this.submitted) && control.invalid;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
-    const value = this.form.getRawValue();
-    this.store.values['fundingSource'] = value.fundingSource;
-    this.store.values['earningMembers'] = value.earningMembers.join(', ');
-    this.store.values['fatherIncome'] = value.fatherIncome;
-    this.store.values['motherIncome'] = value.motherIncome;
-    this.store.values['guardianIncome'] = value.guardianIncome;
-    this.store.values['annualHouseholdIncome'] = String(this.householdIncomeTotal());
-    this.store.values['currency'] = value.currency;
-    this.store.values['employmentCategory'] = value.employmentCategory;
-    this.store.values['needsLoan'] = value.needsLoan;
-    this.store.values['declarationAccurate'] = String(value.declarationAccurate);
-    this.store.values['declarationConsent'] = String(value.declarationConsent);
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
 
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/projects');
+    const value = this.form.getRawValue();
+    const annualHouseholdIncome = String(this.householdIncomeTotal());
+
+    this.saving = true;
+    try {
+      await this.api.saveStudentFinancialInformation(token, {
+        fundingSource: value.fundingSource,
+        earningMembers: value.earningMembers,
+        fatherIncome: value.fatherIncome || undefined,
+        motherIncome: value.motherIncome || undefined,
+        guardianIncome: value.guardianIncome || undefined,
+        annualHouseholdIncome,
+        currency: value.currency,
+        employmentCategory: value.employmentCategory,
+        needsLoan: value.needsLoan,
+        declarationAccurate: value.declarationAccurate,
+        declarationConsent: value.declarationConsent
+      });
+
+      this.store.values['fundingSource'] = value.fundingSource;
+      this.store.values['earningMembers'] = value.earningMembers.join(', ');
+      this.store.values['fatherIncome'] = value.fatherIncome;
+      this.store.values['motherIncome'] = value.motherIncome;
+      this.store.values['guardianIncome'] = value.guardianIncome;
+      this.store.values['annualHouseholdIncome'] = annualHouseholdIncome;
+      this.store.values['currency'] = value.currency;
+      this.store.values['employmentCategory'] = value.employmentCategory;
+      this.store.values['needsLoan'] = value.needsLoan;
+      this.store.values['declarationAccurate'] = String(value.declarationAccurate);
+      this.store.values['declarationConsent'] = String(value.declarationConsent);
+
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/projects');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your financial details. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

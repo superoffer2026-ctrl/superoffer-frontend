@@ -12,10 +12,10 @@ export class AuthApiService {
     return this.request('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
   }
 
-  async login(identifier: string, password: string): Promise<any> {
+  async login(email: string, password: string): Promise<any> {
     return this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ identifier, password })
+      body: JSON.stringify({ email, password })
     });
   }
 
@@ -36,6 +36,127 @@ export class AuthApiService {
       method: 'PUT',
       headers: { authorization: `Bearer ${token}` },
       body: JSON.stringify(profile)
+    });
+  }
+
+  async saveStudentPersonalInformation(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/personal-information', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentStudyPreferences(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/study-preferences', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentAcademicInformation(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/academic-information', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentEnglishExam(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/english-exam', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentCompetitiveExam(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/competitive-exam', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentWorkExperience(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/work-experience', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentProjectsAchievements(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/projects-achievements', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async saveStudentFinancialInformation(token: string, payload: Record<string, unknown>): Promise<any> {
+    return this.request('/students/me/financial-information', {
+      method: 'PUT',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  /** Public — no auth required. Single source of truth for country/city dropdown data,
+   *  matching the same lists the backend's own DTO validators check against. */
+  async getGeoReferenceData(): Promise<{ countries: { name: string; iso2: string; dial: string }[]; indiaCities: string[] }> {
+    return this.request('/reference/geo');
+  }
+
+  /** Public — no auth required. Single source of truth for study-preferences dropdown data,
+   *  matching the same lists the backend's own DTO validator checks against. */
+  async getStudyPreferencesReferenceData(): Promise<{
+    studyCountries: string[]; mbbsOnlyCountries: string[]; fieldsOfStudy: string[]; intakeOptions: string[]; startYears: string[];
+  }> {
+    return this.request('/reference/study-preferences');
+  }
+
+  /** Public — no auth required. Single source of truth for academic-information dropdown data,
+   *  matching the same lists the backend's own DTO validator checks against. */
+  async getAcademicInformationReferenceData(): Promise<{
+    qualificationOptions: string[]; curriculumOptions: string[]; educationGapOptions: string[]; educationYears: string[]; universityOptions: string[];
+  }> {
+    return this.request('/reference/academic-information');
+  }
+
+  /** Public — no auth required. Single source of truth for english-exam dropdown data,
+   *  matching the same lists the backend's own DTO validator checks against. */
+  async getEnglishExamReferenceData(): Promise<{ englishExamOptions: string[]; examStatusOptions: string[] }> {
+    return this.request('/reference/english-exam');
+  }
+
+  /** Public — no auth required. Single source of truth for competitive-exam dropdown data. */
+  async getCompetitiveExamReferenceData(): Promise<{ competitiveExamOptions: string[]; examStatusOptions: string[] }> {
+    return this.request('/reference/competitive-exam');
+  }
+
+  /** Public — no auth required. Single source of truth for work-experience dropdown data. */
+  async getWorkExperienceReferenceData(): Promise<{ employmentTypes: string[] }> {
+    return this.request('/reference/work-experience');
+  }
+
+  /** Public — no auth required. Single source of truth for financial-information dropdown data. */
+  async getFinancialInformationReferenceData(): Promise<{
+    fundingSourceOptions: string[]; employmentCategoryOptions: string[]; earningMemberOptions: string[]; currencyOptions: string[];
+  }> {
+    return this.request('/reference/financial-information');
+  }
+
+  /** Public — no auth required. Single source of truth for projects-achievements suggestion data. */
+  async getProjectsAchievementsReferenceData(): Promise<{ achievementSuggestions: string[] }> {
+    return this.request('/reference/projects-achievements');
+  }
+
+  async submitStudentProfile(token: string): Promise<any> {
+    return this.request('/students/me/submit', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` }
     });
   }
 

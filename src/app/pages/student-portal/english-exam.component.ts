@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { ENGLISH_EXAM_OPTIONS, EXAM_STATUS_OPTIONS, scoreFieldsForStatus } from './exam-options';
+import { scoreFieldsForStatus } from './exam-options';
+import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   standalone: true,
@@ -19,7 +20,7 @@ import { ENGLISH_EXAM_OPTIONS, EXAM_STATUS_OPTIONS, scoreFieldsForStatus } from 
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 4 OF 8</span>
+          <span class="step-badge">STEP 4 OF 9</span>
         </div>
 
         <div class="qualification-question" *ngIf="!attended">
@@ -80,18 +81,19 @@ import { ENGLISH_EXAM_OPTIONS, EXAM_STATUS_OPTIONS, scoreFieldsForStatus } from 
         </div>
 
         <p class="save-message error" *ngIf="submitted && form.invalid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </form>
 
       <div class="step-actions">
         <a class="button secondary" routerLink="/student/academic-information">Previous</a>
-        <button class="button primary" type="button" [disabled]="form.invalid" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class EnglishExamComponent {
-  examOptions = ENGLISH_EXAM_OPTIONS;
-  statusOptions = EXAM_STATUS_OPTIONS;
+export class EnglishExamComponent implements OnInit {
+  examOptions: string[] = [];
+  statusOptions: string[] = [];
   submitted = false;
   pickerOpen = false;
   pickerQuery = '';
@@ -101,10 +103,72 @@ export class EnglishExamComponent {
     english: this.fb.array<FormGroup>([])
   });
 
+  saving = false;
+  saveError = '';
+
   private returnToReview = false;
 
-  constructor(private fb: FormBuilder, public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private fb: FormBuilder,
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
+  }
+
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  private handleUnauthorized() {
+    localStorage.removeItem('superoffer_access_token');
+    sessionStorage.removeItem('superoffer_access_token');
+    this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+  }
+
+  private restoreExam(entry: Record<string, string>) {
+    this.toggleExam(entry['exam']);
+    const idx = this.examsArray.controls.findIndex(c => c.value.exam === entry['exam']);
+    if (idx < 0) return;
+    const group = this.asGroup(this.examsArray.at(idx));
+    this.setExamStatus(group, entry['status']);
+    (['score', 'expectedScore', 'currentScore'] as const).forEach(key => {
+      if (entry[key]) group.get(key)!.setValue(entry[key]);
+    });
+  }
+
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+    try {
+      const options = await this.api.getEnglishExamReferenceData();
+      this.examOptions = options.englishExamOptions;
+      this.statusOptions = options.examStatusOptions;
+    } catch {
+      // Reference data endpoint unreachable — pickers stay empty; existing selections still load below.
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const exams = (profile?.entranceExams as { englishExams?: Array<Record<string, string>> }) || {};
+      const englishExams = exams.englishExams || [];
+      if (!this.examsArray.length && englishExams.length) {
+        this.form.get('attendedExams')!.setValue('Yes');
+        englishExams.forEach(entry => this.restoreExam(entry));
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      // No saved exams yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
   }
 
   get attended(): string { return this.form.get('attendedExams')!.value as string; }
@@ -186,18 +250,41 @@ export class EnglishExamComponent {
     return (control.touched || this.submitted) && control.invalid;
   }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
     const value = this.form.getRawValue();
-    this.store.values['englishExams'] = JSON.stringify(value.english);
-
     const firstEnglish = value.english[0] as Record<string, string> | undefined;
-    this.store.values['englishExam'] = firstEnglish ? firstEnglish['exam'] : '';
-    this.store.values['englishScore'] = firstEnglish ? (firstEnglish['score'] || firstEnglish['expectedScore'] || firstEnglish['currentScore'] || '') : '';
+    const englishExam = firstEnglish ? firstEnglish['exam'] : '';
+    const englishScore = firstEnglish ? (firstEnglish['score'] || firstEnglish['expectedScore'] || firstEnglish['currentScore'] || '') : '';
 
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/competitive-exam');
+    this.saving = true;
+    try {
+      await this.api.saveStudentEnglishExam(token, { englishExams: value.english, englishExam, englishScore });
+
+      this.store.values['englishExams'] = JSON.stringify(value.english);
+      this.store.values['englishExam'] = englishExam;
+      this.store.values['englishScore'] = englishScore;
+
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/competitive-exam');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        this.handleUnauthorized();
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your exam details. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

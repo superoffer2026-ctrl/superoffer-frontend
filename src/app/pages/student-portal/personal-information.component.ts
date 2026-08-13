@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { StudentProfileUiStore } from './student-profile-ui.store';
-import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
+import { CountryInfo } from './geo-data';
+import { AuthApiService } from '../../core/auth-api.service';
 
 @Component({
   standalone: true,
@@ -19,7 +20,7 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
               <p>Your information is securely saved to your student profile.</p>
             </div>
           </div>
-          <span class="step-badge">STEP 1 OF 8</span>
+          <span class="step-badge">STEP 1 OF 9</span>
         </div>
 
         <div class="field-grid">
@@ -38,17 +39,18 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
           </label>
 
           <div class="field-pair-row">
-            <label>
+            <label [class.field-invalid]="showError('mobile')">
               <span class="field-label">Mobile Number <span class="required-mark">*</span></span>
               <div class="phone-group">
-                <select class="dial-select" name="mobileCountry" [(ngModel)]="store.values['mobileCountry']" disabled>
+                <select class="dial-select" name="mobileCountry" [(ngModel)]="store.values['mobileCountry']" (blur)="markTouched('mobile')" (change)="markTouched('mobile')">
                   <option value="" disabled>+</option>
                   <option *ngFor="let c of countries" [value]="c.iso2" [title]="c.name">{{c.dial}}</option>
                 </select>
                 <input type="tel" name="mobileNumber" autocomplete="tel-national" placeholder="98765 43210"
-                  [(ngModel)]="store.values['mobileNumber']" disabled>
+                  [(ngModel)]="store.values['mobileNumber']" (blur)="markTouched('mobile')">
               </div>
-              <small class="field-hint">Verified via OTP at sign-in — can't be changed here.</small>
+              <small class="field-error" *ngIf="showError('mobile')">{{mobileError}}</small>
+              <small class="field-hint" *ngIf="!showError('mobile')">&nbsp;</small>
             </label>
 
             <label [class.field-invalid]="showError('altMobile')">
@@ -95,45 +97,72 @@ import { COUNTRIES, COUNTRY_CITY_OPTIONS, CountryInfo } from './geo-data';
         </div>
 
         <p class="save-message error" *ngIf="submitted && !isValid">Please fix the highlighted fields before continuing.</p>
+        <p class="save-message error" *ngIf="saveError">{{saveError}}</p>
       </div>
 
       <div class="step-actions">
         <span></span>
-        <button class="button primary" type="button" [disabled]="!isValid" (click)="saveAndContinue()">Continue</button>
+        <button class="button primary" type="button" [disabled]="saving" (click)="saveAndContinue()">{{saving ? 'Saving…' : 'Continue'}}</button>
       </div>
     </section>
   `
 })
-export class PersonalInformationComponent {
-  countries = COUNTRIES;
+export class PersonalInformationComponent implements OnInit {
+  countries: CountryInfo[] = [];
+  countryCityOptions: Record<string, string[]> = {};
   countryOpen = false;
   touched: Record<string, boolean> = {};
   submitted = false;
+  saving = false;
+  saveError = '';
 
   private returnToReview = false;
 
-  constructor(public store: StudentProfileUiStore, private router: Router, private route: ActivatedRoute) {
-    this.lockMobileFromLogin();
+  constructor(
+    public store: StudentProfileUiStore,
+    private router: Router,
+    private route: ActivatedRoute,
+    private api: AuthApiService,
+    private cdr: ChangeDetectorRef
+  ) {
+    if (!this.store.values['mobileCountry']) this.store.values['mobileCountry'] = 'IN';
     if (!this.store.values['altMobileCountry']) this.store.values['altMobileCountry'] = 'IN';
     this.returnToReview = this.route.snapshot.queryParamMap.get('from') === 'review';
   }
 
-  /** The mobile number was already OTP-verified at login — pull it from that session instead of asking again. */
-  private lockMobileFromLogin() {
-    if (this.store.values['mobileNumber']) return;
+  private getToken(): string | null {
+    return localStorage.getItem('superoffer_access_token') || sessionStorage.getItem('superoffer_access_token');
+  }
+
+  async ngOnInit() {
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
     try {
-      const user = JSON.parse(sessionStorage.getItem('superoffer_user') || 'null');
-      const mobile: string = user?.mobile || '';
-      const [dial, ...rest] = mobile.trim().split(/\s+/);
-      const number = rest.join(' ');
-      const matched = this.countries.find(c => c.dial === dial);
-      if (matched && number) {
-        this.store.values['mobileCountry'] = matched.iso2;
-        this.store.values['mobileNumber'] = number;
+      const geo = await this.api.getGeoReferenceData();
+      this.countries = geo.countries;
+      this.countryCityOptions = { India: geo.indiaCities };
+    } catch {
+      // Reference data endpoint unreachable — dropdowns stay empty; the student can still type a country/city.
+    }
+    try {
+      const profile = await this.api.studentProfile(token);
+      const personal = (profile?.personal as Record<string, string>) || {};
+      for (const key of Object.keys(personal)) {
+        if (!this.store.values[key]) this.store.values[key] = personal[key];
+      }
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        localStorage.removeItem('superoffer_access_token');
+        sessionStorage.removeItem('superoffer_access_token');
+        this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
         return;
       }
-    } catch { /* no valid login session — fall through to default */ }
-    if (!this.store.values['mobileCountry']) this.store.values['mobileCountry'] = 'IN';
+      // No saved profile yet, or the server is unreachable — the student can still fill the form from scratch.
+    }
+    this.cdr.detectChanges();
   }
 
   markTouched(key: string) { this.touched[key] = true; }
@@ -176,11 +205,11 @@ export class PersonalInformationComponent {
   }
 
   get countryValid(): boolean {
-    return COUNTRIES.some(c => c.name === (this.store.values['country'] || ''));
+    return this.countries.some(c => c.name === (this.store.values['country'] || ''));
   }
   get countryError(): string { return this.countryValid ? '' : 'Select a valid country from the list'; }
 
-  get cityOptions(): string[] { return COUNTRY_CITY_OPTIONS[this.store.values['country'] || ''] || []; }
+  get cityOptions(): string[] { return this.countryCityOptions[this.store.values['country'] || ''] || []; }
   get hasCityOptions(): boolean { return this.cityOptions.length > 0; }
   get cityError(): string { return (this.store.values['city'] || '').trim() ? '' : 'Select or enter your current city'; }
 
@@ -204,12 +233,49 @@ export class PersonalInformationComponent {
 
   private dialFor(iso2: string): string { return this.countries.find(c => c.iso2 === iso2)?.dial || ''; }
 
-  saveAndContinue() {
+  async saveAndContinue() {
     this.submitted = true;
+    this.saveError = '';
     if (!this.isValid) return;
+
+    const token = this.getToken();
+    if (!token) {
+      this.router.navigate(['/auth/login/student']);
+      return;
+    }
+
     const mobile = `${this.dialFor(this.store.values['mobileCountry'])} ${this.store.values['mobileNumber'] || ''}`.trim();
     this.store.values['phone'] = mobile;
     this.store.values['location'] = [this.store.values['city'], this.store.values['country']].filter(Boolean).join(', ');
-    this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/study-preferences');
+
+    const payload = {
+      fullName: this.store.values['fullName'],
+      email: this.store.values['email'],
+      mobileCountry: this.store.values['mobileCountry'],
+      mobileNumber: this.store.values['mobileNumber'],
+      altMobileCountry: this.store.values['altMobileCountry'] || undefined,
+      altMobileNumber: this.store.values['altMobileNumber'] || undefined,
+      country: this.store.values['country'],
+      city: this.store.values['city'],
+      phone: this.store.values['phone'],
+      location: this.store.values['location']
+    };
+
+    this.saving = true;
+    try {
+      await this.api.saveStudentPersonalInformation(token, payload);
+      this.router.navigateByUrl(this.returnToReview ? '/student/review' : '/student/study-preferences');
+    } catch (e) {
+      if ((e as { status?: number }).status === 401) {
+        localStorage.removeItem('superoffer_access_token');
+        sessionStorage.removeItem('superoffer_access_token');
+        this.router.navigate(['/auth/login/student'], { queryParams: { sessionExpired: '1' } });
+        return;
+      }
+      this.saveError = e instanceof Error ? e.message : 'Could not save your details. Please try again.';
+    } finally {
+      this.saving = false;
+      this.cdr.detectChanges();
+    }
   }
 }

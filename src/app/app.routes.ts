@@ -23,6 +23,7 @@ import { StudentOnboardingComponent } from './pages/student-onboarding/student-o
 import { StudentExtraPageComponent } from './pages/student-portal/student-extra-page.component';
 import { ConsultancyWorkspaceComponent } from './pages/consultancy-portal/consultancy-workspace.component';
 import { WorkExperienceComponent } from './pages/student-portal/work-experience.component';
+import { FinancialInformationComponent } from './pages/student-portal/financial-information.component';
 
 export const appRoutes: Routes = [
   { path: '', component: LandingPageComponent, title: 'SuperOffer | Education opportunities, connected' },
@@ -42,7 +43,7 @@ export const appRoutes: Routes = [
       { path: 'english-exam', component: EnglishExamComponent },
       { path: 'competitive-exam', component: CompetitiveExamComponent },
       { path: 'work-experience', component: WorkExperienceComponent },
-      { path: 'financial-information', pathMatch: 'full', redirectTo: 'projects' },
+      { path: 'financial-information', component: FinancialInformationComponent },
       { path: 'skills', pathMatch: 'full', redirectTo: 'projects' },
       { path: 'projects', component: ProjectsAchievementsComponent },
       { path: 'documents', pathMatch: 'full', redirectTo: 'review' },

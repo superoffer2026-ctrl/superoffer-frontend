@@ -34,12 +34,6 @@ import { SubmittedStudentsStore, mapProfileToOrgStudent } from '../../core/submi
     </div>
 
     <ng-container *ngIf="wantsLoan===true">
-      <section class="loan">
-        <form #loanForm="ngForm" (ngSubmit)="checkEligibility(loanForm.valid)"><h2>Check your indicative eligibility</h2><p>Adjust the details below to preview matched funding.</p><div><label>Study destination<select name="destination" required [(ngModel)]="destination"><option>Canada</option><option>United Kingdom</option><option>United States</option></select></label><label>Course level<select name="level" required [(ngModel)]="level"><option>Postgraduate</option><option>Undergraduate</option></select></label><label>Estimated course cost (₹)<input name="cost" required type="number" min="100000" [(ngModel)]="cost"></label><label>Co-applicant monthly income (₹)<input name="income" required type="number" min="10000" [(ngModel)]="income"></label></div><button [disabled]="loanForm.invalid">Check eligibility</button></form>
-        <aside *ngIf="checked"><span>INDICATIVE RESULT</span><b>✓</b><h2>You may be eligible</h2><strong>Up to ₹35 lakh</strong><p>Matched with 3 verified education finance partners.</p><a routerLink="/student/offers">View funding offers →</a><small>This is not a credit decision or guaranteed offer.</small></aside>
-        <aside class="empty" *ngIf="!checked"><b>₹</b><h2>Your estimate will appear here</h2><p>Complete the form to see a mock eligibility result.</p></aside>
-      </section>
-
       <section class="loan-documents">
         <header><span>VERIFICATION</span><h2>Upload your documents</h2><p>These help lenders confirm eligibility once you're ready to proceed — upload whenever you're ready.</p></header>
         <label class="doc-employment">Employment category<select [(ngModel)]="employmentCategory"><option value="" disabled>Select employment category</option><option *ngFor="let opt of employmentOptions" [value]="opt">{{opt}}</option></select></label>
@@ -67,7 +61,7 @@ import { SubmittedStudentsStore, mapProfileToOrgStudent } from '../../core/submi
   <section class="messages" *ngIf="page==='messages'"><aside><button *ngFor="let contact of contacts" [class.active]="selected===contact" (click)="selected=contact"><i>{{contact.initial}}</i><div><strong>{{contact.name}}</strong><small>{{contact.role}}</small></div></button></aside><div><header><i>{{selected.initial}}</i><div><strong>{{selected.name}}</strong><small>{{selected.role}}</small></div></header><section><p><span>{{selected.message}}</span><small>Today, 10:14</small></p><p class="mine"><span>Thank you. I’ll review it today.</span><small>Today, 10:20</small></p></section><form (ngSubmit)="send()"><input name="draft" [(ngModel)]="draft" placeholder="Write a message…"><button [disabled]="!draft.trim()">Send</button></form></div></section>
 </main>`})
 export class StudentExtraPageComponent{
- page='saved-universities';query='';filter='All destinations';saved=true;checked=false;destination='Canada';level='Postgraduate';cost=3500000;income=90000;draft='';
+ page='saved-universities';query='';filter='All destinations';saved=true;draft='';
  wantsLoan:boolean|null=null;
  employmentOptions=EMPLOYMENT_CATEGORY_OPTIONS;
  documentFields=FINANCIAL_DOCUMENT_FIELDS;
@@ -90,7 +84,7 @@ export class StudentExtraPageComponent{
    this.submittedStudentsStore.upsert(mapProfileToOrgStudent(this.store.values,this.store.photo));
  }
  get title(){return {'saved-universities':'Saved universities',scholarships:'Scholarships','loan-eligibility':'Loan eligibility',notifications:'Notifications',messages:'Messages'}[this.page]||'Student workspace';}
- get description(){return {'saved-universities':'Compare universities you want to revisit.',scholarships:'Explore awards matched to your profile and goals.','loan-eligibility':'Preview potential education finance matches.',notifications:'Stay on top of offers, documents, and deadlines.',messages:'Speak with universities, lenders, and support.'}[this.page]||'';}
+ get description(){return {'saved-universities':'Compare universities you want to revisit.',scholarships:'Explore awards matched to your profile and goals.','loan-eligibility':'Upload documents so lenders can confirm your eligibility.',notifications:'Stay on top of offers, documents, and deadlines.',messages:'Speak with universities, lenders, and support.'}[this.page]||'';}
  get actionRoute(){return this.page==='saved-universities'?'/student/offers':this.page==='scholarships'?'/student/study-preferences':'';} get actionLabel(){return this.page==='saved-universities'?'Explore offers':'Update preferences';}
- get filteredCards(){const q=this.query.toLowerCase();return this.cards.filter(x=>!q||`${x.title} ${x.detail}`.toLowerCase().includes(q));} checkEligibility(valid:boolean|null){this.checked=!!valid;} markAll(){this.notes.forEach(x=>x.read=true);} send(){if(!this.draft.trim())return;this.selected.message=this.draft;this.draft='';}
+ get filteredCards(){const q=this.query.toLowerCase();return this.cards.filter(x=>!q||`${x.title} ${x.detail}`.toLowerCase().includes(q));} markAll(){this.notes.forEach(x=>x.read=true);} send(){if(!this.draft.trim())return;this.selected.message=this.draft;this.draft='';}
 }
