@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type PortalKey = 'student' | 'organization' | 'consultancy';
+export type PortalKey = 'student' | 'organization';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {

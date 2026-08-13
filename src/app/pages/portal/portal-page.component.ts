@@ -20,10 +20,10 @@ import { AuthApiService } from '../../core/auth-api.service';
   `
 })
 export class PortalPageComponent implements OnInit{
-  portal='consultancy';cards:any[]=[];user:any=null;error='';token='';
+  portal='';cards:any[]=[];user:any=null;error='';token='';
   constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService){}
   async ngOnInit(){
-    this.portal=this.route.snapshot.paramMap.get('portal')||'consultancy';
+    this.portal=this.route.snapshot.paramMap.get('portal')||'';
     if(this.portal==='student'){
       await this.router.navigate(['/student/dashboard'],{replaceUrl:true});
       return;
@@ -36,7 +36,7 @@ export class PortalPageComponent implements OnInit{
     if(!this.token){await this.router.navigate(['/auth/login',this.portal]);return;}
     try{
       this.user=await this.api.currentUser(this.token);
-      this.cards=[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Client pipeline',text:'Track consulting opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted student clients.'}];
+      this.cards=[{icon:'⌕',title:'Student discovery',text:'Find students with genuine study-abroad intent.'},{icon:'▤',title:'Pipeline',text:'Track engagement opportunities.'},{icon:'↗',title:'Engagements',text:'Guide accepted students.'}];
     }catch(e){this.error=e instanceof Error?e.message:'Could not load portal data.';}
   }
   logout(){localStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_access_token');sessionStorage.removeItem('superoffer_role');this.router.navigate(['/']);}

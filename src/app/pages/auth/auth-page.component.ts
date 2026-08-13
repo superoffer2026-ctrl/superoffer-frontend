@@ -34,16 +34,6 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
             <label>Confirm password<input name="confirmPassword" type="password" [(ngModel)]="form.confirmPassword" minlength="8" required placeholder="Re-enter your password"></label>
           </div>
 
-          <div class="form-grid" *ngIf="mode === 'register' && portal !== 'organization' && portal !== 'student'">
-            <label>Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
-            <label>Phone number<input name="phone" [(ngModel)]="form.phone" placeholder="+91 00000 00000"></label>
-            <label class="full">Official email<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
-            <label class="full">Organisation legal name<input name="organization" [(ngModel)]="form.organization" required></label>
-            <label>Registration number<input name="registrationNumber" [(ngModel)]="form.registrationNumber"></label>
-            <label>Accreditation / licence reference<input name="license" [(ngModel)]="form.license"></label>
-            <label class="full">Password<input name="password" type="password" [(ngModel)]="form.password" minlength="8" required placeholder="8+ characters with a letter and number"></label>
-          </div>
-
           <div class="form-grid" *ngIf="mode === 'register' && portal === 'student'">
             <label class="full">Full name<input name="fullName" [(ngModel)]="form.fullName" required placeholder="Your full name"></label>
             <label class="full">Email address<input name="email" type="email" [(ngModel)]="form.email" required placeholder="you@example.com"></label>
@@ -68,7 +58,7 @@ import { ORG_TYPE_OPTIONS, OrganizationType, lookupOrganizationType, organizatio
 export class AuthPageComponent implements OnInit {
   portal: PortalKey='student'; mode='login'; loading=false; error=''; message='';
   orgTypeOptions = ORG_TYPE_OPTIONS;
-  form={fullName:'',phone:'',email:'',organization:'',registrationNumber:'',license:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
+  form={fullName:'',phone:'',email:'',organization:'',password:'',confirmPassword:'',orgType:'UNIVERSITY' as OrganizationType,country:'',remember:true,mobileCountry:'+91',mobileNumber:''};
   constructor(private route:ActivatedRoute,private router:Router,private api:AuthApiService,private cdr:ChangeDetectorRef){}
   ngOnInit(){
     this.route.paramMap.subscribe(p=>{this.portal=(p.get('portal') as PortalKey)||'student';this.mode=p.get('mode')==='register'?'register':'login';this.error='';this.message='';});
@@ -85,7 +75,6 @@ export class AuthPageComponent implements OnInit {
       if(this.mode==='register')return 'Submit official organization details for Super Admin verification before marketplace tools are unlocked.';
       return 'Log in to your verified university or bank workspace.';
     }
-    if(this.portal==='consultancy')return 'Submit business and certification details for verification before connecting with students.';
     return 'Create one structured profile and receive relevant education opportunities.';
   }
   get benefits(){
@@ -94,11 +83,10 @@ export class AuthPageComponent implements OnInit {
         ?['Creditworthy student discovery','Clear indicative loan offers','Conversion and funnel reporting']
         :['AI-ranked student discovery','Shortlists and admission offers','Programme-level funnel reporting'];
     }
-    return this.portal==='consultancy'?['Intent-qualified student discovery','Consulting engagement offers','Client relationship tracking']:['Private verified profile','Comparable invitations and offers','Visibility controls'];
+    return ['Private verified profile','Comparable invitations and offers','Visibility controls'];
   }
   private role(){
     if(this.portal==='student')return 'STUDENT';
-    if(this.portal==='consultancy')return 'CONSULTANT';
     return organizationRole(this.form.orgType);
   }
   private async openPortal(session:any,trustBackend=false){
