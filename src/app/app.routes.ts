@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { LandingPageComponent } from './pages/landing/landing-page.component';
 import { StudentPageComponent } from './pages/student/student-page.component';
 import { OrganizationPageComponent } from './pages/organization/organization-page.component';
-import { ConsultancyPageComponent } from './pages/consultancy/consultancy-page.component';
 import { AuthPageComponent } from './pages/auth/auth-page.component';
 import { PortalPageComponent } from './pages/portal/portal-page.component';
 import { AdminPageComponent } from './pages/admin/admin-page.component';
@@ -21,7 +20,6 @@ import { StudentSettingsComponent } from './pages/student-portal/student-setting
 import { OrganizationWorkspaceComponent } from './pages/organization-portal/organization-workspace.component';
 import { StudentOnboardingComponent } from './pages/student-onboarding/student-onboarding.component';
 import { StudentExtraPageComponent } from './pages/student-portal/student-extra-page.component';
-import { ConsultancyWorkspaceComponent } from './pages/consultancy-portal/consultancy-workspace.component';
 import { WorkExperienceComponent } from './pages/student-portal/work-experience.component';
 import { FinancialInformationComponent } from './pages/student-portal/financial-information.component';
 
@@ -62,7 +60,6 @@ export const appRoutes: Routes = [
     ]
   },
   { path: 'organization', component: OrganizationPageComponent, title: 'Organizations | SuperOffer' },
-  { path: 'consultancy', component: ConsultancyPageComponent, title: 'Consultancies | SuperOffer' },
 
   // Legacy university/bank auth links redirect into the unified organization auth flow.
   { path: 'auth/login/university', pathMatch: 'full', redirectTo: 'organization/login' },
@@ -89,8 +86,6 @@ export const appRoutes: Routes = [
   { path: 'organization/saved', pathMatch: 'full', redirectTo: 'organization/shortlists' },
   ...['dashboard','students','shortlists','invitations','catalog','templates','criteria','reports','notifications','subscription','profile','settings'].map(page => ({ path: `organization/${page}`, component: OrganizationWorkspaceComponent, data: { page }, title: 'Organization Workspace | SuperOffer' })),
 
-  ...['dashboard','students','settings'].map(path => ({ path: `portal/consultancy/${path}`, component: ConsultancyWorkspaceComponent, data: { page: path }, title: 'Consultancy Workspace | SuperOffer' })),
-  { path: 'portal/consultancy', pathMatch: 'full', redirectTo: 'portal/consultancy/dashboard' },
   { path: 'portal/:portal', component: PortalPageComponent, title: 'Portal | SuperOffer' },
   { path: 'admin', component: AdminPageComponent, title: 'Institution approvals | SuperOffer' },
   { path: '**', redirectTo: '' }

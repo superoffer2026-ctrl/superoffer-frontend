@@ -64,8 +64,6 @@ const ROLE_CONFIG: Record<Role, any> = {
     logoSrc: '/university-logo.png', logoAlt: 'SuperOffer University',
     brandLabel: 'SuperOffer University', orgInitials: 'NU', orgLabel: 'University',
     userName: 'Aisha Malik', userTitle: 'Admissions Officer', userInitials: 'AM',
-    eyebrow: 'ADMISSIONS WORKSPACE', greeting: 'Good afternoon, Aisha',
-    dashboardIntro: "Here's a premium overview of your student discovery pipeline.",
     cycleLabel: 'recruitment cycle', createActionLabel: 'Send admission terms',
     searchEyebrow: 'STUDENT DISCOVERY', searchTitle: 'Find best-fit students',
     searchIntro: 'Browse verified student profiles ranked by compatibility with your products.',
@@ -91,8 +89,6 @@ const ROLE_CONFIG: Record<Role, any> = {
     logoSrc: '/university-logo.png', logoAlt: 'SuperOffer Finance',
     brandLabel: 'SuperOffer Finance', orgInitials: 'EF', orgLabel: 'Lender',
     userName: 'Rohan Kapoor', userTitle: 'Loan Manager', userInitials: 'RK',
-    eyebrow: 'EDUCATION FINANCE', greeting: 'Good afternoon, Rohan',
-    dashboardIntro: "Here's a premium overview of your loan applicant pipeline.",
     cycleLabel: 'lending cycle', createActionLabel: 'Send loan terms',
     searchEyebrow: 'STUDENT DISCOVERY', searchTitle: 'Find loan-ready students',
     searchIntro: 'Browse verified student profiles ranked by compatibility and financial eligibility.',
@@ -310,8 +306,6 @@ const ROLE_CONFIG: Record<Role, any> = {
       <!-- STANDARD VIEW MAIN FOR DASHBOARD, TEMPLATES, NOTIFICATIONS, PROFILE -->
       <main class="uni-main" *ngIf="view!=='students' && view!=='shortlists' && view!=='invitations'">
         <section class="uni-view" *ngIf="view==='dashboard' || view==='reports'">
-          <header class="uni-page-title"><div><span>{{cfg.eyebrow}}</span><h1>{{cfg.greeting}}</h1><p>{{cfg.dashboardIntro}}</p></div></header>
-
           <div class="uni-metrics">
             <article><span>CURRENT SUBSCRIPTION</span><strong>{{currentPlan}}</strong><small>{{planQuotaLabel}} profiles / cycle</small></article>
             <article><span>PROFILES VIEWED</span><strong>{{profilesViewed}}</strong><small>this {{cfg.cycleLabel}}</small></article>
