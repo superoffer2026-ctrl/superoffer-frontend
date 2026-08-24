@@ -55,7 +55,12 @@ export interface LoanProduct {
   templateName?: string;
 }
 
-export interface OfferTemplate { id: string; name: string; description: string; terms: Record<string, any>; usedCount: number; }
+/**
+ * The organisation-wide term sets the old composer loaded from, kept while the
+ * Templates & Criteria page still reads them. Superseded by OfferTemplate,
+ * which belongs to a product and is what an invitation is actually sent on.
+ */
+export interface LegacyOfferTemplate { id: string; name: string; description: string; terms: Record<string, any>; usedCount: number; }
 
 export interface UniversityCriteria { minCgpa: number; minEnglishScore: number; englishTest: string; preferredCurricula: string; targetCountries: string; }
 export interface BankCriteria { guarantorRequired: boolean; maxFamilyIncome: number; eligibleCountries: string; }
@@ -283,6 +288,45 @@ export interface Counterparty {
     amount: number;
     share: number;
   }>;
+}
+
+/**
+ * An offer a product is prepared to make, written once and sent many times.
+ *
+ * Terms live here rather than being typed per invitation, which is what lets a
+ * single click send something the organisation already agreed to.
+ */
+export interface OfferTemplate {
+  id: string;
+  productId: string;
+  name: string;
+  description?: string | null;
+  terms: Record<string, unknown>;
+  value?: string | null;
+  valueLabel?: string | null;
+  conditions?: string | null;
+  nextSteps: string[];
+  responseWindowDays?: number | null;
+  /** The one a single-click invitation uses. Exactly one per product. */
+  isDefault: boolean;
+  usedCount: number;
+  product?: { id: string; name: string; category?: string | null };
+}
+
+/** A template being written or edited, before it is saved. */
+export interface TemplateDraft {
+  id?: string;
+  productId: string;
+  productName: string;
+  name: string;
+  description: string;
+  value: string;
+  conditions: string;
+  nextSteps: string;
+  responseWindowDays: string;
+  /** The figures, in the vocabulary the comparison and valuation read. */
+  terms: Record<string, string>;
+  isDefault: boolean;
 }
 
 /** One offer this organization sent, as `/organizations/me/offers` returns it. */

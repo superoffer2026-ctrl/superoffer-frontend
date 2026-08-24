@@ -35,14 +35,7 @@ export function OrganizationDashboard({ workspace }: { workspace: Workspace }) {
             </span>
             <div><strong>Browse Students</strong><small>Discover best-fit candidates</small></div>
           </button>
-          <button type="button" className={cx('quick-action')} onClick={() => openOfferComposer()}>
-            <span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </span>
-            <div><strong>Create Offer</strong><small>{cfg.createActionLabel}</small></div>
-          </button>
+
           <button type="button" className={cx('quick-action')} onClick={() => go('subscription')}>
             <span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

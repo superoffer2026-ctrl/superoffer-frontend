@@ -57,7 +57,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
   const {
     role, cfg, view, workspaceFilter, setWorkspaceFilter, toast, go, navLabel,
     selectedOfferItem, setSelectedOfferId, filteredWorkspaceOffers, countWorkspaceOffers,
-    setOfferStatus, sendCandidateInvite, chatDraft, setChatDraft, sendChatMessage,
+    setOfferStatus, openQuickInvite, chatDraft, setChatDraft, sendChatMessage,
     openProductInviteModal, notify, user, chatFile, setChatFile, openAttachment, selectThread
   } = workspace;
 
@@ -218,7 +218,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                           type="button"
                           className={cx('primary-btn')}
                           style={{ padding: '6px 16px', height: 32, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}
-                          onClick={() => sendCandidateInvite(candidate)}
+                          onClick={() => openQuickInvite(candidate)}
                         >
                           {candidate.status !== 'Accepted' && (
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

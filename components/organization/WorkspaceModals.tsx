@@ -29,6 +29,25 @@ const SELECT_CHEVRON = {
   backgroundSize: '11px auto'
 };
 
+/**
+ * What each figure on a template is called, per organisation type.
+ *
+ * The keys are the vocabulary the comparison table and the cross-side valuation
+ * read, so a template written here is a template those can actually price.
+ */
+const TEMPLATE_FIGURES: Record<string, Array<{ key: string; label: string; placeholder: string }>> = {
+  UNIVERSITY: [
+    { key: 'scholarshipPct', label: 'Scholarship (% of tuition)', placeholder: '40' },
+    { key: 'tuitionFee', label: 'Tuition fee', placeholder: 'CAD 42,000 / year' },
+    { key: 'durationYears', label: 'Duration in years', placeholder: '2' }
+  ],
+  BANK: [
+    { key: 'loanAmount', label: 'Loan amount', placeholder: '₹38,00,000' },
+    { key: 'interestRate', label: 'Interest rate', placeholder: '9.4% p.a.' },
+    { key: 'tenure', label: 'Repayment tenure', placeholder: '10 years' }
+  ]
+};
+
 export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
   const {
     role, cfg, orgName, orgDomain, students, products, loanProducts, bankEvaluationMode,
@@ -36,6 +55,8 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
     activePresetCategories, getPresetsByCategory, selectPreset, sendProductInvite,
     offerDraft, setOfferDraft, onOfferCourseChange, onOfferProductChange, saveOffer,
     catalogDraft, setCatalogDraft, saveCatalogItem,
+    quickInvite, setQuickInvite, sendQuickInvite, offerTemplates,
+    templateDraft, setTemplateDraft, saveTemplate,
     negotiationOffer, setNegotiationOffer, negotiationReply, setNegotiationReply, sendNegotiationReply,
     offerPrimary, offerSecondary,
     inviteDraft, setInviteDraft, sendInvite
@@ -390,6 +411,219 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
             <footer>
               <button className={cx('uni-secondary')} type="button" onClick={() => setOfferDraft(null)}>Cancel</button>
               <button className={cx('uni-primary')} type="submit">Send {cfg.offerVerb}</button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/*
+        * A template is written once and sent many times, so it is worth being
+        * explicit about what it will say — this is the only place an offer's
+        * terms are composed.
+        */}
+      {templateDraft && (
+        <div className={cx('university-panel-backdrop', 'product-modal-backdrop')} onClick={() => setTemplateDraft(null)}>
+          <form
+            className={cx('university-offer-composer')}
+            onSubmit={event => {
+              event.preventDefault();
+              saveTemplate(
+                templateDraft.productId,
+                {
+                  name: templateDraft.name,
+                  description: templateDraft.description || undefined,
+                  terms: Object.fromEntries(
+                    Object.entries(templateDraft.terms).filter(([, value]) => String(value).trim())
+                  ),
+                  value: templateDraft.value || undefined,
+                  conditions: templateDraft.conditions || undefined,
+                  nextSteps: templateDraft.nextSteps.split('\n').map(step => step.trim()).filter(Boolean),
+                  responseWindowDays: Number(templateDraft.responseWindowDays) || undefined,
+                  isDefault: templateDraft.isDefault
+                },
+                templateDraft.id
+              );
+            }}
+            onClick={event => event.stopPropagation()}
+          >
+            <header>
+              <div>
+                <small>{templateDraft.id ? 'EDIT TEMPLATE' : 'NEW TEMPLATE'}</small>
+                <h2>{templateDraft.productName}</h2>
+                <p>An offer this product is prepared to make. Written once, sent with a single click.</p>
+              </div>
+              <button type="button" onClick={() => setTemplateDraft(null)}>×</button>
+            </header>
+
+            <div className={cx('composer-grid')}>
+              <label>
+                Template name
+                <input
+                  name="templateName"
+                  required
+                  value={templateDraft.name}
+                  placeholder="e.g. 40% Global Excellence Scholarship"
+                  onChange={event => setTemplateDraft({ ...templateDraft, name: event.target.value })}
+                />
+              </label>
+              <label>
+                Headline figure
+                <input
+                  name="templateValue"
+                  value={templateDraft.value}
+                  placeholder="e.g. 40% tuition"
+                  onChange={event => setTemplateDraft({ ...templateDraft, value: event.target.value })}
+                />
+              </label>
+
+              {(TEMPLATE_FIGURES[role] || TEMPLATE_FIGURES.UNIVERSITY).map(figure => (
+                <label key={figure.key}>
+                  {figure.label}
+                  <input
+                    name={figure.key}
+                    value={templateDraft.terms[figure.key] || ''}
+                    placeholder={figure.placeholder}
+                    onChange={event => setTemplateDraft({
+                      ...templateDraft,
+                      terms: { ...templateDraft.terms, [figure.key]: event.target.value }
+                    })}
+                  />
+                </label>
+              ))}
+
+              <label>
+                Respond within (days)
+                <input
+                  name="responseWindowDays"
+                  type="number"
+                  min="1"
+                  value={templateDraft.responseWindowDays}
+                  onChange={event => setTemplateDraft({ ...templateDraft, responseWindowDays: event.target.value })}
+                />
+              </label>
+
+              <label className={cx('wide')}>
+                Conditions
+                <input
+                  name="templateConditions"
+                  value={templateDraft.conditions}
+                  placeholder="e.g. Subject to final transcript verification"
+                  onChange={event => setTemplateDraft({ ...templateDraft, conditions: event.target.value })}
+                />
+              </label>
+
+              <label className={cx('wide')}>
+                Next steps, one per line
+                <textarea
+                  name="templateNextSteps"
+                  rows={3}
+                  value={templateDraft.nextSteps}
+                  placeholder={'Review the terms\nUpload your transcript'}
+                  onChange={event => setTemplateDraft({ ...templateDraft, nextSteps: event.target.value })}
+                />
+              </label>
+
+              <label className={cx('wide', 'template-default-toggle')}>
+                <input
+                  type="checkbox"
+                  checked={templateDraft.isDefault}
+                  onChange={event => setTemplateDraft({ ...templateDraft, isDefault: event.target.checked })}
+                />
+                <span>Send this one on a single click</span>
+              </label>
+            </div>
+
+            <footer>
+              <button className={cx('uni-secondary')} type="button" onClick={() => setTemplateDraft(null)}>Cancel</button>
+              <button className={cx('uni-primary')} type="submit">
+                {templateDraft.id ? 'Save template' : 'Add template'}
+              </button>
+            </footer>
+          </form>
+        </div>
+      )}
+
+      {/*
+        * One click, but never blind: the officer sees exactly which offer will
+        * go out before it does, because the template — not this modal — decides
+        * the terms.
+        */}
+      {quickInvite && (
+        <div className={cx('university-panel-backdrop', 'product-modal-backdrop')} onClick={() => setQuickInvite(null)}>
+          <form
+            className={cx('university-offer-composer')}
+            onSubmit={event => { event.preventDefault(); sendQuickInvite(); }}
+            onClick={event => event.stopPropagation()}
+          >
+            <header>
+              <div>
+                <small>QUICK INVITE</small>
+                <h2>Invite {quickInvite.candidate.name}</h2>
+                <p>Pick a product. The offer goes out on the terms you set for it.</p>
+              </div>
+              <button type="button" onClick={() => setQuickInvite(null)}>×</button>
+            </header>
+
+            <div className={cx('composer-grid')} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <label>
+                Product
+                <select
+                  name="quickInviteProduct"
+                  required
+                  value={quickInvite.productId}
+                  onChange={event => setQuickInvite({ ...quickInvite, productId: event.target.value })}
+                >
+                  <option value="" disabled>Select a product…</option>
+                  {(role === 'BANK' ? loanProducts : products).map(product => (
+                    <option key={product.id} value={product.id}>{product.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              {/* What will actually be sent, before it is. */}
+              {(() => {
+                if (!quickInvite.productId) return null;
+                const template = offerTemplates.find(
+                  (t: { productId: string; isDefault: boolean }) => t.productId === quickInvite.productId && t.isDefault
+                );
+
+                if (!template) {
+                  return (
+                    <p className={cx('quick-invite-warning')}>
+                      This product has no offer template yet. Add one on the Products page before inviting with a
+                      single click.
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className={cx('quick-invite-preview')}>
+                    <small>THIS IS WHAT THEY WILL RECEIVE</small>
+                    <strong>{template.name}</strong>
+                    {template.value && <b>{template.value}</b>}
+                    {template.conditions && <em>{template.conditions}</em>}
+                    {!!template.nextSteps?.length && (
+                      <ul>{template.nextSteps.map((step: string) => <li key={step}>{step}</li>)}</ul>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <footer>
+              <button className={cx('uni-secondary')} type="button" onClick={() => setQuickInvite(null)}>Cancel</button>
+              <button
+                className={cx('uni-primary')}
+                type="submit"
+                disabled={
+                  !quickInvite.productId ||
+                  !offerTemplates.some(
+                    (t: { productId: string; isDefault: boolean }) => t.productId === quickInvite.productId && t.isDefault
+                  )
+                }
+              >
+                Send invitation
+              </button>
             </footer>
           </form>
         </div>

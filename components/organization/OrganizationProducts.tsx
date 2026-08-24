@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { classNames } from '@/lib/cx';
 import type { useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
-import type { LoanProduct, Product } from '@/lib/organization/workspace-data';
+import type { LoanProduct, Product, TemplateDraft } from '@/lib/organization/workspace-data';
 import styles from '@/styles/OrganizationWorkspace.module.css';
 
 const cx = classNames(styles);
@@ -14,8 +14,30 @@ const formatDate = (value?: string) =>
   value ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 
 export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
-  const { role, cfg, user, products, loanProducts, openCatalogModal, downloadCsvTemplate, importProducts } = workspace;
+  const {
+    role, cfg, user, products, loanProducts, openCatalogModal, downloadCsvTemplate, importProducts,
+    offerTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, makeTemplateDefault
+  } = workspace;
   const fileInput = useRef<HTMLInputElement>(null);
+
+  /** A blank template for a product, in the vocabulary the valuation reads. */
+  const blankTemplate = (productId: string, productName: string): TemplateDraft => ({
+    productId,
+    productName,
+    name: '',
+    description: '',
+    value: '',
+    conditions: '',
+    nextSteps: '',
+    responseWindowDays: '14',
+    terms: role === 'BANK'
+      ? { loanAmount: '', interestRate: '', tenure: '' }
+      : { scholarshipPct: '', tuitionFee: '', durationYears: '' },
+    isDefault: false
+  });
+
+  const templatesFor = (productId: string) =>
+    offerTemplates.filter((template: { productId: string }) => template.productId === productId);
 
   const catalog: Array<Product | LoanProduct> = role === 'BANK' ? loanProducts : products;
 
@@ -91,6 +113,67 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" onClick={() => openCatalogModal(item)}>Edit</button>
+              </div>
+
+              {/*
+                * The offers this product is prepared to make. A one-click
+                * invitation sends whichever is marked default, so a product
+                * without one says so rather than letting an officer click into
+                * nothing.
+                */}
+              <div className={cx('product-templates')}>
+                <header>
+                  <span>Offer templates</span>
+                  <button type="button" onClick={() => setTemplateDraft(blankTemplate(item.id, item.name))}>
+                    + Add template
+                  </button>
+                </header>
+
+                {!templatesFor(item.id).length && (
+                  <p className={cx('product-templates-empty')}>
+                    None yet — add one so this product can be sent with a single click.
+                  </p>
+                )}
+
+                {templatesFor(item.id).map((template: any) => (
+                  <div key={template.id} className={cx('product-template-row')}>
+                    <div>
+                      <strong>{template.name}</strong>
+                      {template.isDefault && <span className={cx('template-default')}>One-click</span>}
+                      <small>
+                        {template.value || 'No headline figure'}
+                        {template.usedCount ? ` · sent ${template.usedCount}×` : ' · never sent'}
+                      </small>
+                    </div>
+                    <div className={cx('product-template-actions')}>
+                      {!template.isDefault && (
+                        <button type="button" onClick={() => makeTemplateDefault(template.id)}>
+                          Make one-click
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setTemplateDraft({
+                          ...blankTemplate(item.id, item.name),
+                          id: template.id,
+                          name: template.name,
+                          description: template.description || '',
+                          value: template.value || '',
+                          conditions: template.conditions || '',
+                          nextSteps: (template.nextSteps || []).join('\n'),
+                          responseWindowDays: String(template.responseWindowDays || 14),
+                          terms: { ...blankTemplate(item.id, item.name).terms, ...(template.terms || {}) },
+                          isDefault: template.isDefault
+                        })}
+                      >
+                        Edit
+                      </button>
+                      <button type="button" className={cx('template-archive')} onClick={() => archiveTemplate(template.id)}>
+                        Archive
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </article>
           ))}

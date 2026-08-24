@@ -20,6 +20,7 @@ import {
   type LoanProduct,
   type Offer,
   type OfferStatus,
+  type LegacyOfferTemplate,
   type OfferTemplate,
   type OrganizationOffer,
   type OrganizationProfile,
@@ -32,7 +33,8 @@ import {
   type UniversityCriteria,
   type UniversityInterest,
   type WorkspaceCandidate,
-  type WorkspaceStudent
+  type WorkspaceStudent,
+  type TemplateDraft
 } from './workspace-data';
 
 export type WorkspaceFilter = 'All' | 'Accepted' | 'Shortlisted' | 'Rejected' | 'Discover' | 'Offers' | 'Negotiating';
@@ -146,6 +148,12 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
   const [selectedThreadId, setSelectedThreadId] = useState('');
   const [offerDraft, setOfferDraft] = useState<any>(null);
   const [catalogDraft, setCatalogDraft] = useState<any>(null);
+
+  /** The offers each product is prepared to make, and the one being edited. */
+  const [offerTemplates, setOfferTemplates] = useState<OfferTemplate[]>([]);
+  const [templateDraft, setTemplateDraft] = useState<TemplateDraft | null>(null);
+  /** The candidate a one-click invitation is being sent to, once a product is picked. */
+  const [quickInvite, setQuickInvite] = useState<{ candidate: WorkspaceCandidate; productId: string } | null>(null);
   const [productInviteDraft, setProductInviteDraft] = useState<any>(null);
   const [negotiationOffer, setNegotiationOffer] = useState<Offer | null>(null);
   const [negotiationReply, setNegotiationReply] = useState('');
@@ -254,6 +262,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
         await Promise.all([
           loadProfile(token),
           loadProducts(token),
+          loadTemplates(token),
           loadStudents(token, filters),
           loadOffers(token),
           loadTeam(token),
@@ -370,7 +379,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     [role, apiProducts]
   );
 
-  const templates = useMemo<OfferTemplate[]>(() => profile?.offerTemplates || [], [profile]);
+  const templates = useMemo<LegacyOfferTemplate[]>(() => (profile?.offerTemplates as LegacyOfferTemplate[]) || [], [profile]);
   const notificationPrefs = useMemo(() => profile?.notificationPrefs || [], [profile]);
 
   const uniCriteria = useMemo<UniversityCriteria>(
@@ -709,37 +718,86 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
   };
 
   /** Sending an invitation creates a real offer the student will see in their wallet. */
-  const sendCandidateInvite = async (candidate: WorkspaceCandidate) => {
-    const token = requireToken();
-    if (!token) return;
+  /**
+   * One click from a candidate row: choose the product, and the offer its
+   * template already describes goes out.
+   *
+   * Nothing is composed here. The terms an officer sends are the terms the
+   * organisation wrote against that product, which is what makes a single click
+   * a responsible thing to offer at all.
+   */
+  const openQuickInvite = (candidate: WorkspaceCandidate) => {
     if (candidate.offerId) {
       notify(`An invitation is already open with ${candidate.name}`);
       return;
     }
+    setQuickInvite({ candidate, productId: '' });
+  };
 
-    const matchingProduct = role === 'BANK'
-      ? loanProducts.find(p => p.name)
-      : products.find(p => p.course === candidate.course) || products[0];
+  const sendQuickInvite = async () => {
+    const token = requireToken();
+    if (!token || !quickInvite?.productId) return;
 
     try {
-      await authApi.createOrganizationOffer(token, {
-        studentUserId: candidate.id,
-        program: matchingProduct?.name || candidate.course || 'Programme',
-        headline: `Invitation to apply for ${matchingProduct?.name || candidate.course}`,
-        location: candidate.targetCountry,
-        intake: candidate.intake,
-        valueLabel: role === 'BANK' ? 'Loan amount' : 'Scholarship',
-        value: role === 'BANK' ? (matchingProduct as LoanProduct)?.maxAmount || 'To be confirmed' : (matchingProduct as Product)?.scholarshipRange || 'To be confirmed',
-        conditions: 'Subject to document verification.',
-        nextSteps: ['Review the terms', 'Reply with any questions', 'Accept or decline before the deadline'],
-        contactName: user?.full_name || cfg.userTitle,
-        contactRole: cfg.userTitle,
-        terms: matchingProduct ? productTerms(matchingProduct as Product) : {}
+      await authApi.quickInvite(token, {
+        studentUserId: quickInvite.candidate.id,
+        productId: quickInvite.productId
       });
       await loadOffers(token);
-      notify(`Invitation sent to ${candidate.name}`);
+      notify(`Invitation sent to ${quickInvite.candidate.name}`);
+      setQuickInvite(null);
     } catch (e) {
       reportFailure(e, 'That invitation could not be sent.');
+    }
+  };
+
+  // ── The offers each product is prepared to make ──────────────────────────
+
+  const loadTemplates = useCallback(async (token: string) => {
+    try {
+      const payload = await authApi.offerTemplates(token);
+      setOfferTemplates(payload.templates || []);
+    } catch {
+      /** A products page that cannot list templates still lists products. */
+    }
+  }, []);
+
+  const saveTemplate = async (productId: string, input: Record<string, unknown>, id?: string) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      if (id) await authApi.updateOfferTemplate(token, id, input);
+      else await authApi.createOfferTemplate(token, productId, input);
+      await loadTemplates(token);
+      setTemplateDraft(null);
+      notify(id ? 'Template saved' : 'Template added');
+    } catch (e) {
+      reportFailure(e, 'That template could not be saved.');
+    }
+  };
+
+  /** Archived rather than deleted: offers already sent on it still point at it. */
+  const archiveTemplate = async (id: string) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      await authApi.archiveOfferTemplate(token, id);
+      await loadTemplates(token);
+      notify('Template archived');
+    } catch (e) {
+      reportFailure(e, 'That template could not be archived.');
+    }
+  };
+
+  const makeTemplateDefault = async (id: string) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      await authApi.updateOfferTemplate(token, id, { isDefault: true });
+      await loadTemplates(token);
+      notify('This is now the one-click offer for that product');
+    } catch (e) {
+      reportFailure(e, 'That could not be set as the default.');
     }
   };
 
@@ -1288,7 +1346,9 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     filters, setFilter, clearFilters, activeFilterCount, filtersOpen, setFiltersOpen, searching, filterFields,
     user, profile,
     candidates, selectedOfferItem, setSelectedOfferId, filteredWorkspaceOffers, countWorkspaceOffers,
-    setOfferStatus, sendCandidateInvite, chatDraft, setChatDraft, sendChatMessage,
+    setOfferStatus, chatDraft, setChatDraft, sendChatMessage,
+    openQuickInvite, sendQuickInvite, quickInvite, setQuickInvite,
+    offerTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, makeTemplateDefault,
     chatFile, setChatFile, openAttachment, selectThread, selectedThreadId,
     offers, displayStatus, offerTone, offerIcon, offerPrimary, offerSecondary,
     products, loanProducts, templates, saveTemplates, uniCriteria, bankCriteria, saveCriteria,

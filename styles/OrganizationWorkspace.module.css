@@ -3483,3 +3483,29 @@
 .readiness-reasons{margin:10px 0 0;padding-left:18px}
 .readiness-reasons li{font-size:12px;line-height:1.55;color:#33463c}
 .readiness-note{display:block;margin-top:10px;font-size:10.5px;color:#98a29b}
+
+/* What a one-click invitation will actually send, shown before it is sent. */
+.quick-invite-preview{display:flex;flex-direction:column;gap:5px;padding:13px 15px;background:#f1f9f4;border:1px solid #cfe8db;border-radius:10px}
+.quick-invite-preview small{font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#6b7871}
+.quick-invite-preview strong{font-size:15px;color:#172019}
+.quick-invite-preview b{font-size:13px;color:#087a50;font-weight:700}
+.quick-invite-preview em{font-size:12px;font-style:normal;color:#4f6057;line-height:1.5}
+.quick-invite-preview ul{margin:4px 0 0;padding-left:18px}
+.quick-invite-preview li{font-size:12px;line-height:1.5;color:#4f6057}
+.quick-invite-warning{margin:0;padding:11px 14px;background:#fff6e6;border:1px solid #f0dcb4;border-radius:10px;font-size:12.5px;line-height:1.55;color:#8a6516}
+
+/* The offers a product is prepared to make, listed under it. */
+.product-templates{grid-column:1/-1;margin-top:12px;padding:12px 14px;background:#f6f9f7;border:1px solid #e0e6e2;border-radius:10px}
+.product-templates>header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.product-templates>header span{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#6b7871}
+.product-templates>header button{padding:4px 10px;border:1px solid #cfe8db;border-radius:999px;background:#fff;font-size:11px;font-weight:700;color:#087a50;cursor:pointer}
+.product-templates-empty{margin:0;font-size:12px;font-style:italic;color:#98a29b}
+.product-template-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;margin-top:6px;background:#fff;border:1px solid #e4eae6;border-radius:8px}
+.product-template-row strong{font-size:13px;color:#172019}
+.product-template-row small{display:block;margin-top:2px;font-size:11px;color:#7c887f}
+.template-default{margin-left:8px;padding:1px 7px;border-radius:999px;background:#dcefe4;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#087a50}
+.product-template-actions{display:flex;gap:6px;flex:0 0 auto}
+.product-template-actions button{padding:4px 9px;border:1px solid #e0e6e2;border-radius:7px;background:#fff;font-size:11px;color:#33463c;cursor:pointer}
+.product-template-actions .template-archive{color:#a8332a;border-color:#f0cfcb}
+.template-default-toggle{flex-direction:row!important;align-items:center;gap:8px}
+.template-default-toggle input{width:15px;height:15px;accent-color:#087a50}

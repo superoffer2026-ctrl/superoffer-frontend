@@ -298,6 +298,40 @@ export const authApi = {
 
   organizationProducts: (token: string) => request('/organizations/me/products', { headers: bearer(token) }),
 
+  // ── The offers a product is prepared to make ───────────────────────────────
+
+  /** Every template, with the product each belongs to. */
+  offerTemplates: (token: string) => request('/organizations/me/offer-templates', { headers: bearer(token) }),
+
+  createOfferTemplate: (token: string, productId: string, payload: ApiPayload) =>
+    request('/organizations/me/products/' + encodeURIComponent(productId) + '/templates', {
+      method: 'POST',
+      headers: { ...bearer(token), 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }),
+
+  updateOfferTemplate: (token: string, id: string, payload: ApiPayload) =>
+    request('/organizations/me/offer-templates/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { ...bearer(token), 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }),
+
+  /** Archived, not deleted: offers already sent on it still point at it. */
+  archiveOfferTemplate: (token: string, id: string) =>
+    request('/organizations/me/offer-templates/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: bearer(token)
+    }),
+
+  /** One click: a product, a student, and the terms the template already describes. */
+  quickInvite: (token: string, payload: { studentUserId: string; productId: string; templateId?: string }) =>
+    request('/organizations/me/offers/quick-invite', {
+      method: 'POST',
+      headers: { ...bearer(token), 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }),
+
   createOrganizationProduct: (token: string, payload: ApiPayload) =>
     request('/organizations/me/products', { method: 'POST', headers: bearer(token), body: JSON.stringify(payload) }),
 
