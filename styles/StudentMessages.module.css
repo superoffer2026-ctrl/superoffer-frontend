@@ -1,0 +1,343 @@
+/* Student ↔ organization messaging. Two columns inside the workspace shell:
+   the conversation list, and the open thread. Matches the offer workspace so
+   the two screens read as the same product. */
+
+.host {
+  --line: #dfe6e1;
+  --muted: #6b7871;
+  --accent: #087a50;
+}
+
+.messages-page {
+  width: calc(100vw - 68px);
+  margin-left: 68px;
+  height: 100vh;
+  max-height: 100vh;
+  padding: 0;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.messages-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Conversation list ───────────────────────────────────────────────────── */
+
+.messages-list {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  background: #f5f2ed;
+  overflow-y: auto;
+}
+
+.messages-list > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 18px 20px 14px;
+  background: rgba(245, 242, 237, 0.97);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e2ddd5;
+}
+
+.messages-list > header strong { display: block; font-size: 19px; letter-spacing: -0.02em; }
+.messages-list > header small { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); }
+
+.messages-list-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 20px;
+  border: 0;
+  border-bottom: 1px solid #e5e0d9;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.messages-list-item:hover { background: #eee9e1; }
+.messages-list-item.selected { background: #e0f0e7; box-shadow: inset 4px 0 var(--accent); }
+
+.messages-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #0f6f54;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.messages-list-main { min-width: 0; flex: 1; }
+
+.messages-list-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.messages-list-head strong { font-size: 14px; }
+.messages-list-head time { flex: 0 0 auto; font-size: 10px; color: #98a29b; }
+
+.messages-list-main small { display: block; margin: 2px 0 4px; font-size: 11px; color: var(--accent); font-weight: 700; }
+
+.messages-list-main p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messages-unread {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  font-style: normal;
+}
+
+/* ── Thread ──────────────────────────────────────────────────────────────── */
+
+.messages-thread {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #eef3f7;
+}
+
+.messages-thread-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  background: #f0f8f4;
+  border-bottom: 1px solid #d7e6dd;
+}
+
+.messages-thread-head h2 { margin: 0; font-size: 16px; }
+.messages-thread-head p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+
+.messages-status {
+  margin-left: auto;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #e8f6ef;
+  border: 1px solid #d1eadc;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.messages-status.settled { background: #f2f4f3; border-color: #e0e5e2; color: #6b7871; }
+
+.messages-notice {
+  padding: 10px 22px;
+  background: #fdf6ec;
+  border-bottom: 1px solid #f0e2cb;
+  font-size: 12px;
+  color: #8a6a35;
+}
+
+.messages-thread-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.messages-bubble {
+  align-self: flex-start;
+  max-width: 68%;
+  padding: 11px 14px;
+  border-radius: 14px 14px 14px 4px;
+  background: #fff;
+  border: 1px solid #dde5e9;
+}
+
+.messages-bubble.mine {
+  align-self: flex-end;
+  border-radius: 14px 14px 4px 14px;
+  background: #e0f0e7;
+  border-color: #c6e2d3;
+}
+
+.messages-bubble small {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.messages-bubble p { margin: 0; font-size: 13.5px; line-height: 1.55; color: #172019; white-space: pre-wrap; }
+.messages-bubble time { display: block; margin-top: 6px; font-size: 10px; color: #98a29b; }
+
+.messages-attachment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 9px;
+  padding: 8px 10px;
+  border: 1px solid #cfdad4;
+  border-radius: 9px;
+  background: #f7faf8;
+  cursor: pointer;
+  text-align: left;
+}
+
+.messages-attachment:hover { border-color: var(--accent); }
+.messages-attachment-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 700; color: #172019; }
+.messages-attachment em { flex: 0 0 auto; font-style: normal; font-size: 10.5px; color: var(--muted); }
+
+.messages-error { margin: 0; padding: 9px 22px; background: #fdeceb; color: #a13d3d; font-size: 12px; }
+
+.messages-pending-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 22px;
+  background: #f2faf6;
+  border-top: 1px solid #d7e6dd;
+  font-size: 12px;
+  color: #172019;
+}
+
+.messages-pending-file button { border: 0; background: none; color: #a13d3d; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+/* ── Composer ────────────────────────────────────────────────────────────── */
+
+.messages-composer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 18px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+.messages-attach-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 1px solid #dce4df;
+  border-radius: 9px;
+  background: #f7faf8;
+  color: #55625a;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.messages-attach-btn:hover { border-color: var(--accent); color: var(--accent); }
+.messages-attach-btn input { display: none; }
+
+.messages-composer > input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 13px;
+  border: 1px solid #dce4df;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13.5px;
+  color: #172019;
+}
+
+.messages-composer > input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.messages-composer > button {
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.messages-composer > button:disabled { opacity: 0.45; cursor: default; }
+
+/* ── Empty states ────────────────────────────────────────────────────────── */
+
+.messages-thread-empty { display: grid; place-items: center; background: #fff; padding: 40px; }
+.messages-empty-state { max-width: 380px; text-align: center; }
+
+.messages-empty-state > span {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e8f6ef;
+  color: var(--accent);
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+.messages-empty-state h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.02em; color: #172019; }
+.messages-empty-state p { margin: 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+
+.messages-empty-note { padding: 26px 20px; margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .messages-workspace { grid-template-columns: 1fr; }
+  .messages-list { max-height: 300px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .messages-bubble { max-width: 88%; }
+}
+
+/* A platform notice belongs to neither side of the thread, so it sits between them. */
+.messages-notice {
+  align-self: center;
+  max-width: 82%;
+  margin: 2px 0;
+  padding: 6px 12px;
+  background: #eef2ef;
+  border-radius: 999px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #67736a;
+  text-align: center;
+}
+.messages-notice time { margin-left: 6px; font-size: 10px; color: #98a29b; }
+
+/* Named as a person, written by a rule — the label keeps that honest. */
+.messages-auto-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid #d5ded7;
+  border-radius: 999px;
+  background: #f4f7f5;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #7c887f;
+}

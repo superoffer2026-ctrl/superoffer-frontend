@@ -1,0 +1,237 @@
+/* Message automation: triggers down the rail, one rule open in the editor.
+   Styled to sit inside the existing admin shell alongside the form builder. */
+
+.automation {
+  --line: #e2e7e3;
+  --muted: #6b7871;
+  --accent: #087a50;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.automation-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.automation-head h2 { margin: 0 0 4px; font-size: 18px; color: #12211a; }
+.automation-head p { margin: 0; max-width: 68ch; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+
+.automation-error,
+.automation-note {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+.automation-error { background: #fdecea; border: 1px solid #f5c6c0; color: #a8332a; }
+.automation-note { background: #e8f5ee; border: 1px solid #cfe8db; color: #0a6a48; }
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+.automation-body {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.automation-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 74vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ── One trigger, with the rules that answer it ──────────────────────────── */
+
+.trigger {
+  padding: 12px 13px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.trigger > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.trigger > header strong { display: block; font-size: 12.5px; color: #12211a; line-height: 1.35; }
+.trigger > header code { display: block; margin-top: 2px; font-size: 10.5px; color: #98a29b; }
+.trigger > header button {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f6f9f7;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+.trigger > header button:hover { background: #e8f5ee; }
+
+.trigger-warning {
+  margin: 0 0 8px;
+  padding: 6px 9px;
+  background: #fff6e6;
+  border: 1px solid #f0dcb4;
+  border-radius: 8px;
+  font-size: 10.5px;
+  color: #8a6516;
+}
+.trigger-empty { margin: 0; font-size: 11px; font-style: italic; color: #98a29b; }
+
+/* ── One rule ────────────────────────────────────────────────────────────── */
+
+.rule {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fbfcfb;
+  text-align: left;
+  cursor: pointer;
+}
+.rule:hover { border-color: #c4d6cc; }
+.rule.selected { border-color: var(--accent); background: #eef7f2; box-shadow: inset 2px 0 0 var(--accent); }
+.rule.off { opacity: .58; }
+
+.rule-label { display: block; font-size: 12px; font-weight: 700; color: #12211a; }
+.rule-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; }
+.rule-meta em { font-style: normal; font-size: 10px; color: var(--muted); }
+.rule-meta em + em::before { content: '·'; margin-right: 6px; color: #c3ccc6; }
+.rule-meta b {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ede0e0;
+  font-size: 9px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #96504a;
+}
+
+/* ── Editor ──────────────────────────────────────────────────────────────── */
+
+.automation-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.editor-empty { margin: 0; padding: 40px 0; text-align: center; font-size: 13px; color: #98a29b; }
+
+.editor-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.editor-head h3 { margin: 0; font-size: 16px; color: #12211a; }
+.editor-actions { display: flex; gap: 8px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > span { font-size: 11px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.field > small { font-size: 11px; color: #98a29b; }
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fbfcfb;
+  font: inherit;
+  font-size: 13px;
+  color: #12211a;
+}
+.field textarea { resize: vertical; line-height: 1.55; }
+.field input:focus,
+.field select:focus,
+.field textarea:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px #e4f4eb; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+
+/* The admin shell centres bare labels, so this one states its own alignment. */
+.checkbox {
+  display: flex;
+  align-self: flex-start;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #12211a;
+  text-align: left;
+}
+.checkbox input { width: 15px; height: 15px; accent-color: var(--accent); }
+
+/* ── Placeholder reference ───────────────────────────────────────────────── */
+
+.placeholders { display: flex; flex-direction: column; gap: 6px; }
+.placeholders > small { font-size: 11px; color: #98a29b; }
+.placeholders > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.placeholders button {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f6f9f7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  color: #4c6a5c;
+  cursor: pointer;
+}
+.placeholders button:hover { border-color: var(--accent); background: #e8f5ee; color: var(--accent); }
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+
+.editor-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 4px; }
+.editor-foot > div { display: flex; gap: 8px; }
+
+.primary,
+.ghost,
+.danger {
+  padding: 8px 15px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+.primary:disabled { border-color: #dfe6e1; background: #dfe6e1; color: #8b958f; cursor: not-allowed; }
+.ghost { border: 1px solid var(--line); background: #fff; color: #33463c; }
+.ghost:hover:not(:disabled) { border-color: #c4d6cc; background: #f6f9f7; }
+.ghost:disabled { opacity: .5; cursor: not-allowed; }
+.danger { border: 1px solid #f0cfcb; background: #fff; color: #a8332a; }
+.danger:hover:not(:disabled) { background: #fdecea; }
+.danger:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Preview ─────────────────────────────────────────────────────────────── */
+
+.preview {
+  padding: 13px 15px;
+  background: #f6f9f7;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.preview > small { font-size: 9.5px; font-weight: 800; letter-spacing: .05em; color: var(--muted); }
+.preview p { margin: 6px 0 5px; font-size: 13.5px; line-height: 1.55; color: #172019; white-space: pre-wrap; }
+.preview em { font-size: 10.5px; font-style: normal; color: #98a29b; }
+
+@media (max-width: 980px) {
+  .automation-body { grid-template-columns: 1fr; }
+  .automation-rail { max-height: none; }
+  .field-row { grid-template-columns: 1fr; }
+}

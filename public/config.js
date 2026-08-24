@@ -1,2 +1,2 @@
-// Deployment startup scripts can override this using SUPER_OFFER_API_URL.
-window.SUPER_OFFER_API_URL = '/api/v1';
+// Runtime API origin, written at container start-up by runtime-config.sh.
+// Left unset in development so NEXT_PUBLIC_SUPER_OFFER_API_URL (.env.local) applies.

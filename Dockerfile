@@ -1,24 +1,37 @@
-FROM node:24-alpine AS build
+# syntax=docker/dockerfile:1
 
+# ── deps ─────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS deps
 WORKDIR /app
-
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
+# ── build ────────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN ./node_modules/.bin/ng build --configuration production
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
 
-FROM nginx:1.27-alpine
+# ── runtime ──────────────────────────────────────────────────────────────────
+# `output: 'standalone'` in next.config.ts emits a self-contained server bundle,
+# so the image carries only what the app actually imports.
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=4200 HOSTNAME=0.0.0.0
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-RUN rm -rf /usr/share/nginx/html/*
-COPY --from=build /app/dist/superoffer/browser/ /usr/share/nginx/html/
-COPY runtime-config.sh /docker-entrypoint.d/40-superoffer-config.sh
-RUN chmod +x /docker-entrypoint.d/40-superoffer-config.sh
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-EXPOSE 80
+COPY --from=build /app/public ./public
+COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --chown=nextjs:nodejs runtime-config.sh ./runtime-config.sh
+RUN chmod +x ./runtime-config.sh
 
-ENV SUPER_OFFER_API_URL=https://api.superoffer.net/api/v1
+USER nextjs
+EXPOSE 4200
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/health || exit 1
+# runtime-config.sh writes public/config.js so the API URL is set per environment
+# rather than baked into the build.
+ENTRYPOINT ["/bin/sh", "-c", "./runtime-config.sh && node server.js"]

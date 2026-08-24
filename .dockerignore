@@ -1,6 +1,9 @@
 node_modules
-dist
-.angular
+.next
+out
+_legacy-angular
 .git
-.DS_Store
-npm-debug.log*
+.env
+.env.*
+!.env.example
+*.log

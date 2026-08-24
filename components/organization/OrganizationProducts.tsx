@@ -1,0 +1,107 @@
+'use client';
+
+import { useRef } from 'react';
+import { classNames } from '@/lib/cx';
+import type { useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
+import type { LoanProduct, Product } from '@/lib/organization/workspace-data';
+import styles from '@/styles/OrganizationWorkspace.module.css';
+
+const cx = classNames(styles);
+
+type Workspace = ReturnType<typeof useOrganizationWorkspace>;
+
+const formatDate = (value?: string) =>
+  value ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
+  const { role, cfg, user, products, loanProducts, openCatalogModal, downloadCsvTemplate, importProducts } = workspace;
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const catalog: Array<Product | LoanProduct> = role === 'BANK' ? loanProducts : products;
+
+  return (
+    <section className={cx('uni-view')}>
+      <header className={cx('uni-page-title')}>
+        <div>
+          <span>{role === 'BANK' ? 'FINANCIAL PRODUCTS & UNDERWRITING' : 'Product Management'}</span>
+          <h1>{role === 'BANK' ? 'Loan Products' : 'Products'}</h1>
+          <p>
+            {role === 'BANK'
+              ? 'Manage loan products, underwriting criteria, and their standard offer templates.'
+              : 'Manage course offerings, admission criteria, and their standard offer templates.'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={downloadCsvTemplate}
+            style={{ background: 'transparent', border: 'none', color: '#087a50', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+          >
+            Download CSV Template
+          </button>
+          <input
+            type="file"
+            ref={fileInput}
+            style={{ display: 'none' }}
+            accept=".csv"
+            onChange={event => {
+              const file = event.target.files?.[0];
+              if (file) importProducts(file, () => { if (fileInput.current) fileInput.current.value = ''; });
+            }}
+          />
+          <button className={cx('uni-secondary')} onClick={() => fileInput.current?.click()} style={{ padding: '0 16px', height: 36 }}>
+            Import via CSV
+          </button>
+          <button className={cx('uni-primary')} onClick={() => openCatalogModal()}>
+            + Add {role === 'BANK' ? 'loan product' : 'product'}
+          </button>
+        </div>
+      </header>
+
+      <section className={cx('uni-card')} style={{ marginBottom: 24 }}>
+        <div className={cx('product-catalog')}>
+          {catalog.map(item => (
+            <article key={item.id}>
+              <span className={cx('product-mark')}>{item.name.charAt(0)}</span>
+              <div className={cx('product-name')}>
+                <h2>
+                  {item.url ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ textDecoration: 'underline', textDecorationColor: '#c9d5cf', textUnderlineOffset: 4 }}
+                      onClick={event => event.stopPropagation()}
+                    >
+                      {item.name} ↗
+                    </a>
+                  ) : (
+                    item.name
+                  )}
+                </h2>
+                <p>Created by {user?.full_name || cfg.userTitle}{item.createdAt ? ` on ${formatDate(item.createdAt)}` : ''}</p>
+              </div>
+              <div style={{ fontSize: 13, color: '#4f6057', textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                {item.lastModifiedAt && (
+                  <>
+                    Last modified<br />
+                    <span style={{ color: '#172019', fontWeight: 500 }}>{formatDate(item.lastModifiedAt)}</span>
+                  </>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={() => openCatalogModal(item)}>Edit</button>
+              </div>
+            </article>
+          ))}
+          {!catalog.length && (
+            <div className={cx('empty-state')}>
+              <strong>No {role === 'BANK' ? 'loan products' : 'products'} yet</strong>
+              <p>Add your first product to start receiving matched students.</p>
+            </div>
+          )}
+        </div>
+      </section>
+    </section>
+  );
+}

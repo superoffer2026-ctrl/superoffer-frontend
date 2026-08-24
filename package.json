@@ -1,28 +1,26 @@
 {
   "name": "superoffer-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test"
+    "dev": "next dev -p 4200",
+    "build": "next build",
+    "start": "next start -p 4200",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@angular/common": "^22.0.0",
-    "@angular/compiler": "^22.0.0",
-    "@angular/core": "^22.0.0",
-    "@angular/forms": "^22.0.0",
-    "@angular/platform-browser": "^22.0.0",
-    "@angular/router": "^22.0.0",
-    "rxjs": "~7.8.0",
-    "serve": "^14.2.4",
-    "tslib": "^2.3.0",
-    "zone.js": "~0.16.0"
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@angular/build": "^22.0.0",
-    "@angular/cli": "^22.0.0",
-    "@angular/compiler-cli": "^22.0.0",
-    "typescript": "~6.0.0"
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,0 +1,373 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { authApi, type ApiError, type PortalKey } from '@/lib/api/auth-api';
+import {
+  ORG_TYPE_OPTIONS,
+  organizationRole,
+  organizationTypeFromRole,
+  type OrganizationType
+} from '@/lib/models/organization';
+import { clearAccessToken, writeLocal, writeSession } from '@/lib/storage';
+
+interface AuthFormState {
+  fullName: string;
+  phone: string;
+  email: string;
+  organization: string;
+  registrationNumber: string;
+  license: string;
+  password: string;
+  confirmPassword: string;
+  orgType: OrganizationType;
+  country: string;
+  remember: boolean;
+}
+
+const EMPTY_FORM: AuthFormState = {
+  fullName: '', phone: '', email: '', organization: '', registrationNumber: '', license: '',
+  password: '', confirmPassword: '', orgType: 'UNIVERSITY', country: '', remember: true
+};
+
+export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [form, setForm] = useState<AuthFormState>(EMPTY_FORM);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const set = <K extends keyof AuthFormState>(key: K, value: AuthFormState[K]) =>
+    setForm(current => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (searchParams.get('sessionExpired') === '1') setError('Your session has expired. Please log in again.');
+  }, [searchParams]);
+
+  const portalLabel = portal.charAt(0).toUpperCase() + portal.slice(1);
+  const isStudent = portal === 'student';
+  const isOrganization = portal === 'organization';
+
+  const buttonLabel = mode === 'login' ? 'Log in securely' : 'Create account';
+
+  const authTitle = isStudent ? 'Build your opportunity profile.' : `Register your ${portal} securely.`;
+
+  const authCopy = (() => {
+    if (isOrganization) {
+      if (mode === 'register' && form.orgType === 'BANK') {
+        return 'Submit official lender and licence details for verification before finance tools are unlocked.';
+      }
+      if (mode === 'register') {
+        return 'Submit official organization details for Super Admin verification before marketplace tools are unlocked.';
+      }
+      return 'Log in to your verified university or bank workspace.';
+    }
+    if (portal === 'consultancy') {
+      return 'Submit business and certification details for verification before connecting with students.';
+    }
+    return 'Create one structured profile and receive relevant education opportunities.';
+  })();
+
+  const benefits = (() => {
+    if (isOrganization) {
+      return mode === 'register' && form.orgType === 'BANK'
+        ? ['Creditworthy student discovery', 'Clear indicative loan offers', 'Conversion and funnel reporting']
+        : ['AI-ranked student discovery', 'Shortlists and admission offers', 'Programme-level funnel reporting'];
+    }
+    return portal === 'consultancy'
+      ? ['Intent-qualified student discovery', 'Consulting engagement offers', 'Client relationship tracking']
+      : ['Private verified profile', 'Comparable invitations and offers', 'Visibility controls'];
+  })();
+
+  const role = () => {
+    if (isStudent) return 'STUDENT';
+    if (portal === 'consultancy') return 'CONSULTANT';
+    return organizationRole(form.orgType);
+  };
+
+  /** The API returns the session flat (`access_token`, `role`), not wrapped in a `user` object. */
+  const openPortal = async (
+    session: {
+      role: string;
+      access_token: string;
+      full_name?: string;
+      organization?: { name?: string; organizationType?: OrganizationType } | null;
+    },
+    trustBackend = false
+  ) => {
+    if (!trustBackend && session.role !== role()) {
+      throw new Error('This account belongs to a different SuperOffer portal.');
+    }
+
+    clearAccessToken();
+    if (form.remember) writeLocal('superoffer_access_token', session.access_token);
+    else writeSession('superoffer_access_token', session.access_token);
+
+    /** Only the token is kept — name, role and organization are read from /auth/me. */
+
+    if (isOrganization) {
+      /** The workspace reads the organization type back from /auth/me. */
+      router.push('/organization/dashboard');
+      return;
+    }
+    router.push(isStudent ? '/student/dashboard' : `/portal/${portal}`);
+  };
+
+  const submitOrganization = async () => {
+    if (mode === 'register') {
+      if (form.password !== form.confirmPassword) {
+        setError('Passwords do not match.');
+        return;
+      }
+      try {
+        await authApi.register({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName || undefined,
+          phone: form.phone || undefined,
+          role: organizationRole(form.orgType),
+          organization: {
+            name: form.organization,
+            registrationNumber: form.registrationNumber || undefined,
+            licenseReference: form.license || undefined,
+            country: form.country || undefined
+          }
+        });
+        setMessage('Your registration has been submitted for Super Admin review. You can log in once it is approved.');
+        setForm(current => ({ ...current, password: '', confirmPassword: '' }));
+        router.push(`/auth/login/${portal}`);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not submit your registration.');
+      }
+      return;
+    }
+
+    try {
+      const session = await authApi.login(form.email, form.password);
+      await openPortal(session, true);
+    } catch (e) {
+      const apiError = e as ApiError;
+      if (apiError.code === 'ACCOUNT_PENDING_APPROVAL' || apiError.code === 'ACCOUNT_REJECTED') {
+        setError(apiError.message);
+        return;
+      }
+      setError(e instanceof Error ? e.message : 'Could not log in.');
+    }
+  };
+
+  /** Students and consultancies: plain email + password, no approval step for students. */
+  const submitAccount = async () => {
+    if (mode === 'register') {
+      try {
+        await authApi.register({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName || undefined,
+          phone: form.phone || undefined,
+          role: role(),
+          ...(isStudent
+            ? {}
+            : {
+                organization: {
+                  name: form.organization,
+                  registrationNumber: form.registrationNumber || undefined,
+                  licenseReference: form.license || undefined
+                }
+              })
+        });
+        setMessage('Account created. Please log in to continue.');
+        setForm(current => ({ ...current, password: '' }));
+        router.push(`/auth/login/${portal}`);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not complete the request.');
+      }
+      return;
+    }
+
+    try {
+      const session = await authApi.login(form.email, form.password);
+      await openPortal(session);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not complete the request.');
+    }
+  };
+
+  const onSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+    await (isOrganization ? submitOrganization() : submitAccount());
+    setLoading(false);
+  };
+
+  return (
+    <main className="auth-layout">
+      <aside className="auth-aside">
+        <Link className="brand light-brand" href="/"><span>S</span>SuperOffer</Link>
+        <div>
+          <span className="eyebrow light">{portalLabel} account</span>
+          <h1>{mode === 'login' ? 'Welcome back to your workspace.' : authTitle}</h1>
+          <p>{authCopy}</p>
+          <ul>{benefits.map(item => <li key={item}>✓ {item}</li>)}</ul>
+        </div>
+        <small>Role-based access • Secure sessions • Privacy by design</small>
+      </aside>
+
+      <section className="auth-panel">
+        <form onSubmit={onSubmit}>
+          <Link className="back-link" href={`/${portal === 'student' ? 'students' : portal}`}>← Back to {portalLabel}</Link>
+          <span className="eyebrow">{mode === 'login' ? 'Secure sign in' : 'Account registration'}</span>
+          <h2>{mode === 'login' ? 'Log in to SuperOffer' : 'Create your account'}</h2>
+          <p>
+            {mode === 'login'
+              ? 'Enter the details associated with your account.'
+              : 'Use accurate information to create your role-specific access.'}
+          </p>
+
+          {mode === 'register' && isOrganization && (
+            <div className="form-grid">
+              <label className="full">
+                Organization name
+                <input name="organization" value={form.organization} required placeholder="Your organization's legal name"
+                  onChange={event => set('organization', event.target.value)} />
+              </label>
+              <label>
+                Organization type
+                <select name="orgType" value={form.orgType} required
+                  onChange={event => set('orgType', event.target.value as OrganizationType)}>
+                  {ORG_TYPE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+              <label>
+                Country
+                <input name="country" value={form.country} required placeholder="Country"
+                  onChange={event => set('country', event.target.value)} />
+              </label>
+              <label className="full">
+                Official email
+                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                  onChange={event => set('email', event.target.value)} />
+              </label>
+              <label>
+                Phone number
+                <input name="phone" value={form.phone} required placeholder="+91 00000 00000"
+                  onChange={event => set('phone', event.target.value)} />
+              </label>
+              <label>
+                Password
+                <input name="password" type="password" value={form.password} minLength={8} required
+                  placeholder="8+ characters with a letter and number"
+                  onChange={event => set('password', event.target.value)} />
+              </label>
+              <label>
+                Confirm password
+                <input name="confirmPassword" type="password" value={form.confirmPassword} minLength={8} required
+                  placeholder="Re-enter your password"
+                  onChange={event => set('confirmPassword', event.target.value)} />
+              </label>
+            </div>
+          )}
+
+          {mode === 'register' && !isOrganization && !isStudent && (
+            <div className="form-grid">
+              <label>
+                Full name
+                <input name="fullName" value={form.fullName} required placeholder="Your full name"
+                  onChange={event => set('fullName', event.target.value)} />
+              </label>
+              <label>
+                Phone number
+                <input name="phone" value={form.phone} placeholder="+91 00000 00000"
+                  onChange={event => set('phone', event.target.value)} />
+              </label>
+              <label className="full">
+                Official email
+                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                  onChange={event => set('email', event.target.value)} />
+              </label>
+              <label className="full">
+                Organisation legal name
+                <input name="organization" value={form.organization} required
+                  onChange={event => set('organization', event.target.value)} />
+              </label>
+              <label>
+                Registration number
+                <input name="registrationNumber" value={form.registrationNumber}
+                  onChange={event => set('registrationNumber', event.target.value)} />
+              </label>
+              <label>
+                Accreditation / licence reference
+                <input name="license" value={form.license}
+                  onChange={event => set('license', event.target.value)} />
+              </label>
+              <label className="full">
+                Password
+                <input name="password" type="password" value={form.password} minLength={8} required
+                  placeholder="8+ characters with a letter and number"
+                  onChange={event => set('password', event.target.value)} />
+              </label>
+            </div>
+          )}
+
+          {mode === 'register' && isStudent && (
+            <div className="form-grid">
+              <label className="full">
+                Full name
+                <input name="fullName" value={form.fullName} required placeholder="Your full name"
+                  onChange={event => set('fullName', event.target.value)} />
+              </label>
+              <label className="full">
+                Email address
+                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                  onChange={event => set('email', event.target.value)} />
+              </label>
+              <label className="full">
+                Password
+                <input name="password" type="password" value={form.password} minLength={8} required
+                  placeholder="8+ characters with a letter and number"
+                  onChange={event => set('password', event.target.value)} />
+              </label>
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <div>
+              <label>
+                Email address
+                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                  onChange={event => set('email', event.target.value)} />
+              </label>
+              <label>
+                Password
+                <input name="password" type="password" value={form.password} required placeholder="Enter your password"
+                  onChange={event => set('password', event.target.value)} />
+              </label>
+              <label className="remember">
+                <input type="checkbox" name="remember" checked={form.remember}
+                  onChange={event => set('remember', event.target.checked)} /> Keep me signed in
+              </label>
+            </div>
+          )}
+
+          {message && <p className="form-message success">{message}</p>}
+          {error && <p className="form-message error">{error}</p>}
+
+          <button type="submit" className="button primary wide-button" disabled={loading}>
+            {loading ? 'Please wait…' : buttonLabel}
+          </button>
+
+          <p className="switch">
+            {mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}{' '}
+            <Link href={`/auth/${mode === 'login' ? 'register' : 'login'}/${portal}`}>
+              {mode === 'login' ? 'Create an account' : 'Log in'}
+            </Link>
+          </p>
+        </form>
+      </section>
+    </main>
+  );
+}
