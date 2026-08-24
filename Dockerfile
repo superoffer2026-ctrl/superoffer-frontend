@@ -23,7 +23,9 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=4200 HOSTNAME=0.0.0.0
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
-COPY --from=build /app/public ./public
+# Owned by the runtime user: runtime-config.sh writes config.js into this
+# directory at start-up, and cannot if it belongs to root.
+COPY --from=build --chown=nextjs:nodejs /app/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --chown=nextjs:nodejs runtime-config.sh ./runtime-config.sh
