@@ -206,7 +206,7 @@ export function StudentMessages() {
                 <span>✉</span>
                 <h2>No conversation selected</h2>
                 <p>
-                  Universities, lenders and consultancies message you here once they send an offer. Complete and submit
+                  Universities and lenders message you here once they send an offer. Complete and submit
                   your profile so they can find you.
                 </p>
               </div>

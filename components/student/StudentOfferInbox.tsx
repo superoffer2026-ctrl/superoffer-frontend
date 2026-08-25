@@ -14,7 +14,7 @@ type OfferFilter = 'All' | OfferDecisionStatus;
 type CategoryFilter = 'All' | OfferCategory;
 
 /** A fixed order, so the chips keep their places as new offers arrive. */
-const CATEGORY_ORDER: OfferCategory[] = ['University', 'Bank', 'Scholarship', 'Consultancy'];
+const CATEGORY_ORDER: OfferCategory[] = ['University', 'Bank', 'Scholarship'];
 
 export function StudentOfferInbox() {
   const profile = useStudentProfile();
@@ -177,8 +177,8 @@ export function StudentOfferInbox() {
                   {offers.length
                     ? 'No offer matches these filters. Clear them to see everything again.'
                     : profile.isSubmitted
-                      ? 'Your profile is with our verified universities, lenders and consultancies. The offers they send you land here.'
-                      : 'Complete and submit your profile so verified universities, lenders and consultancies can discover you. Their offers land here.'}
+                      ? 'Your profile is with our verified universities and lenders. The offers they send you land here.'
+                      : 'Complete and submit your profile so verified universities and lenders can discover you. Their offers land here.'}
                 </p>
                 {!!offers.length && (
                   <button type="button" className={cx('primary-btn')} onClick={clearFilters}>Clear filters</button>

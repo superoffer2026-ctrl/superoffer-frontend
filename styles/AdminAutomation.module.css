@@ -235,3 +235,129 @@
   .automation-rail { max-height: none; }
   .field-row { grid-template-columns: 1fr; }
 }
+
+/* ── Condition builder ──────────────────────────────────────────────────────
+   A rule reads as a sentence: When <field> <comparison> <value>, and … . The
+   row is laid out in that order so it can be read rather than decoded. */
+
+.condition-builder {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 12px;
+  border: 1px solid #dfe6ea;
+  border-radius: 10px;
+  background: #f8fafb;
+}
+
+.condition-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.1fr) auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.condition-join {
+  min-width: 34px;
+  color: #637482;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.condition-row select,
+.condition-row input {
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid #cfd9df;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12.5px;
+}
+
+.condition-row select:focus,
+.condition-row input:focus {
+  border-color: #2467e8;
+  outline: none;
+}
+
+.condition-novalue { color: #9aa8b2; text-align: center }
+
+.condition-remove {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e2e8ec;
+  border-radius: 50%;
+  background: #fff;
+  color: #8a97a1;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.condition-remove:hover { border-color: #e6b8b2; color: #a3372c }
+
+/* The description sits under the row it explains, across the full width. */
+.condition-row .condition-help {
+  grid-column: 2 / -1;
+  margin-top: -2px;
+  color: #7c8a94;
+  font-size: 11px;
+}
+
+.condition-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.condition-actions > button {
+  padding: 7px 12px;
+  border: 1px solid #cfd9df;
+  border-radius: 8px;
+  background: #fff;
+  color: #2467e8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.condition-actions > button:hover { background: #f2f6ff }
+
+.condition-join-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #637482;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.condition-join-toggle select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #cfd9df;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+}
+
+.condition-empty {
+  margin: 0;
+  color: #7c8a94;
+  font-size: 12px;
+}
+
+/* The server's own reading of the rule, so the panel never disagrees with it. */
+.condition-reads {
+  display: block;
+  margin-top: 7px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #2c4a7c;
+  font-size: 11.5px;
+  font-weight: 600;
+}

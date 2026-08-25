@@ -54,7 +54,7 @@ function fieldsFor(category: OfferCategory): Array<{ label: string; value: (offe
 }
 
 export function OfferCompare({ offers, onClose }: { offers: StudentOffer[]; onClose(): void }) {
-  const categories: OfferCategory[] = ['University', 'Bank', 'Scholarship', 'Consultancy'];
+  const categories: OfferCategory[] = ['University', 'Bank', 'Scholarship'];
 
   const groups: CompareGroup[] = categories
     .map(category => offers.filter(offer => offer.category === category))

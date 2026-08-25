@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { authApi } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
 import styles from '@/styles/AdminAutomation.module.css';
+import {
+  ConditionBuilder, fromRows, toRows,
+  type ConditionCatalogue, type Predicate
+} from './ConditionBuilder';
 
 const cx = classNames(styles);
 
@@ -14,7 +18,12 @@ interface Rule {
   audience: 'student' | 'organization' | 'both';
   attribution: 'system' | 'organization';
   body: string;
-  condition: Record<string, string> | null;
+  /** A predicate tree; the two-key shape older rules used still reads. */
+  condition: unknown;
+  /** Re-read when a delayed rule comes due: the reason to still send it. */
+  guard: unknown;
+  /** Minutes to wait after the event. 0 posts immediately. */
+  delayMinutes: number;
   markUnread: boolean;
   enabled: boolean;
   order: number;
@@ -43,6 +52,21 @@ const ATTRIBUTIONS: Array<{ value: Rule['attribution']; label: string; describes
   { value: 'organization', label: 'A reply from the organisation', describes: 'Shown under the officer name, labelled Automatic' }
 ];
 
+/**
+ * Waits worth offering. A free-text minute box invites "10080" and a mistake
+ * nobody notices until a message arrives a week late.
+ */
+const DELAYS: Array<{ minutes: number; label: string }> = [
+  { minutes: 0, label: 'Send immediately' },
+  { minutes: 60, label: 'After 1 hour' },
+  { minutes: 60 * 6, label: 'After 6 hours' },
+  { minutes: 60 * 24, label: 'After 1 day' },
+  { minutes: 60 * 24 * 2, label: 'After 2 days' },
+  { minutes: 60 * 24 * 3, label: 'After 3 days' },
+  { minutes: 60 * 24 * 7, label: 'After 1 week' },
+  { minutes: 60 * 24 * 14, label: 'After 2 weeks' }
+];
+
 /** Triggers that are defined and seeded but not yet wired to anything. */
 const NOT_WIRED = ['offer.expired', 'document.uploaded'];
 
@@ -52,6 +76,9 @@ const blankRule = (event: string): Partial<Rule> => ({
   audience: 'both',
   attribution: 'system',
   body: '',
+  condition: null,
+  guard: null,
+  delayMinutes: 0,
   markUnread: true,
   enabled: true,
   order: 1
@@ -64,9 +91,22 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Rule> | null>(null);
   const [preview, setPreview] = useState('');
+  const [catalogue, setCatalogue] = useState<ConditionCatalogue | null>(null);
+  const [reads, setReads] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+
+  /** The server decides what a condition means, so the panel never disagrees with it. */
+  const explain = async (condition: unknown, set: (value: string) => void) => {
+    if (!condition) { set(''); return; }
+    try {
+      const answer = await authApi.adminExplainCondition(adminKey, condition);
+      set(answer?.valid ? answer.reads : '');
+    } catch {
+      set('');
+    }
+  };
 
   const load = useCallback(async () => {
     const payload = await authApi.adminAutomation(adminKey);
@@ -79,6 +119,16 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
   useEffect(() => {
     void load().catch(e => setError(e instanceof Error ? e.message : 'Rules could not be loaded.'));
   }, [load]);
+
+  /**
+   * What a condition may read comes from the server, so this editor cannot
+   * offer a field the engine would refuse — or miss one it has just gained.
+   */
+  useEffect(() => {
+    void authApi.adminAutomationFields(adminKey)
+      .then(payload => setCatalogue(payload as ConditionCatalogue))
+      .catch(() => setCatalogue(null));
+  }, [adminKey]);
 
   /** Grouped by trigger, because a trigger is what an admin thinks in. */
   const grouped = useMemo(() => {
@@ -350,6 +400,64 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
                   ))}
                 </div>
               </div>
+
+              {/*
+                * A trigger is an event plus the case it applies to. Without this
+                * the nine events were nine rules; with it they are as many as
+                * the admin needs.
+                */}
+              <div className={cx('field')}>
+                <span>Only when</span>
+                <ConditionBuilder
+                  catalogue={catalogue}
+                  join={toRows(selected.condition).join}
+                  rows={toRows(selected.condition).rows}
+                  cx={cx}
+                  emptyLabel="Every time this happens. Add a test to narrow it."
+                  onChange={(join, rows) => {
+                    const next = fromRows(join, rows as Predicate[]);
+                    edit({ condition: next });
+                    void explain(next, setReads);
+                  }}
+                />
+                {!!reads && <small className={cx('condition-reads')}>Fires when {reads}.</small>}
+              </div>
+
+              {/*
+                * Waiting is what turns a notice into a nudge. It is also the one
+                * thing that can make an automated message wrong by the time it
+                * arrives, which is why a wait comes with a reason to still send.
+                */}
+              <label className={cx('field')}>
+                <span>Wait before sending</span>
+                <select
+                  name="delayMinutes"
+                  value={String(selected.delayMinutes ?? 0)}
+                  onChange={event => edit({ delayMinutes: Number(event.target.value) })}
+                >
+                  {DELAYS.map(option => (
+                    <option key={option.minutes} value={option.minutes}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              {(selected.delayMinutes ?? 0) > 0 && (
+                <div className={cx('field')}>
+                  <span>Only still send if</span>
+                  <ConditionBuilder
+                    catalogue={catalogue}
+                    join={toRows(selected.guard).join}
+                    rows={toRows(selected.guard).rows}
+                    cx={cx}
+                    emptyLabel="Send regardless of what has changed while it waited."
+                    onChange={(join, rows) => edit({ guard: fromRows(join, rows as Predicate[]) })}
+                  />
+                  <small className={cx('condition-help')}>
+                    Re-read at the moment it would send, so a reminder written days ago does not
+                    reach someone who has already replied.
+                  </small>
+                </div>
+              )}
 
               <label className={cx('checkbox')}>
                 <input

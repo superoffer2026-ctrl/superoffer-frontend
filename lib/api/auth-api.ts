@@ -499,6 +499,25 @@ export const authApi = {
   adminDeleteAutomationRule: (adminKey: string, id: string) =>
     request(`/admin/automation/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } }),
 
+  /** What a condition may read, and which comparisons each field allows. */
+  adminAutomationFields: (adminKey: string) =>
+    request('/admin/automation/fields', { headers: { 'x-admin-key': adminKey } }),
+
+  /** What a condition means in English, and whether it means anything at all. */
+  adminExplainCondition: (adminKey: string, condition: unknown) =>
+    request('/admin/automation/explain', {
+      method: 'POST',
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ condition })
+    }),
+
+  /** What is waiting to be sent, and what was skipped and why. */
+  adminScheduledAutomation: (adminKey: string) =>
+    request('/admin/automation/scheduled', { headers: { 'x-admin-key': adminKey } }),
+
+  adminRunScheduledAutomation: (adminKey: string) =>
+    request('/admin/automation/scheduled/run', { method: 'POST', headers: { 'x-admin-key': adminKey } }),
+
   /** Renders a body against a sample offer, so wording is checked before it is saved. */
   adminPreviewAutomation: (adminKey: string, body: string) =>
     request('/admin/automation/preview', {

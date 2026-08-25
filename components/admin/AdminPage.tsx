@@ -19,7 +19,6 @@ const TYPES = [
   { label: 'All organisations', value: 'ALL' },
   { label: 'Universities', value: 'UNIVERSITY' },
   { label: 'Banks', value: 'BANK' },
-  { label: 'Consultancies', value: 'CONSULTANCY' }
 ];
 
 interface PlatformStats {
@@ -88,6 +87,51 @@ const number = (value: number) => value.toLocaleString('en-IN');
 const percentOf = (value: number, total: number) => (total ? Math.round((value / total) * 100) : 0);
 const mediumDate = (value?: string) => (value ? new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 const mediumDateTime = (value?: string) => (value ? new Date(value).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+
+/** Free mailboxes prove nothing about belonging to an institution. */
+const PUBLIC_MAIL_DOMAINS = [
+  'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.in', 'outlook.com',
+  'hotmail.com', 'live.com', 'icloud.com', 'proton.me', 'protonmail.com',
+  'rediffmail.com', 'aol.com', 'zoho.com', 'mail.com', 'yandex.com'
+];
+
+const hostOf = (value: string) =>
+  (value || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+
+/**
+ * What a reviewer cannot confirm from this submission.
+ *
+ * Registration now requires every one of these, so a gap here means the row was
+ * submitted before that rule existed. Naming the gaps is more use than
+ * repeating the instruction to check them.
+ */
+function evidenceGaps(row: {
+  email?: string;
+  organization?: {
+    registrationNumber?: string | null;
+    licenseReference?: string | null;
+    website?: string | null;
+    country?: string | null;
+  } | null;
+}) {
+  const org = row.organization;
+  const missing = [
+    !org?.registrationNumber && 'registration number',
+    !org?.licenseReference && 'accreditation / licence reference',
+    !org?.website && 'official website',
+    !org?.country && 'country'
+  ].filter(Boolean) as string[];
+
+  const emailDomain = hostOf((row.email || '').split('@')[1] || '');
+  const siteDomain = hostOf(org?.website || '');
+  const publicMailbox = !!emailDomain && PUBLIC_MAIL_DOMAINS.includes(emailDomain);
+  /** Only a real mismatch counts — a subdomain of the site is still the site. */
+  const domainMismatch =
+    !!emailDomain && !!siteDomain && !publicMailbox &&
+    !emailDomain.endsWith(siteDomain) && !siteDomain.endsWith(emailDomain);
+
+  return { missing, emailDomain, siteDomain, publicMailbox, domainMismatch };
+}
 
 export function AdminPage() {
   const [adminKey, setAdminKey] = useState('');
@@ -241,7 +285,7 @@ export function AdminPage() {
   };
 
   const roleLabel = (role: string) =>
-    role === 'UNIVERSITY_OFFICER' ? 'University' : role === 'LOAN_OFFICER' ? 'Education lender' : 'Study abroad consultancy';
+    role === 'UNIVERSITY_OFFICER' ? 'University' : role === 'LOAN_OFFICER' ? 'Education lender' : 'Consultancy (closed)';
   const orgInitial = (item: any) => String(item.organization?.name || item.full_name || '?')[0].toUpperCase();
   const location = (item: any) => [item.organization?.city, item.organization?.country].filter(Boolean).join(', ') || 'Not provided';
 
@@ -350,7 +394,7 @@ export function AdminPage() {
               <div>
                 <span className={cx('eyebrow')}>TRUST &amp; VERIFICATION</span>
                 <h1>Institution registrations</h1>
-                <p>Review universities, education lenders, and consultancies before unlocking login.</p>
+                <p>Review universities and education lenders before unlocking login.</p>
               </div>
               <nav className={cx('page-tabs')}>
                 <button className={cx(view === 'dashboard' && 'active')} onClick={() => setView('dashboard')}>Dashboard</button>
@@ -368,7 +412,6 @@ export function AdminPage() {
                   <article className={cx('metric')}><small>Total students</small><strong>{number(stats.students)}</strong></article>
                   <article className={cx('metric')}><small>Verified universities</small><strong>{stats.universities}</strong></article>
                   <article className={cx('metric')}><small>Verified banks</small><strong>{stats.banks}</strong></article>
-                  <article className={cx('metric')}><small>Verified consultancies</small><strong>{stats.consultancies}</strong></article>
                   <article className={cx('metric', 'pending')}><small>Pending verifications</small><strong>{stats.pendingVerifications}</strong></article>
                   <article className={cx('metric', 'approved')}><small>Submitted profiles</small><strong>{number(stats.submittedProfiles)}</strong></article>
                 </section>
@@ -457,7 +500,6 @@ export function AdminPage() {
                   <article className={cx('metric')}><small>Rejected</small><strong>{summary.rejected || 0}</strong></article>
                   <article className={cx('metric')}><small>Universities waiting</small><strong>{summary.universities || 0}</strong></article>
                   <article className={cx('metric')}><small>Banks waiting</small><strong>{summary.banks || 0}</strong></article>
-                  <article className={cx('metric')}><small>Consultancies waiting</small><strong>{summary.consultancies || 0}</strong></article>
                 </section>
 
                 <nav className={cx('filters')}>
@@ -522,10 +564,40 @@ export function AdminPage() {
                         <div><dt>Phone</dt><dd>{selected.phone || 'Not provided'}</dd></div>
                         <div><dt>Submitted</dt><dd>{mediumDateTime(selected.submitted_at)}</dd></div>
                       </dl>
-                      <section className={cx('evidence')}>
-                        <strong>Verification evidence</strong>
-                        <p>Confirm registration and accreditation/licence references against the appropriate official authority before approval.</p>
-                      </section>
+                      {(() => {
+                        const gaps = evidenceGaps(selected);
+                        const unverifiable = gaps.missing.length || gaps.publicMailbox || gaps.domainMismatch;
+                        if (!unverifiable) {
+                          return (
+                            <section className={cx('evidence')}>
+                              <strong>Verification evidence</strong>
+                              <p>Confirm the registration and accreditation/licence references against the issuing authority before approval.</p>
+                            </section>
+                          );
+                        }
+                        return (
+                          <section className={cx('evidence', 'evidence-warning')}>
+                            <strong>⚠ Cannot be verified from this submission</strong>
+                            <ul>
+                              {!!gaps.missing.length && (
+                                <li>Missing: {gaps.missing.join(', ')}.</li>
+                              )}
+                              {gaps.publicMailbox && (
+                                <li>
+                                  <code>{gaps.emailDomain}</code> is a public mailbox, not the organisation&rsquo;s own domain.
+                                </li>
+                              )}
+                              {gaps.domainMismatch && (
+                                <li>
+                                  The email domain <code>{gaps.emailDomain}</code> does not match the website{' '}
+                                  <code>{gaps.siteDomain}</code>.
+                                </li>
+                              )}
+                            </ul>
+                            <p>Approving unlocks access to submitted student profiles. Confirm this organisation by another route first.</p>
+                          </section>
+                        );
+                      })()}
 
                       {selected.approval_status === 'PENDING' && (
                         <>
@@ -609,7 +681,6 @@ export function AdminPage() {
                     <option value="STUDENT">Student</option>
                     <option value="UNIVERSITY_OFFICER">University Officer</option>
                     <option value="LOAN_OFFICER">Loan Officer</option>
-                    <option value="CONSULTANT">Consultant</option>
                   </select>
                   <select
                     className={cx('auth-select')} value={authStatusFilter}

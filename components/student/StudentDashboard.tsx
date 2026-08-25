@@ -163,7 +163,6 @@ export function StudentDashboard() {
     { value: walletStore.universityCount, label: 'University' },
     { value: walletStore.bankCount, label: 'Loan' },
     { value: walletStore.scholarshipCount, label: 'Scholarship' },
-    { value: walletStore.consultancyCount, label: 'Consultancy' },
     { value: walletStore.savedCount, label: 'Saved' },
     { value: walletStore.acceptedCount, label: 'Accepted' }
   ];

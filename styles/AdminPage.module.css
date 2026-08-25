@@ -64,4 +64,32 @@
 
 @media(max-width:1000px){.metrics{grid-template-columns:repeat(3,1fr)}.queue-layout{grid-template-columns:1fr}.detail{position:static}.dash-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.page-head{align-items:flex-start;flex-direction:column;gap:15px}.filters{overflow:auto}.queue-layout{display:block}.request{grid-template-columns:45px 1fr}.request>.status{grid-column:2}.audit-row{grid-template-columns:1fr}.audit-row.header{display:none}.auth-table th:nth-child(n+6){display:none}.auth-table td:nth-child(n+6){display:none}.health-row,.tier-row{grid-template-columns:100px 1fr 55px}}
-  
+
+/* A submission that cannot be checked should not look like one that can. */
+.evidence-warning {
+  border-color: #edd0b6;
+  background: #fdf4ec;
+}
+
+.evidence-warning strong { color: #a54d1d }
+
+.evidence-warning ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #7a5233;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.evidence-warning code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #f6e5d6;
+  font-size: 11.5px;
+}
+
+.evidence-warning p {
+  margin: 9px 0 0;
+  color: #8a6247;
+  font-weight: 600;
+}

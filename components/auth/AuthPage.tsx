@@ -19,16 +19,37 @@ interface AuthFormState {
   organization: string;
   registrationNumber: string;
   license: string;
+  website: string;
   password: string;
   confirmPassword: string;
   orgType: OrganizationType;
   country: string;
+  city: string;
   remember: boolean;
 }
 
 const EMPTY_FORM: AuthFormState = {
   fullName: '', phone: '', email: '', organization: '', registrationNumber: '', license: '',
-  password: '', confirmPassword: '', orgType: 'UNIVERSITY', country: '', remember: true
+  website: '', password: '', confirmPassword: '', orgType: 'UNIVERSITY', country: '', city: '',
+  remember: true
+};
+
+/**
+ * The reviewer checks these against the body that issued them, so the field has
+ * to name that body. "Accreditation / licence reference" tells a registrar
+ * nothing about which reference is wanted.
+ */
+const EVIDENCE_LABELS: Record<string, { licence: string; licenceHint: string; registrationHint: string }> = {
+  UNIVERSITY: {
+    licence: 'Accreditation / affiliation reference',
+    licenceHint: 'UGC, AICTE, NAAC or the equivalent body in your country',
+    registrationHint: 'As issued by the authority that registered the institution'
+  },
+  BANK: {
+    licence: 'Regulator licence number',
+    licenceHint: 'RBI, or the banking regulator in your country',
+    registrationHint: 'Company or entity registration number'
+  }
 };
 
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
@@ -65,9 +86,6 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
       }
       return 'Log in to your verified university or bank workspace.';
     }
-    if (portal === 'consultancy') {
-      return 'Submit business and certification details for verification before connecting with students.';
-    }
     return 'Create one structured profile and receive relevant education opportunities.';
   })();
 
@@ -77,14 +95,14 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         ? ['Creditworthy student discovery', 'Clear indicative loan offers', 'Conversion and funnel reporting']
         : ['AI-ranked student discovery', 'Shortlists and admission offers', 'Programme-level funnel reporting'];
     }
-    return portal === 'consultancy'
-      ? ['Intent-qualified student discovery', 'Consulting engagement offers', 'Client relationship tracking']
-      : ['Private verified profile', 'Comparable invitations and offers', 'Visibility controls'];
+    return ['Private verified profile', 'Comparable invitations and offers', 'Visibility controls'];
   })();
+
+  /** Labels name the authority the reviewer will check against. */
+  const evidence = EVIDENCE_LABELS[form.orgType] || EVIDENCE_LABELS.UNIVERSITY;
 
   const role = () => {
     if (isStudent) return 'STUDENT';
-    if (portal === 'consultancy') return 'CONSULTANT';
     return organizationRole(form.orgType);
   };
 
@@ -131,9 +149,11 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           role: organizationRole(form.orgType),
           organization: {
             name: form.organization,
-            registrationNumber: form.registrationNumber || undefined,
-            licenseReference: form.license || undefined,
-            country: form.country || undefined
+            registrationNumber: form.registrationNumber,
+            licenseReference: form.license,
+            website: form.website,
+            country: form.country,
+            city: form.city
           }
         });
         setMessage('Your registration has been submitted for Super Admin review. You can log in once it is approved.');
@@ -158,7 +178,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
     }
   };
 
-  /** Students and consultancies: plain email + password, no approval step for students. */
+  /** Students: plain email + password, with no approval step. */
   const submitAccount = async () => {
     if (mode === 'register') {
       try {
@@ -280,29 +300,54 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
                   onChange={event => set('fullName', event.target.value)} />
               </label>
               <label>
-                Phone number
-                <input name="phone" value={form.phone} placeholder="+91 00000 00000"
+                Phone number *
+                <input name="phone" value={form.phone} required placeholder="+91 00000 00000"
                   onChange={event => set('phone', event.target.value)} />
               </label>
               <label className="full">
-                Official email
-                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                Official email *
+                <input name="email" type="email" value={form.email} required
+                  placeholder="you@your-institution.edu"
                   onChange={event => set('email', event.target.value)} />
               </label>
               <label className="full">
-                Organisation legal name
+                Organisation legal name *
                 <input name="organization" value={form.organization} required
                   onChange={event => set('organization', event.target.value)} />
               </label>
+              {/*
+                * Everything below is what the Super Admin is asked to confirm
+                * against the issuing authority before unlocking a login. An
+                * approved organisation can read submitted student profiles, so
+                * none of it is optional.
+                */}
               <label>
-                Registration number
-                <input name="registrationNumber" value={form.registrationNumber}
+                Registration number *
+                <input name="registrationNumber" value={form.registrationNumber} required
+                  placeholder={evidence.registrationHint}
                   onChange={event => set('registrationNumber', event.target.value)} />
               </label>
               <label>
-                Accreditation / licence reference
-                <input name="license" value={form.license}
+                {evidence.licence} *
+                <input name="license" value={form.license} required
+                  placeholder={evidence.licenceHint}
                   onChange={event => set('license', event.target.value)} />
+              </label>
+              <label className="full">
+                Official website *
+                <input name="website" value={form.website} required
+                  placeholder="www.example.edu"
+                  onChange={event => set('website', event.target.value)} />
+              </label>
+              <label>
+                Country *
+                <input name="country" value={form.country} required
+                  onChange={event => set('country', event.target.value)} />
+              </label>
+              <label>
+                City *
+                <input name="city" value={form.city} required
+                  onChange={event => set('city', event.target.value)} />
               </label>
               <label className="full">
                 Password
