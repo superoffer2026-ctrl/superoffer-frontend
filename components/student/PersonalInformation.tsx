@@ -103,12 +103,24 @@ export function PersonalInformation() {
     return /^\d{6,14}$/.test(digits) ? '' : 'Enter a valid mobile number';
   })();
 
+  /** Dial country plus digits, so spacing never decides whether two match. */
+  const mobileKeyOf = (country: string, number: string) => {
+    const digits = number.replace(/\D/g, '');
+    return digits ? `${country.trim().toUpperCase()}:${digits}` : '';
+  };
+
   const altMobileError = (() => {
     const raw = value('altMobileNumber').trim();
     if (!raw) return '';
     if (!value('altMobileCountry')) return 'Select a country code';
     const digits = raw.replace(/\D/g, '');
-    return /^\d{6,14}$/.test(digits) ? '' : 'Enter a valid mobile number';
+    if (!/^\d{6,14}$/.test(digits)) return 'Enter a valid mobile number';
+    /** The server refuses this too; catching it here saves a round trip. */
+    const primary = mobileKeyOf(value('mobileCountry'), value('mobileNumber'));
+    const alternate = mobileKeyOf(value('altMobileCountry'), raw);
+    return primary && primary === alternate
+      ? 'Use a different number from your mobile number'
+      : '';
   })();
 
   const countryValid = countries.some(c => c.name === value('country'));

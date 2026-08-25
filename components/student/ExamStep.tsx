@@ -70,7 +70,14 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
   /** Fields this step draws by hand; anything else the schema declares is added below. */
   const extras = useSchemaExtras(
     config.sectionKey,
-    config.codedKeys,
+    /*
+     * 'attended' is drawn by hand as the Yes/No cards below, so it must be
+     * declared here too. Without it the hook treats the published field as an
+     * admin addition and draws it a second time as a plain select — and because
+     * it is required, Continue silently refused to save until that phantom
+     * control was filled in as well.
+     */
+    [...config.codedKeys, 'attended'],
     profile.profile.entranceExams as Record<string, unknown> | undefined,
     profile.loaded
   );
@@ -347,7 +354,10 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
                         </span>
                         <input
                           type={field.type === 'number' ? 'number' : 'text'}
-                          placeholder={field.placeholder || ''}
+                          /* IELTS is scored out of 9 and TOEFL out of 120, so one
+                             shared "e.g. 7.5" is wrong for most exams. The hint
+                             comes from the published form, keyed on the exam. */
+                          placeholder={fields.hintFor(config.compositeKey, entry.exam, field.placeholder || '')}
                           value={entry[field.key] || ''}
                           onChange={event => setScore(entry.exam, field.key, event.target.value)}
                           onBlur={() => setTouched(current => ({ ...current, [`${entry.exam}.${field.key}`]: true }))}

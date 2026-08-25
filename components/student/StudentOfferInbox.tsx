@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { classNames } from '@/lib/cx';
-import { offerWalletStore, type OfferDecisionStatus, type StudentOffer } from '@/lib/stores/offer-wallet.store';
+import { offerWalletStore, type OfferCategory, type OfferDecisionStatus, type StudentOffer } from '@/lib/stores/offer-wallet.store';
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/OfferWorkspace.module.css';
@@ -11,12 +11,17 @@ import { StudentWorkspaceRail } from './StudentWorkspaceRail';
 const cx = classNames(styles);
 
 type OfferFilter = 'All' | OfferDecisionStatus;
+type CategoryFilter = 'All' | OfferCategory;
+
+/** A fixed order, so the chips keep their places as new offers arrive. */
+const CATEGORY_ORDER: OfferCategory[] = ['University', 'Bank', 'Scholarship', 'Consultancy'];
 
 export function StudentOfferInbox() {
   const profile = useStudentProfile();
   const walletStore = useStore(offerWalletStore);
 
   const [filter, setFilter] = useState<OfferFilter>('All');
+  const [category, setCategory] = useState<CategoryFilter>('All');
   const [draft, setDraft] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error] = useState('');
@@ -26,7 +31,18 @@ export function StudentOfferInbox() {
   }, [walletStore]);
 
   const offers = walletStore.offers;
-  const filteredOffers = offers.filter(offer => filter === 'All' || offer.status === filter);
+
+  /** Only the kinds the student actually has — an empty chip filters nothing. */
+  const presentCategories = CATEGORY_ORDER.filter(kind => offers.some(offer => offer.category === kind));
+
+  const filteredOffers = offers
+    .filter(offer => filter === 'All' || offer.status === filter)
+    .filter(offer => category === 'All' || offer.category === category);
+
+  const clearFilters = () => {
+    setFilter('All');
+    setCategory('All');
+  };
 
   /** The reading pane follows the visible list, so a filter never leaves it
    *  showing an offer the list has just excluded. */
@@ -60,6 +76,18 @@ export function StudentOfferInbox() {
     </span>
   );
 
+  /** Days between now and the deadline, floored at zero. */
+  const daysLeft = (iso: string) => {
+    const target = new Date(iso).getTime();
+    if (Number.isNaN(target)) return null;
+    return Math.max(0, Math.ceil((target - Date.now()) / 86400000));
+  };
+
+  /** The server sends a dash for an offer that never stated a figure. A labelled
+   *  blank is worse than no row, so the term is dropped rather than drawn. */
+  const isStated = (value: string | undefined) =>
+    !!value && !['—', '-', '–', 'N/A', 'TBD'].includes(value.trim());
+
   const heroLabel =
     selected?.category === 'Bank' ? 'FINANCE PROPOSAL'
       : selected?.category === 'Scholarship' ? 'SCHOLARSHIP AWARD'
@@ -77,7 +105,11 @@ export function StudentOfferInbox() {
             <header className={cx('mailbox-toolbar')}>
               <button className={cx('all-offers-reset')} onClick={() => setFilter('All')}>
                 <strong>My offers</strong>
-                <small>{offers.length} offers to review</small>
+                <small>
+                  {!offers.length ? 'Nothing here yet'
+                    : offers.length === 1 ? '1 offer to review'
+                      : `${offers.length} offers to review`}
+                </small>
               </button>
               <div className={cx('compact-offer-filters')}>
                 <button className={cx(filter === 'All' && 'active')} onClick={() => setFilter('All')}>All <b>{offers.length}</b></button>
@@ -85,6 +117,27 @@ export function StudentOfferInbox() {
                 <button className={cx(filter === 'Shortlisted' && 'active')} onClick={() => setFilter('Shortlisted')}>Shortlisted <b>{count('Shortlisted')}</b></button>
                 <button className={cx(filter === 'Rejected' && 'active')} onClick={() => setFilter('Rejected')}>Rejected <b>{count('Rejected')}</b></button>
               </div>
+
+              {presentCategories.length > 1 && (
+                <div className={cx('mailbox-kinds')} role="group" aria-label="Filter by offer type">
+                  <button
+                    className={cx(category === 'All' && 'active')}
+                    onClick={() => setCategory('All')}
+                  >
+                    All types
+                  </button>
+                  {presentCategories.map(kind => (
+                    <button
+                      key={kind}
+                      className={cx(category === kind && 'active')}
+                      onClick={() => setCategory(kind)}
+                    >
+                      {kind} <b>{offers.filter(offer => offer.category === kind).length}</b>
+                    </button>
+                  ))}
+                </div>
+              )}
+
             </header>
 
             {filteredOffers.map(offer => (
@@ -107,19 +160,29 @@ export function StudentOfferInbox() {
             {/* With no offers at all the reading pane carries the explanation, so this
                 only speaks up when a filter is what emptied the list. */}
             {!filteredOffers.length && !!offers.length && (
-              <p className={cx('mailbox-empty')}>No {filter.toLowerCase()} offers.</p>
+              <div className={cx('mailbox-empty')}>
+                <strong>No offers match</strong>
+                <small>Nothing matches these filters.</small>
+                <button type="button" onClick={clearFilters}>Clear filters</button>
+              </div>
             )}
           </aside>
 
           {!selected && (
             <section className={cx('offer-reading-pane', 'offer-reading-pane-empty')}>
               <div className={cx('offer-empty-state')}>
-                <span>✉</span>
-                <h2>Nothing to review yet</h2>
+                <span>{offers.length ? '⌗' : '✉'}</span>
+                <h2>{offers.length ? 'No offers match' : 'Nothing to review yet'}</h2>
                 <p>
-                  Complete and submit your profile so verified universities, lenders and consultancies can discover you.
-                  Their offers land here.
+                  {offers.length
+                    ? 'No offer matches these filters. Clear them to see everything again.'
+                    : profile.isSubmitted
+                      ? 'Your profile is with our verified universities, lenders and consultancies. The offers they send you land here.'
+                      : 'Complete and submit your profile so verified universities, lenders and consultancies can discover you. Their offers land here.'}
                 </p>
+                {!!offers.length && (
+                  <button type="button" className={cx('primary-btn')} onClick={clearFilters}>Clear filters</button>
+                )}
               </div>
             </section>
           )}
@@ -154,9 +217,27 @@ export function StudentOfferInbox() {
                   <h1>{selected.headline}</h1>
                   <div className={cx('offer-key-terms')}>
                     <div><small>{selected.category === 'Bank' ? 'PRODUCT' : 'PROGRAMME'}</small><strong>{selected.program}</strong></div>
-                    <div><small>{selected.valueLabel.toUpperCase()}</small><strong>{selected.value}</strong></div>
-                    <div><small>{selected.category === 'Bank' ? 'ELIGIBLE INTAKE' : 'INTAKE'}</small><strong>{selected.intake}</strong></div>
-                    <div><small>RESPOND BY</small><strong>{selected.deadline}</strong></div>
+                    {isStated(selected.value) && (
+                      <div><small>{selected.valueLabel.toUpperCase()}</small><strong>{selected.value}</strong></div>
+                    )}
+                    {isStated(selected.intake) && (
+                      <div><small>{selected.category === 'Bank' ? 'ELIGIBLE INTAKE' : 'INTAKE'}</small><strong>{selected.intake}</strong></div>
+                    )}
+                    {(() => {
+                      const left = daysLeft(selected.deadlineAt);
+                      const urgent = left !== null && left <= 7;
+                      return (
+                        <div className={cx(urgent && 'term-urgent')}>
+                          <small>RESPOND BY</small>
+                          <strong>{selected.deadline}</strong>
+                          {left !== null && (
+                            <span className={cx('term-countdown')}>
+                              {left === 0 ? 'Due today' : left === 1 ? '1 day left' : `${left} days left`}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </section>
                 <section className={cx('offer-conditions')}>

@@ -3509,3 +3509,111 @@
 .product-template-actions .template-archive{color:#a8332a;border-color:#f0cfcb}
 .template-default-toggle{flex-direction:row!important;align-items:center;gap:8px}
 .template-default-toggle input{width:15px;height:15px;accent-color:#087a50}
+
+/* ── Candidates & Offers toolbar ──────────────────────────────────────────────
+   The toolbar was a single horizontal row, which squeezed the title onto two
+   lines and left no room for a second filter row. Stacking it gives the title
+   its line back and puts the two filter groups where they can both be read.
+
+   !important appears here only to beat the existing !important declarations on
+   the same properties earlier in this file; it is not a starting position. */
+
+.mailbox-toolbar {
+  display: block !important;
+  min-height: 0 !important;
+  padding: 16px 18px 14px !important;
+}
+
+.mailbox-toolbar .all-offers-reset {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mailbox-toolbar strong {
+  font-size: 20px !important;
+  line-height: 1.15;
+  letter-spacing: -.03em;
+}
+
+.mailbox-toolbar small { font-size: 12px !important; margin-top: 3px }
+
+/* A segmented control: four equal cells, so nothing is clipped at the edge. */
+.mailbox-toolbar .compact-offer-filters {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px !important;
+  margin-top: 12px;
+  padding: 3px;
+  border: 1px solid #e2ddd5;
+  border-radius: 10px;
+  background: #fff;
+  flex: none !important;
+}
+
+.mailbox-toolbar .compact-offer-filters button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 8px !important;
+  border-radius: 7px;
+  font-size: 11.5px !important;
+}
+
+.mailbox-toolbar .compact-offer-filters button.active {
+  background: #102f45;
+  color: #fff;
+}
+
+.mailbox-toolbar .compact-offer-filters button.active b {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+}
+
+/* Candidate snapshot: the facts the hero does not already carry, in a grid that
+   reflows rather than forcing four columns into a third of the viewport. */
+.candidate-snapshot {
+  /* The scroll area is a flex column, so this must refuse to be shrunk —
+     without it the box collapses and overflow:hidden eats the content. */
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin-top: 4px;
+  border: 1px solid #dfe6e1;
+  border-radius: 12px;
+  background: #f8faf9;
+  overflow: hidden;
+}
+
+/* Separators drawn as shadows rather than a background showing through gaps:
+   the cell count varies with the role, so a gap grid paints empty cells. */
+.candidate-snapshot > div {
+  padding: 12px 14px;
+  box-shadow: -1px -1px 0 #dfe6e1;
+}
+
+.candidate-snapshot small {
+  display: block;
+  color: #6b7871;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.candidate-snapshot strong {
+  display: block;
+  margin-top: 5px;
+  color: #172019;
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+
+/* Verification is a state, so it carries a colour that means something. */
+.candidate-snapshot .tone-good strong { color: #087a50 }
+.candidate-snapshot .tone-partial strong { color: #a54d1d }
+.candidate-snapshot .tone-none strong { color: #a3372c }

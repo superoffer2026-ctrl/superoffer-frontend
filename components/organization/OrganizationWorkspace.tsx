@@ -24,6 +24,14 @@ const VERDICT_LABEL: Record<string, string> = {
 
 const money = (value: number) => `₹${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value || 0)}`;
 
+/**
+ * A field the sender never filled in. The server sends a dash for these, and a
+ * labelled blank reads as "we know this and it is nothing" — so the row is
+ * dropped instead of drawn.
+ */
+const isStated = (value: string | undefined) =>
+  !!value && !['—', '-', '–', 'N/A', 'TBD', 'Not yet offered'].includes(value.trim());
+
 const NAV_ICONS: Record<string, ReactElement> = {
   dashboard: (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -48,9 +56,6 @@ const NAV_ICONS: Record<string, ReactElement> = {
     </svg>
   )
 };
-
-const microLabel = { fontSize: 10, color: '#6b7871', fontWeight: 700, display: 'block', marginBottom: 3 } as const;
-const microValue = { fontSize: 13, color: '#172019' } as const;
 
 export function OrganizationWorkspace(options: WorkspaceOptions) {
   const workspace = useOrganizationWorkspace(options);
@@ -232,34 +237,56 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
 
                     <div className={cx('reading-pane-scroll')}>
                       <section className={cx('offer-detail-hero')}>
-                        <small>{role === 'BANK' ? 'FINANCIAL ASSESSMENT & LOAN PROPOSAL' : 'ACADEMIC & SCHOLARSHIP EVALUATION'}</small>
+                        <small>{role === 'BANK' ? 'FINANCIAL ASSESSMENT' : 'ACADEMIC EVALUATION'}</small>
                         <h1>{candidate.headline}</h1>
                         <div className={cx('offer-key-terms')}>
                           <div><small>{role === 'BANK' ? 'TARGET COURSE' : 'PRODUCT'}</small><strong>{candidate.course}</strong></div>
-                          <div><small>{candidate.offerValueLabel.toUpperCase()}</small><strong>{candidate.offerValue}</strong></div>
-                          <div><small>TARGET INTAKE</small><strong>{candidate.intake}</strong></div>
+                          {/* A blank the officer cannot act on is worse than one row fewer. */}
+                          {isStated(candidate.offerValue) && (
+                            <div><small>{candidate.offerValueLabel.toUpperCase()}</small><strong>{candidate.offerValue}</strong></div>
+                          )}
+                          {isStated(candidate.intake) && (
+                            <div><small>TARGET INTAKE</small><strong>{candidate.intake}</strong></div>
+                          )}
                           <div><small>DECISION BY</small><strong>{candidate.deadline}</strong></div>
                         </div>
                       </section>
 
-                      <section className={cx('offer-conditions')} style={{ marginTop: 0, paddingBottom: 8 }}>
-                        <h3 style={{ marginBottom: 12, color: '#172019' }}>Study Intent &amp; Preferences</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                          <div><small style={{ ...microLabel, textTransform: 'uppercase' }}>Which country to study in?</small><strong style={microValue}>{candidate.targetCountry}</strong></div>
-                          <div><small style={{ ...microLabel, textTransform: 'uppercase' }}>What to study / Product</small><strong style={microValue}>{candidate.course}</strong></div>
-                          <div><small style={{ ...microLabel, textTransform: 'uppercase' }}>When / Intake</small><strong style={microValue}>{candidate.intake}</strong></div>
-                          <div><small style={{ ...microLabel, textTransform: 'uppercase' }}>Future Study Interests</small><strong style={microValue}>{candidate.futureInterests}</strong></div>
-                        </div>
-                      </section>
-
-                      <section
-                        className={cx('candidate-academic-grid')}
-                        style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, padding: '12px 14px', background: '#f6f9f7', border: '1px solid #dfe6e1', borderRadius: 10, marginTop: 2 }}
-                      >
-                        <div><small style={microLabel}>CGPA / MARKS</small><strong style={{ fontSize: 14, color: '#172019' }}>{candidate.cgpa}</strong></div>
-                        <div><small style={microLabel}>TEST SCORES</small><strong style={{ fontSize: 14, color: '#172019' }}>{candidate.examScore}</strong></div>
-                        <div><small style={microLabel}>BUDGET</small><strong style={{ fontSize: 14, color: '#172019' }}>{candidate.budget}</strong></div>
-                        <div><small style={microLabel}>VERIFIED DOCS</small><strong style={{ fontSize: 14, color: '#087a50' }}>{candidate.documentsVerified}/5 Verified</strong></div>
+                      {/*
+                        * One snapshot instead of three overlapping blocks. Course and
+                        * intake used to appear here as well as in the hero above; what
+                        * is left is what the hero does not already say, ordered by what
+                        * this kind of organisation actually decides on — money first
+                        * for a lender, marks first for a university.
+                        */}
+                      <section className={cx('candidate-snapshot')} aria-label="Candidate snapshot">
+                        {(role === 'BANK'
+                          ? ['budget', 'docs', 'cgpa', 'scores', 'destination', 'interests']
+                          : ['cgpa', 'scores', 'docs', 'budget', 'destination', 'interests']
+                        ).map(key => {
+                          const verified = Number(candidate.documentsVerified) || 0;
+                          const cells: Record<string, { label: string; value: string; tone?: string }> = {
+                            cgpa: { label: 'CGPA / MARKS', value: candidate.cgpa },
+                            scores: { label: 'TEST SCORES', value: candidate.examScore },
+                            budget: { label: 'BUDGET', value: candidate.budget },
+                            /* Nothing verified is a warning, not an achievement in green. */
+                            docs: {
+                              label: 'VERIFIED DOCS',
+                              value: `${verified}/5 verified`,
+                              tone: verified >= 5 ? 'good' : verified > 0 ? 'partial' : 'none'
+                            },
+                            destination: { label: 'DESTINATION', value: candidate.targetCountry },
+                            interests: { label: 'FUTURE INTERESTS', value: candidate.futureInterests }
+                          };
+                          const cell = cells[key];
+                          if (!cell || !isStated(cell.value)) return null;
+                          return (
+                            <div key={key} className={cx(cell.tone && `tone-${cell.tone}`)}>
+                              <small>{cell.label}</small>
+                              <strong>{cell.value}</strong>
+                            </div>
+                          );
+                        })}
                       </section>
 
                       {/*
