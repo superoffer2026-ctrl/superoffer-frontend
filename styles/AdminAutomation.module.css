@@ -39,18 +39,23 @@
 
 .automation-body {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(250px, 310px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
 
+/* Sticks rather than scrolls on its own: two scrollbars on one screen made
+   the list feel like a separate, smaller window inside the page. */
 .automation-rail {
+  position: sticky;
+  top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 74vh;
+  gap: 10px;
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
-  padding-right: 4px;
+  scrollbar-width: thin;
+  padding-right: 2px;
 }
 
 /* ── One trigger, with the rules that answer it ──────────────────────────── */
@@ -361,3 +366,465 @@
   font-size: 11.5px;
   font-weight: 600;
 }
+
+/* ── What a rule does, as a list of actions ──────────────────────────────── */
+
+.actions-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.actions-head > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.add-action,
+.drop-action {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 7px;
+  padding: 5px 11px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #12211a;
+}
+
+.add-action:hover { border-color: #12211a; }
+.drop-action { color: #a92a1c; border-color: transparent; padding: 4px 8px; }
+.drop-action:hover { border-color: #a92a1c; }
+
+/* An action is a card so two of them cannot be mistaken for one long form. */
+.action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 16px 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fbfcfb;
+}
+
+.action-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-head strong { font-size: 12.5px; letter-spacing: .02em; }
+
+/* ── Channels ────────────────────────────────────────────────────────────── */
+
+.channels { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.channel input { margin: 0; cursor: pointer; }
+.channel:hover { border-color: #9fb0a7; }
+
+/* Selected reads as filled, so which channels are on is legible at a glance. */
+.channel.on {
+  background: #12211a;
+  border-color: #12211a;
+  color: #fff;
+}
+
+.channel em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: .7;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* A channel with no credentials still selectable — it records a skip, and the
+   admin should be able to author the rule before the provider is wired up. */
+.channel.unconfigured { border-style: dashed; }
+.channel.unconfigured.on { background: #4a5a52; border-color: #4a5a52; }
+
+/* ── WhatsApp's template requirement ─────────────────────────────────────── */
+
+.template-box {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 14px 15px;
+  border: 1px solid #e6d9c2;
+  border-radius: 9px;
+  background: #fdf9f1;
+}
+
+.template-box > strong { font-size: 12px; letter-spacing: .02em; color: #7a5a1c; }
+
+.template-box > p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #8a6c33;
+}
+
+.template-box input { background: #fff; }
+
+/* ── Where a rule goes, on its card in the rail ──────────────────────────── */
+
+.rule-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.chip {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: #fff;
+}
+
+/* The external channels carry their own colour: leaving the building is the
+   thing worth noticing at a glance, not posting to a thread. */
+.chip.email { border-color: #c9dcf0; background: #f2f8fd; color: #245b8c; }
+.chip.whatsapp { border-color: #c3e6cf; background: #f1faf4; color: #1c6b41; }
+.chip.count { border-style: dashed; }
+
+/* ── The redesign: fewer things on screen, said more plainly ─────────────── */
+
+/* A rule is one line. The chips say where it goes and whether it is on, which
+   is everything the list needs to carry — the rest is a click away. */
+.rule { padding: 9px 11px; gap: 6px; }
+.rule-label { font-size: 13px; line-height: 1.35; }
+.rule-channels { margin-top: 4px; gap: 3px; }
+.chip { font-size: 9px; padding: 1px 6px; }
+.chip.off { border-color: #e3c9c5; background: #fdf2f0; color: #a3453a; }
+
+/* The rule in a sentence, before any of the controls that make it. */
+.rule-reads {
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #f2f7f4;
+  border: 1px solid #dfeae4;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #2c3b34;
+}
+
+/* Addressing reads as a line of prose with two controls in it, rather than as
+   two labelled fields that happen to sit side by side. */
+.addressing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inline-field { display: inline-flex; align-items: center; gap: 7px; }
+
+.inline-field > span,
+.inline-word {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.inline-field select {
+  width: auto;
+  min-width: 152px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.needs-channel { display: block; font-size: 11.5px; color: #a3453a; }
+
+/* Smaller than before: three of these were taking a whole row of the panel. */
+.channel { padding: 5px 10px; font-size: 12px; gap: 6px; }
+.channel input { width: 13px; height: 13px; }
+
+/* Twelve placeholder chips is a lot of noise for something used occasionally. */
+.placeholders { border: 0; padding: 0; }
+
+.placeholders > summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 3px 0;
+  list-style: none;
+}
+
+.placeholders > summary::-webkit-details-marker { display: none; }
+.placeholders > summary::before { content: '+ '; }
+.placeholders[open] > summary::before { content: '– '; }
+.placeholders > div { margin-top: 8px; }
+
+/* ── The fold ────────────────────────────────────────────────────────────── */
+
+.advanced {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcfb;
+}
+
+.advanced > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 15px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.advanced > summary::-webkit-details-marker { display: none; }
+
+.advanced > summary > span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Says what is inside without opening it, so a narrowed rule is never hidden. */
+.advanced > summary > em {
+  font-style: normal;
+  font-size: 12px;
+  color: #8b9992;
+}
+
+.advanced[open] > summary { border-bottom: 1px solid var(--line); }
+.advanced > *:not(summary) { margin: 13px 15px; }
+.advanced > *:last-child { margin-bottom: 16px; }
+
+/* Labels stop shouting: the panel had eleven uppercase headings on one screen. */
+.field > span { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+
+/* ── The rule drawn as a flow ─────────────────────────────────────────────
+   Nodes down the left, what you edit beside them. The connector is a border
+   on the node column rather than an element, so nothing has to be positioned
+   against anything else as the cards grow. */
+
+.canvas { display: flex; flex-direction: column; }
+
+.step { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 18px; }
+
+/* The line between one node and the next. */
+.step:not(.last)::before {
+  content: '';
+  grid-column: 1;
+  grid-row: 2;
+  width: 2px;
+  height: 26px;
+  margin: 0 auto;
+  background: #c9d6ee;
+}
+
+.step > .node { grid-column: 1; grid-row: 1; }
+.step > *:not(.node) { grid-column: 2; grid-row: 1; }
+
+.node {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  background: #2b4a8b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  margin: 0 auto;
+}
+
+.node.when, .node.do { border-radius: 50%; }
+
+/* A decision is a diamond, so the one branching step does not look like the
+   two that simply follow on. */
+.node.condition {
+  transform: rotate(45deg);
+  border-radius: 8px;
+  width: 56px;
+  height: 56px;
+}
+
+.node.condition > span { transform: rotate(-45deg); }
+
+.step-card {
+  padding: 14px 16px;
+  border: 1px solid #c9d6ee;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.node-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+.do-cards { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Instant and scheduled sets ───────────────────────────────────────────── */
+
+.act-card {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  padding: 14px 15px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The two kinds are told apart by a coloured edge rather than by reading the
+   heading — which is what a glance at the canvas is for. */
+.act-card.instant { border-top: 3px solid var(--accent); }
+.act-card.scheduled { border-top: 3px solid #3f6ab8; }
+
+.act-card > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.act-card > header strong { font-size: 13.5px; }
+.act-card > header em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+
+.delay-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #3f6ab8; font-weight: 600; }
+.delay-pick select { width: auto; padding: 4px 8px; font-size: 12px; border-color: #c9d6ee; }
+
+.act-empty { margin: 0; font-size: 12px; font-style: italic; color: #98a29b; }
+
+.add-set {
+  align-self: flex-start;
+  border: 1px dashed #b9c6dd;
+  background: transparent;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3f6ab8;
+  cursor: pointer;
+}
+
+.add-set:hover { background: #f3f7fd; border-style: solid; }
+
+/* Actions sit inside a set now, so they lose the outer box they used to need. */
+.act-card .action-card { background: #fbfcfb; }
+
+@media (max-width: 900px) {
+  .step { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; }
+  .node { width: 46px; height: 46px; font-size: 9px; }
+  .node.condition { width: 40px; height: 40px; }
+}
+
+/* ── One panel per channel ───────────────────────────────────────────────── */
+
+.per-channel {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.per-channel-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  background: #f7f9f8;
+}
+
+.per-channel-tab {
+  border: 0;
+  background: transparent;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.per-channel-tab:hover { color: #2c3b34; }
+.per-channel-tab.on { color: #12211a; background: #fff; border-bottom-color: var(--accent); }
+
+/* A dot means this channel has been given its own words — so an admin can see
+   which channels are tailored without opening each one. */
+.tailored { font-style: normal; font-size: 8px; color: var(--accent); }
+
+.per-channel-panel { padding: 14px 15px; display: flex; flex-direction: column; gap: 12px; }
+.per-channel-note { margin: 0; font-size: 12px; color: var(--muted); }
+.per-channel-panel .template-box { margin: 0; }
+
+/* The delay reads as one sentence; a label elsewhere in this sheet stacks its
+   children, which turned "Execute 1 hour after trigger time" into three lines. */
+.delay-pick {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* The admin shell styles every label as a stacked field — `.host label` — which
+   outranks a single class and was quietly turning these inline controls into
+   three-line columns. Two classes beats one class plus an element. */
+.act-card .delay-pick,
+.addressing .inline-field {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.addressing .inline-field > span { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+
+/* A filled chip has already said it is on, so the checkbox inside it is saying
+   the same thing twice — and a bright box on a dark chip was the noisiest
+   thing on the panel. Hidden rather than removed: the input still takes
+   keyboard focus and still toggles when the chip is clicked. */
+.channel.on input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Without the box the chip would shrink as it is ticked; the padding makes up
+   the difference so nothing jumps under the cursor. */
+.channel.on { padding-left: 16px; padding-right: 16px; }

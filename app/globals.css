@@ -208,3 +208,30 @@
 /* RESPONSIVE */
 @media(max-width:1100px){.lp-hero-grid{grid-template-columns:1fr;gap:50px}.lp-hero-visual{display:none}.lp-how-grid{grid-template-columns:1fr}.lp-why-grid{grid-template-columns:1fr 1fr}.lp-features-grid{grid-template-columns:1fr 1fr}.lp-ai-layout{grid-template-columns:1fr}.lp-benefits-layout{grid-template-columns:1fr}.lp-benefits-layout.reverse{direction:ltr}.lp-testimonials-grid{grid-template-columns:1fr 1fr}.lp-stats-strip{grid-template-columns:repeat(2,1fr)}.lp-stats-strip>div:nth-child(2){border-right:0}}
 @media(max-width:680px){.lp-hero{padding:80px 24px 60px;min-height:auto}.lp-hero-h1{font-size:40px}.lp-why-grid{grid-template-columns:1fr}.lp-features-grid{grid-template-columns:1fr}.lp-testimonials-grid{grid-template-columns:1fr}.lp-stats-strip{grid-template-columns:1fr 1fr}.lp-section,.lp-how-inner,.lp-features-inner,.lp-testimonials-inner,.lp-faq-inner,.lp-benefits-section{padding:72px 24px}.lp-why-band,.lp-ai-section{padding:72px 24px}.lp-cta-band{padding:72px 24px}.lp-section-full{padding:72px 24px}.lp-cta-row{flex-direction:column}}
+
+/* Placeholders read as prompts, not as answers.
+
+   Nothing in the app set ::placeholder, so a placeholder inherited whatever
+   weight and colour its input had — and in the bolder forms that made an
+   example look exactly like a value somebody had typed. An admin reading
+   "{{student.firstName}}, {{offer.program}}" could not tell whether the field
+   was filled in or empty.
+
+   Deliberately global and deliberately plain: every input in this application
+   sits on a light ground, so one light grey works everywhere, and the explicit
+   weight stops it inheriting a bold input. Firefox dims placeholders on its
+   own, so opacity is pinned to keep the colour the one chosen here. */
+input::placeholder,
+textarea::placeholder {
+  color: #a2adb4;
+  font-weight: 400;
+  font-style: normal;
+  opacity: 1;
+}
+
+/* A select showing its own prompt is the same idea: nothing is chosen yet. */
+select:invalid,
+select.placeholder,
+select option[value=""] {
+  color: #a2adb4;
+}

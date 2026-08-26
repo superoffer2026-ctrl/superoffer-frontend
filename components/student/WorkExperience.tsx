@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { authApi, type ApiError } from '@/lib/api/auth-api';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { classNames } from '@/lib/cx';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
@@ -36,6 +37,10 @@ export function WorkExperience() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('work-experience');
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('work-experience');
 
   const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
   const [workStatus, setWorkStatus] = useState('');
@@ -186,7 +191,7 @@ export function WorkExperience() {
 
       await profile.refresh();
 
-      router.push(returnToReview ? '/student/review' : '/student/financial-information');
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -222,7 +227,7 @@ export function WorkExperience() {
                 <p>Your information is securely saved to your student profile.</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>STEP 6 OF 9</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           <h3 className={cx('section-title')}>Do you have any work experience?</h3>

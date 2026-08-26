@@ -296,6 +296,17 @@ export const authApi = {
   organizationStudent: (token: string, id: string) =>
     request(`/organizations/me/students/${id}`, { headers: bearer(token) }),
 
+  /** What an organisation still owes a reviewer, and how far along it is. */
+  organizationVerification: (token: string) =>
+    request('/organizations/me/verification', { headers: bearer(token) }),
+
+  saveOrganizationVerification: (token: string, payload: ApiPayload) =>
+    request('/organizations/me/verification', {
+      method: 'PUT',
+      headers: { ...bearer(token), 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }),
+
   organizationProducts: (token: string) => request('/organizations/me/products', { headers: bearer(token) }),
 
   // ── The offers a product is prepared to make ───────────────────────────────
@@ -499,9 +510,62 @@ export const authApi = {
   adminDeleteAutomationRule: (adminKey: string, id: string) =>
     request(`/admin/automation/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } }),
 
+  /** The named lists every dropdown draws from, with which fields use each. */
+  adminOptionSets: (adminKey: string) =>
+    request('/admin/form-schema/option-sets', { headers: { 'x-admin-key': adminKey } }),
+
+  /** Who would be left holding a value, asked before it is removed. */
+  adminOptionSetImpact: (adminKey: string, key: string, values: string[]) =>
+    request(`/admin/form-schema/option-sets/${encodeURIComponent(key)}/impact`, {
+      method: 'POST',
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ values })
+    }),
+
+  adminSaveOptionSet: (adminKey: string, key: string, payload: ApiPayload) =>
+    request(`/admin/form-schema/option-sets/${encodeURIComponent(key)}`, {
+      method: 'PATCH',
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    }),
+
   /** What a condition may read, and which comparisons each field allows. */
   adminAutomationFields: (adminKey: string) =>
     request('/admin/automation/fields', { headers: { 'x-admin-key': adminKey } }),
+
+  /** Students who accepted an offer, for the team to follow up. */
+  adminAdmissions: (adminKey: string, status?: string) =>
+    request(`/admin/admissions${status ? `?status=${encodeURIComponent(status)}` : ''}`, {
+      headers: { 'x-admin-key': adminKey }
+    }),
+
+  /** One acceptance in full: the offer, who sent it, and the student. */
+  adminAdmissionDetail: (adminKey: string, offerId: string) =>
+    request(`/admin/admissions/${offerId}`, { headers: { 'x-admin-key': adminKey } }),
+
+  /** What the team found when they checked with the university. */
+  adminRecordAdmission: (adminKey: string, offerId: string, body: { status: string; note: string }) =>
+    request(`/admin/admissions/${offerId}`, {
+      method: 'PATCH',
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    }),
+
+  /** Erases the student's personal data. Irreversible. */
+  adminPurgeAdmission: (adminKey: string, offerId: string) =>
+    request(`/admin/admissions/${offerId}/purge`, {
+      method: 'POST',
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
+      body: JSON.stringify({})
+    }),
+
+  /** Which channels exist and whether each is configured to actually send. */
+  adminAutomationChannels: (adminKey: string) =>
+    request('/admin/automation/channels', { headers: { 'x-admin-key': adminKey } }),
+
+  /** What a rule has actually done lately, per channel, newest first. */
+  adminAutomationDeliveries: (adminKey: string, ruleId: string) =>
+    request(`/admin/automation/${ruleId}/deliveries`, { headers: { 'x-admin-key': adminKey } }),
 
   /** What a condition means in English, and whether it means anything at all. */
   adminExplainCondition: (adminKey: string, condition: unknown) =>

@@ -7,11 +7,12 @@ import { classNames } from '@/lib/cx';
 import { readSession, removeSession, writeSession } from '@/lib/storage';
 import styles from '@/styles/AdminPage.module.css';
 import { AdminAutomation } from './AdminAutomation';
+import { AdminAdmissions } from './AdminAdmissions';
 import { AdminFormBuilder } from './AdminFormBuilder';
 
 const cx = classNames(styles);
 
-type AdminView = 'dashboard' | 'queue' | 'audit' | 'auth-logs' | 'form-builder' | 'automation';
+type AdminView = 'dashboard' | 'queue' | 'audit' | 'auth-logs' | 'form-builder' | 'automation' | 'admissions';
 
 const STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 
@@ -132,6 +133,76 @@ function evidenceGaps(row: {
 
   return { missing, emailDomain, siteDomain, publicMailbox, domainMismatch };
 }
+
+/**
+ * What each section is, in its own words.
+ *
+ * Held here rather than inside the views so the rail and the heading can never
+ * disagree about which page you are on.
+ */
+const PAGES: Record<AdminView, { eyebrow: string; title: string; describes: string }> = {
+  dashboard: {
+    eyebrow: 'OVERVIEW',
+    title: 'Platform dashboard',
+    describes: 'Who is using SuperOffer, and what is waiting on an admin.'
+  },
+  queue: {
+    eyebrow: 'TRUST & VERIFICATION',
+    title: 'Institution registrations',
+    describes: 'Review universities and education lenders before unlocking login.'
+  },
+  audit: {
+    eyebrow: 'ACCOUNTABILITY',
+    title: 'Audit log',
+    describes: 'Every verification decision, who made it, and when.'
+  },
+  'auth-logs': {
+    eyebrow: 'ACCOUNTABILITY',
+    title: 'Authentication log',
+    describes: 'Sign-ins and sign-in attempts across every role.'
+  },
+  admissions: {
+    eyebrow: 'AFTER THE OFFER',
+    title: 'Admissions follow-up',
+    describes: 'Students who accepted. Verify the admission, and they become an alumnus.'
+  },
+  'form-builder': {
+    eyebrow: 'CONFIGURATION',
+    title: 'Form builder',
+    describes: 'The questions each form asks, and the lists its answers come from.'
+  },
+  automation: {
+    eyebrow: 'CONFIGURATION',
+    title: 'Message automation',
+    describes: 'What a thread says on its own, and which channels it says it on.'
+  }
+};
+
+/** Grouped, because six flat items give an admin no sense of what sits where. */
+const NAV_GROUPS: Array<{ title: string; items: Array<{ view: AdminView; label: string; describes: string }> }> = [
+  {
+    title: 'Operate',
+    items: [
+      { view: 'dashboard', label: 'Dashboard', describes: 'Health and what needs attention' },
+      { view: 'queue', label: 'Verification queue', describes: 'Organisations awaiting review' },
+      { view: 'admissions', label: 'Admissions', describes: 'Accepted offers to verify' }
+    ]
+  },
+  {
+    title: 'Accountability',
+    items: [
+      { view: 'audit', label: 'Audit log', describes: 'Decisions and who made them' },
+      { view: 'auth-logs', label: 'Auth logs', describes: 'Sign-ins across every role' }
+    ]
+  },
+  {
+    title: 'Configure',
+    items: [
+      { view: 'form-builder', label: 'Form builder', describes: 'Questions and option lists' },
+      { view: 'automation', label: 'Automation', describes: 'Rules, channels and messages' }
+    ]
+  }
+];
 
 export function AdminPage() {
   const [adminKey, setAdminKey] = useState('');
@@ -390,21 +461,44 @@ export function AdminPage() {
 
         {authenticated && (
           <section className={cx('admin-main')}>
-            <header className={cx('page-head')}>
-              <div>
-                <span className={cx('eyebrow')}>TRUST &amp; VERIFICATION</span>
-                <h1>Institution registrations</h1>
-                <p>Review universities and education lenders before unlocking login.</p>
-              </div>
-              <nav className={cx('page-tabs')}>
-                <button className={cx(view === 'dashboard' && 'active')} onClick={() => setView('dashboard')}>Dashboard</button>
-                <button className={cx(view === 'queue' && 'active')} onClick={() => setView('queue')}>Verification queue</button>
-                <button className={cx(view === 'audit' && 'active')} onClick={openAudit}>Audit log</button>
-                <button className={cx(view === 'auth-logs' && 'active')} onClick={() => setView('auth-logs')}>Auth logs</button>
-                <button className={cx(view === 'form-builder' && 'active')} onClick={() => setView('form-builder')}>Form builder</button>
-                <button className={cx(view === 'automation' && 'active')} onClick={() => setView('automation')}>Automation</button>
-              </nav>
-            </header>
+            {/*
+              * The rail, and a heading that belongs to the page under it.
+              *
+              * Every view used to sit beneath one fixed title, so the form
+              * builder and the automation panel both announced themselves as
+              * "Institution registrations". A sidebar makes room for each page
+              * to say what it is, and leaves the full width of the screen for
+              * the detail views that needed it.
+              */}
+            <nav className={cx('side-nav')} aria-label="Admin sections">
+              {NAV_GROUPS.map(group => (
+                <div className={cx('nav-group')} key={group.title}>
+                  <span className={cx('nav-group-title')}>{group.title}</span>
+                  {group.items.map(item => (
+                    <button
+                      key={item.view}
+                      type="button"
+                      className={cx('nav-item', view === item.view && 'active')}
+                      aria-current={view === item.view ? 'page' : undefined}
+                      onClick={() => (item.view === 'audit' ? openAudit() : setView(item.view))}
+                    >
+                      <i className={cx('nav-dot')} aria-hidden="true" />
+                      <span>
+                        <b>{item.label}</b>
+                        <em>{item.describes}</em>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </nav>
+
+            <div className={cx('page-body')}>
+              <header className={cx('page-head')}>
+                <span className={cx('eyebrow')}>{PAGES[view].eyebrow}</span>
+                <h1>{PAGES[view].title}</h1>
+                <p>{PAGES[view].describes}</p>
+              </header>
 
             {view === 'dashboard' && (
               <>
@@ -661,6 +755,8 @@ export function AdminPage() {
               </section>
             )}
 
+            {view === 'admissions' && <AdminAdmissions adminKey={adminKey} />}
+
             {view === 'form-builder' && <AdminFormBuilder adminKey={adminKey} />}
 
             {view === 'automation' && <AdminAutomation adminKey={adminKey} />}
@@ -761,6 +857,7 @@ export function AdminPage() {
                 </div>
               </>
             )}
+            </div>
           </section>
         )}
       </main>

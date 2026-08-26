@@ -2,7 +2,7 @@
 
 .host{--navy:#0d2d42;--green:#087a50;--muted:#6b7b73;--line:#dce5e0;display:block;min-height:100vh;background:#f3f6f4;color:#17221c;font-family:"DM Sans",sans-serif}.admin-shell{min-height:100vh}.topbar{height:72px;padding:0 clamp(20px,4vw,58px);display:flex;align-items:center;border-bottom:1px solid var(--line);background:#fff}.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900}.brand span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:var(--navy);color:#6ad1b4}.topbar>small{margin-left:18px;padding-left:18px;border-left:1px solid var(--line);color:var(--muted)}.topbar button{margin-left:auto;border:0;background:transparent;font-weight:800;color:#65736c;cursor:pointer}
 .admin-login{width:min(520px,calc(100% - 40px));margin:10vh auto;padding:38px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 25px 70px #17332312}.admin-login h1{font-size:36px;margin:8px 0}.admin-login p{color:var(--muted)}.host label{display:flex;flex-direction:column;gap:7px;font-size:14px;font-weight:800}.host input,.host textarea{border:1px solid #cbd8d1;border-radius:9px;padding:12px;font:inherit}.primary,.secondary,.danger{border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer}.primary{border:1px solid var(--green);background:var(--green);color:#fff}.secondary{border:1px solid #cbd8d1;background:#fff}.danger{border:1px solid #dfb4ae;background:#fff2f0;color:#a33d31}.wide{width:100%;margin-top:18px}
-.admin-main{max-width:1480px;margin:auto;padding:34px 28px 70px}.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:25px}.page-head h1{font-size:42px;letter-spacing:-.04em;margin:5px 0}.page-head p{color:var(--muted);margin:0}.page-tabs{display:flex;gap:6px}.page-tabs button,.filters button{border:0;border-radius:8px;background:transparent;padding:9px 12px;font-weight:800;color:#6d7972;cursor:pointer}.page-tabs button.active,.filters button.active{background:var(--navy);color:#fff}
+.admin-main{max-width:1600px;margin:auto;padding:26px 28px 70px;display:grid;grid-template-columns:246px minmax(0,1fr);gap:26px;align-items:start}.page-body{min-width:0}.page-head{margin-bottom:22px}.page-head h1{font-size:42px;letter-spacing:-.04em;margin:5px 0}.page-head p{color:var(--muted);margin:0}.page-tabs{display:flex;gap:6px}.page-tabs button,.filters button{border:0;border-radius:8px;background:transparent;padding:9px 12px;font-weight:800;color:#6d7972;cursor:pointer}.page-tabs button.active,.filters button.active{background:var(--navy);color:#fff}
 .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px}.metric{padding:18px;background:#fff;border:1px solid var(--line);border-radius:12px}.metric small,.metric strong{display:block}.metric small{color:var(--muted);font-size:12px}.metric strong{font-size:28px;margin-top:5px}.metric.pending strong{color:#b47312}.metric.approved strong{color:var(--green)}.filters{display:flex;align-items:center;gap:5px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:11px;margin-bottom:14px}.filters .separator{width:1px;height:25px;background:var(--line);margin:0 8px}.filters .refresh{margin-left:auto;color:var(--green)}
 .queue-layout{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:16px}.queue{display:grid;gap:10px}.request{width:100%;display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left;cursor:pointer}.request.selected{border-color:#7db99d;box-shadow:0 0 0 2px #dff1e7}.org-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:11px;background:#e8f5ef;color:var(--green);font-weight:900}.request small,.request strong,.request span{display:block}.request small{font-size:11px;color:var(--green);font-weight:900}.request strong{font-size:17px;margin:3px 0}.request span{font-size:12px;color:var(--muted)}.status{padding:6px 9px!important;border-radius:99px;background:#fff0d9;color:#93600f!important;font-size:11px!important;font-weight:900}.status.approved{background:#e5f5ed;color:var(--green)!important}.status.rejected{background:#ffebe8;color:#a43b2e!important}
 .detail{position:sticky;top:20px;align-self:start;padding:23px;background:#fff;border:1px solid var(--line);border-radius:13px}.detail-head{display:flex;gap:12px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}.detail-head h2{font-size:21px;margin:3px 0}.detail-head p{font-size:13px;color:var(--muted);margin:0}.detail dl{display:grid;gap:0;margin:15px 0}.detail dl div{display:flex;justify-content:space-between;gap:15px;padding:11px 0;border-bottom:1px solid #edf1ef}.detail dt{font-size:12px;color:var(--muted)}.detail dd{font-size:13px;font-weight:800;text-align:right;margin:0;overflow-wrap:anywhere}.evidence{padding:13px;border-radius:9px;background:#f3f7f5}.evidence strong{font-size:13px}.evidence p{font-size:12px;color:var(--muted);margin:5px 0 0}.review-actions{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:17px}.review-form{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.review-form textarea{width:100%;min-height:90px;margin-top:7px}.review-form footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}.message{padding:11px;border-radius:8px;margin:10px 0}.error{background:#fff0ee;color:#a33d31}.empty{padding:60px;text-align:center;background:#fff;border:1px dashed #cbd7d0;border-radius:12px;color:var(--muted)}
@@ -92,4 +92,89 @@
   margin: 9px 0 0;
   color: #8a6247;
   font-weight: 600;
+}
+
+/* ── The section rail ─────────────────────────────────────────────────────
+   Grouped rather than flat: six equal items told an admin nothing about what
+   sits where, and the three groups are genuinely different kinds of work —
+   things you do, things you check, things you change. */
+
+.side-nav {
+  position: sticky;
+  top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 18px 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.nav-group { display: flex; flex-direction: column; gap: 3px; }
+
+.nav-group-title {
+  padding: 0 10px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #9aa8a1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  color: #43514a;
+}
+
+.nav-item:hover { background: #f1f5f2; }
+
+.nav-item > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nav-item b { font-size: 13.5px; font-weight: 700; }
+
+.nav-item em {
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+/* The dot carries the state, so the label never has to shout it. */
+.nav-dot {
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #cfdad4;
+  flex: 0 0 auto;
+}
+
+.nav-item.active { background: var(--navy); color: #fff; }
+.nav-item.active em { color: #a9c2b8; }
+.nav-item.active .nav-dot { background: #6ad1b4; }
+
+/* ── The heading now belongs to the page under it ─────────────────────── */
+
+.page-head .eyebrow { display: block; margin-bottom: 6px; }
+.page-head h1 { font-size: 36px; }
+
+/* Narrow screens put the rail back on top, scrolling sideways rather than
+   eating the height every page needs. */
+@media (max-width: 1080px) {
+  .admin-main { grid-template-columns: 1fr; }
+  .side-nav { position: static; flex-direction: row; gap: 14px; overflow-x: auto; }
+  .nav-group { flex-direction: row; align-items: center; gap: 4px; }
+  .nav-group-title { display: none; }
+  .nav-item { width: auto; white-space: nowrap; }
+  .nav-item em { display: none; }
 }

@@ -277,10 +277,15 @@
   color: transparent;
 }
 
+/* The box is the thing you click, so it goes once there is nothing left to
+   click it for. The mark stays, without its square, in the slot the box held —
+   so rows keep their alignment and a chosen option still reads as chosen. */
 .option-check.checked {
-  background: var(--slate-900);
-  border-color: var(--slate-900);
-  color: #ffffff;
+  border-color: transparent;
+  background: transparent;
+  color: var(--primary, #087a50);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .tag-chip {

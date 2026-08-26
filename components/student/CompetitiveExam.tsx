@@ -5,10 +5,10 @@ import { ExamStep, type ExamStepConfig } from './ExamStep';
 
 const config: ExamStepConfig = {
   sectionKey: 'competitiveExam',
+  route: 'competitive-exam',
   compositeKey: 'competitiveExams',
   codedKeys: ['competitiveExams', 'entranceExam', 'entranceScore'],
   heading: 'Competitive Exam details',
-  stepBadge: 'STEP 5 OF 9',
   question: 'Have you taken or are preparing for a competitive exam?',
   yesHint: 'GRE or GMAT',
   noHint: "I haven't attempted any competitive exam yet",

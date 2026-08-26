@@ -7,6 +7,7 @@ import { authApi, type ApiError } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useCompositeRows } from '@/lib/forms/use-composite-rows';
+import { useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { useSchemaExtras } from '@/lib/forms/use-schema-extras';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
@@ -36,6 +37,8 @@ const linkLabel = (url: string): string => {
 export function ProjectsAchievements() {
   const profile = useStudentProfile();
   const router = useRouter();
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('projects');
 
   const [achievementSuggestions, setAchievementSuggestions] = useState<string[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -244,7 +247,7 @@ export function ProjectsAchievements() {
                 <p>Your information is securely saved to your student profile.</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>STEP 8 OF 9</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           <h3 className={cx('section-title')}>{fields.groupLabel('presence', 'Social Presence')}</h3>

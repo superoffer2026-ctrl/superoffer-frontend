@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { authApi, type ApiError } from '@/lib/api/auth-api';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { classNames } from '@/lib/cx';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useSchemaExtras } from '@/lib/forms/use-schema-extras';
-import { useStudentProfile } from '@/lib/stores/student-profile.store';
+import { studentProfileStore, useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/FinancialInformation.module.css';
 import { SchemaFields } from './SchemaFields';
 
@@ -103,6 +104,10 @@ export function FinancialInformation() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('financial-information');
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('financial-information');
 
   const [fundingOptions, setFundingOptions] = useState<string[]>([]);
   const [employmentOptions, setEmploymentOptions] = useState<string[]>([]);
@@ -278,7 +283,8 @@ export function FinancialInformation() {
 
       await profile.refresh();
 
-      router.push(returnToReview ? '/student/review' : '/student/projects');
+      /* The answer just written decides where Continue goes. */
+      router.push(returnToReview ? '/student/review' : nextStep({ needsLoan }));
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -320,7 +326,7 @@ export function FinancialInformation() {
                 <p>{fields.description || 'Your information is securely saved to your student profile.'}</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>STEP 7 OF 9</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           <h3 className={cx('section-title')}>{fields.groupLabel('funding', 'Education Funding')}</h3>
@@ -467,7 +473,8 @@ export function FinancialInformation() {
               <input
                 type="radio" name="needsLoan" value="yes"
                 checked={needsLoan === 'yes'}
-                onChange={() => { setNeedsLoan('yes'); markTouched('needsLoan'); }}
+                onChange={() => { setNeedsLoan('yes'); markTouched('needsLoan');
+                  studentProfileStore.previewNeedsLoan('yes'); }}
               />
               <span>Yes, I&apos;ll need an education loan to fund part of my studies.</span>
             </label>
@@ -475,7 +482,8 @@ export function FinancialInformation() {
               <input
                 type="radio" name="needsLoan" value="no"
                 checked={needsLoan === 'no'}
-                onChange={() => { setNeedsLoan('no'); markTouched('needsLoan'); }}
+                onChange={() => { setNeedsLoan('no'); markTouched('needsLoan');
+                  studentProfileStore.previewNeedsLoan('no'); }}
               />
               <span>No, I&apos;m self-funded or already have funding arranged.</span>
             </label>

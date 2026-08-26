@@ -1,0 +1,260 @@
+/* Admissions follow-up: verify what a student said, then remove them.
+   Styled to sit inside the admin shell beside the queue and the builder. */
+
+.admissions {
+  --line: #dce5e0;
+  --muted: #6b7b73;
+  --accent: #087a50;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────── */
+
+.filters { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+.filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #60717b;
+  cursor: pointer;
+}
+
+.filters button.active { background: #12211a; border-color: #12211a; color: #fff; }
+
+.filters button i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: #eef2f0;
+  color: #56655d;
+}
+
+.filters button.active i { background: rgba(255, 255, 255, .18); color: #fff; }
+.filters .refresh { margin-left: auto; border-color: transparent; color: var(--accent); }
+
+.message { margin: 0; padding: 11px 14px; border-radius: 9px; font-size: 13px; }
+.message.error { background: #fdecea; color: #a1372c; }
+.message.good { background: #e9f7f0; color: #14653f; }
+
+/* ── Two columns ─────────────────────────────────────────────────────────── */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.rail {
+  position: sticky;
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.row:hover { border-color: #9fb0a7; }
+.row.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.row.purged { opacity: .62; }
+.row strong { font-size: 13.5px; }
+.row span { font-size: 12px; color: #46554d; }
+.row em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+.row-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+
+.tag {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: #fff;
+}
+
+/* State carries colour, so a queue can be triaged without reading it. */
+.tag.pending { border-color: #e6d9c2; background: #fdf9f1; color: #8a6c33; }
+.tag.confirmed { border-color: #c3e6cf; background: #f1faf4; color: #1c6b41; }
+.tag.not_admitted { border-color: #d9dfdc; background: #f6f8f7; color: #5c6a63; }
+.tag.removed { border-color: #d9c4c1; background: #faf1f0; color: #8c3a2f; }
+.tag.when { font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 10px; }
+
+/* ── The reading pane ────────────────────────────────────────────────────── */
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+  min-height: 320px;
+}
+
+.pane-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pane-head h2 { margin: 0 0 3px; font-size: 20px; }
+.pane-head p { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+.empty { margin: auto; font-size: 13px; color: #98a29b; }
+
+/* The offer, the sender and the student side by side: the credibility check is
+   whether these three agree with each other. */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+
+.cards article {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 15px;
+  background: #fbfcfb;
+}
+
+.cards h3 {
+  margin: 0 0 9px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cards dl { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.cards dl > div { display: flex; flex-direction: column; gap: 1px; }
+.cards dt { font-size: 10.5px; color: var(--muted); }
+.cards dd { margin: 0; font-size: 13px; font-weight: 600; word-break: break-word; }
+.gone { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+
+/* ── The thread ──────────────────────────────────────────────────────────── */
+
+.thread { border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.thread > summary { padding: 11px 15px; cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.thread ul { margin: 0; padding: 0 15px 14px; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.thread li { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.thread b { font-size: 11px; color: var(--muted); }
+
+/* ── Recording the outcome ───────────────────────────────────────────────── */
+
+.outcome { display: flex; flex-direction: column; gap: 12px; }
+.outcome h3 { margin: 0; font-size: 14.5px; }
+.outcome-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 9px; }
+
+.pick {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pick.on { border-color: var(--accent); background: #f3faf6; }
+.pick input { margin-top: 3px; }
+.pick > span { display: flex; flex-direction: column; gap: 1px; }
+.pick b { font-size: 12.5px; }
+.pick em { font-style: normal; font-size: 11px; line-height: 1.4; color: var(--muted); }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); }
+
+.field textarea,
+.field input {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+  background: #fff;
+  resize: vertical;
+}
+
+.primary,
+.destructive {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary { background: #12211a; }
+.primary:disabled,
+.destructive:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── The one thing here that cannot be undone ────────────────────────────── */
+
+.danger {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 16px 17px;
+  border: 1px solid #e3c9c5;
+  border-radius: 11px;
+  background: #fdf6f5;
+}
+
+.danger h3 { margin: 0; font-size: 14px; color: #8c3a2f; }
+.danger p { margin: 0; font-size: 12.5px; line-height: 1.6; color: #7a463e; }
+.danger .field > span { color: #8c3a2f; }
+.destructive { background: #a92a1c; }
+
+.hint { margin: 0; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; }
+  .rail { position: static; max-height: none; }
+}
+
+/* An alumnus is a state to be proud of, not a failure state — coloured apart
+   from the amber "still checking" and the red of an erasure. */
+.tag.alumni { border-color: #c6d5ee; background: #f2f6fd; color: #2b4a8b; }
+
+/* Erasure folds away: it is not what this page is for any more. */
+.danger > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #8c3a2f;
+  list-style: none;
+  padding: 2px 0;
+}
+
+.danger > summary::-webkit-details-marker { display: none; }
+.danger > summary::before { content: '+ '; }
+.danger[open] > summary::before { content: '– '; }

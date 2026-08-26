@@ -10,6 +10,7 @@ import { useSchemaExtras } from '@/lib/forms/use-schema-extras';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/StudyPreferences.module.css';
 import { SchemaFields } from './SchemaFields';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { MultiComboField } from './MultiComboField';
 
@@ -47,6 +48,10 @@ export function StudyPreferences() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('study-preferences');
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('study-preferences');
 
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [mbbsOnlyCountries, setMbbsOnlyCountries] = useState<string[]>([]);
@@ -215,7 +220,7 @@ export function StudyPreferences() {
     try {
       await authApi.saveStudentStudyPreferences(token, payload);
       await profile.refresh();
-      router.push(returnToReview ? '/student/review' : '/student/academic-information');
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -240,7 +245,7 @@ export function StudyPreferences() {
                 <p>Your information is securely saved to your student profile.</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>STEP 2 OF 9</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           <div className={cx('field-grid')}>

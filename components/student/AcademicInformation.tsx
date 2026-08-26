@@ -8,6 +8,7 @@ import { classNames } from '@/lib/cx';
 import type { Qualification } from '@/lib/options/education';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useCompositeRows } from '@/lib/forms/use-composite-rows';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import type { FormFieldDef } from '@/lib/forms/use-form-schema';
 import { useSchemaExtras } from '@/lib/forms/use-schema-extras';
@@ -40,6 +41,10 @@ export function AcademicInformation() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('academic-information');
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('academic-information');
 
   const [loaded, setLoaded] = useState(false);
   const [levels, setLevels] = useState<Qualification[]>([]);
@@ -202,7 +207,7 @@ export function AcademicInformation() {
 
       await profile.refresh();
 
-      router.push(returnToReview ? '/student/review' : '/student/english-exam');
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -282,7 +287,7 @@ export function AcademicInformation() {
                   <p>{fields.description || 'Your information is securely saved to your student profile.'}</p>
                 </div>
               </div>
-              <span className={cx('step-badge')}>STEP 3 OF 9</span>
+              <span className={cx('step-badge')}>{stepBadge}</span>
             </div>
 
             <div className={cx('qualification-question')}>

@@ -1,0 +1,182 @@
+/* The page a pending organisation works on. Deliberately plain: it is a form
+   and a status, not a workspace, and pretending otherwise would suggest the
+   marketplace is already open. */
+
+.host {
+  min-height: 100vh;
+  background: #f6f8f9;
+  color: #10212c;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px clamp(20px, 5vw, 56px);
+  border-bottom: 1px solid #dfe6ea;
+  background: #fff;
+}
+
+.bar > div { display: flex; align-items: center; gap: 10px }
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #0d2d42;
+  color: #79dbc1;
+  font-weight: 900;
+}
+
+.bar strong { font-size: 17px; letter-spacing: -.02em }
+
+.bar small {
+  padding-left: 10px;
+  margin-left: 4px;
+  border-left: 1px solid #dfe6ea;
+  color: #637482;
+  font-size: 13px;
+}
+
+.bar > button {
+  padding: 8px 14px;
+  border: 1px solid #cfd9df;
+  border-radius: 9px;
+  background: #fff;
+  color: #46554c;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.page {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 44px) clamp(18px, 4vw, 24px) 60px;
+}
+
+.loading { padding: 60px; text-align: center; color: #637482 }
+
+.eyebrow {
+  display: block;
+  color: #2467e8;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.intro h1 {
+  margin: 10px 0 8px;
+  font-family: "Libre Franklin", sans-serif;
+  font-size: clamp(26px, 3vw, 34px);
+  letter-spacing: -.035em;
+}
+
+.intro p { margin: 0; max-width: 62ch; color: #637482; line-height: 1.65 }
+
+/* Each panel says one thing about where the submission stands. */
+.panel {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px solid #dfe6ea;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.panel strong { display: block; font-size: 14px }
+
+.panel p { margin: 6px 0 0; color: #556673; font-size: 13.5px; line-height: 1.6 }
+
+.panel ul { margin: 8px 0 0; padding-left: 18px; color: #556673; font-size: 13.5px; line-height: 1.75 }
+
+.panel small { display: block; margin-top: 8px; color: #7c8a94; font-size: 12px }
+
+.outstanding { border-color: #edd0b6; background: #fdf4ec }
+.outstanding strong { color: #a54d1d }
+
+.waiting { border-color: #cfe4d9; background: #f1f8f4 }
+.waiting strong { color: #087a50 }
+
+.rejected { border-color: #e6b8b2; background: #fdf1f0 }
+.rejected strong { color: #a3372c }
+
+.note { border-color: #cddcf5; background: #f2f6ff }
+.note strong { color: #2c4a7c }
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid #dfe6ea;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.field { display: flex; flex-direction: column; gap: 7px; min-width: 0 }
+.wide { grid-column: 1 / -1 }
+
+.field > span { font-size: 13px; font-weight: 800 }
+
+.field input,
+.field textarea {
+  padding: 11px 13px;
+  border: 1px solid #cad6dd;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: #2467e8;
+  box-shadow: 0 0 0 3px rgba(36, 103, 232, .12);
+}
+
+.field > small { color: #7c8a94; font-size: 11.5px }
+
+.error, .ok {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.error { background: #fdecea; color: #a3372c }
+.ok { background: #eaf7f0; color: #10714f }
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.actions button {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ghost { border: 1px solid #cfd9df; background: #fff; color: #46554c }
+.ghost:hover { background: #f6f9fb }
+
+.primary { border: 1px solid #0d2d42; background: #0d2d42; color: #fff }
+.primary:hover { background: #123a55 }
+.primary:disabled, .ghost:disabled { opacity: .55; cursor: not-allowed }
+
+@media (max-width: 720px) {
+  .form { grid-template-columns: 1fr }
+  .actions { flex-direction: column-reverse }
+  .actions button { width: 100% }
+}

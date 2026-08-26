@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authApi, type ApiError } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
+import { sectionApplies, useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
@@ -51,8 +52,24 @@ export function CoApplicant() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('co-applicant');
 
   const fields = useSectionFields('coApplicant', []);
+
+  /**
+   * The rail already hides this step for a student paying without a loan, but
+   * the address still resolves — from a bookmark, the back button, or a link
+   * sent before they changed their answer. The rule belongs to the step, not to
+   * the menu that leads to it.
+   */
+  const needsLoan = profile.completion.loanDocuments?.needsLoan || '';
+  const applies = sectionApplies('coApplicant', needsLoan);
+  const stepBadge = useStepBadge('co-applicant');
+
+  useEffect(() => {
+    if (profile.loaded && !applies) router.replace('/student/projects');
+  }, [profile.loaded, applies, router]);
 
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -120,7 +137,7 @@ export function CoApplicant() {
     try {
       await authApi.saveCoApplicant(token, values);
       await profile.refresh();
-      router.push(returnToReview ? '/student/review' : '/student/projects');
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) return handleUnauthorized();
       setError(e instanceof Error ? e.message : 'Those details could not be saved.');
@@ -185,6 +202,8 @@ export function CoApplicant() {
           <h2>{fields.title || 'Parent or Guardian'} details</h2>
           <p>{fields.description || 'The co-applicant on an education loan'}</p>
         </div>
+        {/* The only step that appears for some students; it still says where they are. */}
+        {stepBadge && <span className={cx('step-badge')}>{stepBadge}</span>}
       </header>
 
       {/* Why a student is being asked for someone else's details at all. */}

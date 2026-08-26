@@ -9,6 +9,7 @@ import { useCompositeRows } from '@/lib/forms/use-composite-rows';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useStore } from '@/lib/stores/observable-store';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSchemaExtras } from '@/lib/forms/use-schema-extras';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/EntranceExams.module.css';
@@ -31,12 +32,13 @@ export interface ExamStepConfig {
   /** The repeating block in that section whose rows this step renders. */
   compositeKey: string;
   heading: string;
-  stepBadge: string;
   question: string;
   yesHint: string;
   noHint: string;
   noOptionCopy: string;
   previousHref: string;
+  /** This step's own route, used to find the next one in the published order. */
+  route: string;
   nextHref: string;
   loadOptions(): Promise<{ examOptions: string[]; statusOptions: string[] }>;
   readSaved(profile: any): Array<Record<string, string>>;
@@ -56,6 +58,12 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /**
+   * Continue follows the published order rather than the successor named in
+   * this step's config — the order lives in the form now, not in nine files.
+   */
+  const nextStep = useNextStepPath(config.route);
+  const stepBadge = useStepBadge(config.route);
 
   const [examOptions, setExamOptions] = useState<string[]>([]);
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
@@ -218,7 +226,7 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
     try {
       await config.save(token, exams, attended);
       await profile.refresh();
-      router.push(returnToReview ? '/student/review' : config.nextHref);
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -241,7 +249,7 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
                 <p>Your information is securely saved to your student profile.</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>{config.stepBadge}</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           {!!extras.fields.length && (

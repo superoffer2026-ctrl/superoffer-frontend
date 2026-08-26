@@ -17,39 +17,17 @@ interface AuthFormState {
   phone: string;
   email: string;
   organization: string;
-  registrationNumber: string;
-  license: string;
-  website: string;
   password: string;
   confirmPassword: string;
   orgType: OrganizationType;
   country: string;
-  city: string;
   remember: boolean;
 }
 
 const EMPTY_FORM: AuthFormState = {
-  fullName: '', phone: '', email: '', organization: '', registrationNumber: '', license: '',
-  website: '', password: '', confirmPassword: '', orgType: 'UNIVERSITY', country: '', city: '',
+  fullName: '', phone: '', email: '', organization: '',
+  password: '', confirmPassword: '', orgType: 'UNIVERSITY', country: '',
   remember: true
-};
-
-/**
- * The reviewer checks these against the body that issued them, so the field has
- * to name that body. "Accreditation / licence reference" tells a registrar
- * nothing about which reference is wanted.
- */
-const EVIDENCE_LABELS: Record<string, { licence: string; licenceHint: string; registrationHint: string }> = {
-  UNIVERSITY: {
-    licence: 'Accreditation / affiliation reference',
-    licenceHint: 'UGC, AICTE, NAAC or the equivalent body in your country',
-    registrationHint: 'As issued by the authority that registered the institution'
-  },
-  BANK: {
-    licence: 'Regulator licence number',
-    licenceHint: 'RBI, or the banking regulator in your country',
-    registrationHint: 'Company or entity registration number'
-  }
 };
 
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
@@ -82,7 +60,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         return 'Submit official lender and licence details for verification before finance tools are unlocked.';
       }
       if (mode === 'register') {
-        return 'Submit official organization details for Super Admin verification before marketplace tools are unlocked.';
+        return 'Create your account, then complete verification from inside. Student data unlocks once an admin approves it.';
       }
       return 'Log in to your verified university or bank workspace.';
     }
@@ -97,9 +75,6 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
     }
     return ['Private verified profile', 'Comparable invitations and offers', 'Visibility controls'];
   })();
-
-  /** Labels name the authority the reviewer will check against. */
-  const evidence = EVIDENCE_LABELS[form.orgType] || EVIDENCE_LABELS.UNIVERSITY;
 
   const role = () => {
     if (isStudent) return 'STUDENT';
@@ -147,16 +122,17 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           fullName: form.fullName || undefined,
           phone: form.phone || undefined,
           role: organizationRole(form.orgType),
+          /*
+           * An account, and nothing more. The evidence a reviewer checks is
+           * gathered on the verification page after signing in, where the
+           * registrar can see what is still outstanding.
+           */
           organization: {
             name: form.organization,
-            registrationNumber: form.registrationNumber,
-            licenseReference: form.license,
-            website: form.website,
-            country: form.country,
-            city: form.city
+            country: form.country || undefined
           }
         });
-        setMessage('Your registration has been submitted for Super Admin review. You can log in once it is approved.');
+        setMessage('Account created. Sign in to finish your verification — student data unlocks once an admin approves it.');
         setForm(current => ({ ...current, password: '', confirmPassword: '' }));
         router.push(`/auth/login/${portal}`);
       } catch (e) {
@@ -187,16 +163,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           password: form.password,
           fullName: form.fullName || undefined,
           phone: form.phone || undefined,
-          role: role(),
-          ...(isStudent
-            ? {}
-            : {
-                organization: {
-                  name: form.organization,
-                  registrationNumber: form.registrationNumber || undefined,
-                  licenseReference: form.license || undefined
-                }
-              })
+          role: role()
         });
         setMessage('Account created. Please log in to continue.');
         setForm(current => ({ ...current, password: '' }));
@@ -264,7 +231,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Country
-                <input name="country" value={form.country} required placeholder="Country"
+                <input name="country" value={form.country} placeholder="Country"
                   onChange={event => set('country', event.target.value)} />
               </label>
               <label className="full">
@@ -288,72 +255,6 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
                 <input name="confirmPassword" type="password" value={form.confirmPassword} minLength={8} required
                   placeholder="Re-enter your password"
                   onChange={event => set('confirmPassword', event.target.value)} />
-              </label>
-            </div>
-          )}
-
-          {mode === 'register' && !isOrganization && !isStudent && (
-            <div className="form-grid">
-              <label>
-                Full name
-                <input name="fullName" value={form.fullName} required placeholder="Your full name"
-                  onChange={event => set('fullName', event.target.value)} />
-              </label>
-              <label>
-                Phone number *
-                <input name="phone" value={form.phone} required placeholder="+91 00000 00000"
-                  onChange={event => set('phone', event.target.value)} />
-              </label>
-              <label className="full">
-                Official email *
-                <input name="email" type="email" value={form.email} required
-                  placeholder="you@your-institution.edu"
-                  onChange={event => set('email', event.target.value)} />
-              </label>
-              <label className="full">
-                Organisation legal name *
-                <input name="organization" value={form.organization} required
-                  onChange={event => set('organization', event.target.value)} />
-              </label>
-              {/*
-                * Everything below is what the Super Admin is asked to confirm
-                * against the issuing authority before unlocking a login. An
-                * approved organisation can read submitted student profiles, so
-                * none of it is optional.
-                */}
-              <label>
-                Registration number *
-                <input name="registrationNumber" value={form.registrationNumber} required
-                  placeholder={evidence.registrationHint}
-                  onChange={event => set('registrationNumber', event.target.value)} />
-              </label>
-              <label>
-                {evidence.licence} *
-                <input name="license" value={form.license} required
-                  placeholder={evidence.licenceHint}
-                  onChange={event => set('license', event.target.value)} />
-              </label>
-              <label className="full">
-                Official website *
-                <input name="website" value={form.website} required
-                  placeholder="www.example.edu"
-                  onChange={event => set('website', event.target.value)} />
-              </label>
-              <label>
-                Country *
-                <input name="country" value={form.country} required
-                  onChange={event => set('country', event.target.value)} />
-              </label>
-              <label>
-                City *
-                <input name="city" value={form.city} required
-                  onChange={event => set('city', event.target.value)} />
-              </label>
-              <label className="full">
-                Password
-                <input name="password" type="password" value={form.password} minLength={8} required
-                  placeholder="8+ characters with a letter and number"
-                  onChange={event => set('password', event.target.value)} />
               </label>
             </div>
           )}

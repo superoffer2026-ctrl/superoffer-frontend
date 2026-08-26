@@ -5,10 +5,10 @@ import { ExamStep, type ExamStepConfig } from './ExamStep';
 
 const config: ExamStepConfig = {
   sectionKey: 'englishExam',
+  route: 'english-exam',
   compositeKey: 'englishExams',
   codedKeys: ['englishExams', 'englishExam', 'englishScore'],
   heading: 'English Exam details',
-  stepBadge: 'STEP 4 OF 9',
   question: 'Have you taken or are preparing for an English proficiency exam?',
   yesHint: 'IELTS, TOEFL, PTE or DET',
   noHint: "I haven't attempted any English exam yet",

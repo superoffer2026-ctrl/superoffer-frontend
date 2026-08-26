@@ -11,10 +11,49 @@ import {
 
 const cx = classNames(styles);
 
+export type ChannelKey = 'inapp' | 'email' | 'whatsapp' | 'sms';
+
+/** One thing a rule does. A rule holds a list of them, run in order. */
+export interface NotifyAction {
+  type: 'notify';
+  channels: ChannelKey[];
+  audience: 'student' | 'organization' | 'both';
+  attribution: 'system' | 'organization';
+  body: string;
+  /** Email only. Falls back to the rule's name when blank. */
+  subject?: string;
+  /** WhatsApp will not deliver free text outside a 24-hour window. */
+  templates?: Partial<Record<ChannelKey, { name: string; params: string[] }>>;
+  /**
+   * What one channel says, when it should not say what the others say.
+   * Anything left blank falls back to the action's own body and subject.
+   */
+  content?: Partial<Record<ChannelKey, ChannelContent>>;
+  /** Minutes to wait before this action runs. 0, or absent, means at once. */
+  delayMinutes?: number;
+  markUnread?: boolean;
+}
+
+export interface ChannelContent {
+  body?: string;
+  subject?: string;
+  template?: { name: string; params: string[] };
+}
+
+interface ChannelStatus {
+  channel: ChannelKey;
+  label: string;
+  describes: string;
+  configured: boolean;
+  provider: string;
+}
+
 interface Rule {
   id: string;
   event: string;
   label: string;
+  /** What the rule does. Older rules have none and are read as one action. */
+  actions: NotifyAction[];
   audience: 'student' | 'organization' | 'both';
   attribution: 'system' | 'organization';
   body: string;
@@ -40,6 +79,89 @@ interface Placeholder {
   token: string;
   describes: string;
 }
+
+/**
+ * A rule written before actions existed, read as the single action it was.
+ *
+ * The same fallback the server applies, repeated here so the editor opens an
+ * old rule without first having to save it into the new shape.
+ */
+const actionsOf = (rule: Partial<Rule> | null): NotifyAction[] => {
+  if (!rule) return [];
+  if (Array.isArray(rule.actions) && rule.actions.length) return rule.actions;
+  return [{
+    type: 'notify',
+    channels: ['inapp'],
+    audience: rule.audience || 'both',
+    attribution: rule.attribution || 'system',
+    body: rule.body || '',
+    markUnread: rule.markUnread !== false
+  }];
+};
+
+/** Shown until the server says which channels it has; same order, same names. */
+const FALLBACK_CHANNELS: ChannelStatus[] = [
+  { channel: 'inapp', label: 'Native chat', describes: 'Posted in the offer thread', configured: true, provider: 'built in' },
+  { channel: 'email', label: 'Email', describes: 'Sent to the address on the account', configured: true, provider: '' },
+  { channel: 'whatsapp', label: 'WhatsApp', describes: 'Sent to the mobile on the account', configured: true, provider: '' },
+  { channel: 'sms', label: 'SMS', describes: 'Sent to the mobile on the account', configured: true, provider: '' }
+];
+
+/** Every channel a rule touches, across all of its actions, in a fixed order. */
+const channelsOf = (rule: Partial<Rule>): ChannelKey[] => {
+  const seen = new Set<ChannelKey>();
+  for (const action of actionsOf(rule)) for (const channel of action.channels || []) seen.add(channel);
+  return (['inapp', 'email', 'whatsapp'] as ChannelKey[]).filter(channel => seen.has(channel));
+};
+
+/** Short enough to sit three-across on a narrow card. */
+const SHORT_CHANNEL: Record<ChannelKey, string> = {
+  inapp: 'Chat',
+  email: 'Email',
+  whatsapp: 'WhatsApp',
+  sms: 'SMS'
+};
+
+/**
+ * The rule as a sentence.
+ *
+ * Written from the same values the form edits, so it cannot drift from what
+ * will actually happen — and it is the fastest way to check a rule is the one
+ * you meant to open.
+ */
+const readsAloud = (
+  rule: Partial<Rule> | null,
+  actions: NotifyAction[],
+  triggers: Trigger[]
+): string => {
+  if (!rule) return '';
+  const when = triggers.find(t => t.event === rule.event)?.describes || 'something happens';
+  if (!actions.length) return `When ${when.toLowerCase()}, nothing is sent.`;
+
+  const said = actions.map(action => {
+    const who = action.audience === 'both' ? 'both sides'
+      : action.audience === 'organization' ? 'the organisation'
+        : 'the student';
+    const where = (action.channels.length ? action.channels : (['inapp'] as ChannelKey[]))
+      .map(channel => SHORT_CHANNEL[channel].toLowerCase());
+    const list = where.length === 1
+      ? where[0]
+      : `${where.slice(0, -1).join(', ')} and ${where[where.length - 1]}`;
+    return `${who} on ${list}`;
+  });
+
+  const tail = said.length === 1 ? said[0] : `${said.slice(0, -1).join('; ')}; and ${said[said.length - 1]}`;
+  return `When ${when.toLowerCase()}, tell ${tail}.`;
+};
+
+const BLANK_ACTION: NotifyAction = {
+  type: 'notify',
+  channels: ['inapp'],
+  audience: 'student',
+  attribution: 'system',
+  body: '',
+  markUnread: true
+};
 
 const AUDIENCES: Array<{ value: Rule['audience']; label: string; describes: string }> = [
   { value: 'both', label: 'Both sides', describes: 'A neutral record of what happened' },
@@ -92,6 +214,7 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
   const [draft, setDraft] = useState<Partial<Rule> | null>(null);
   const [preview, setPreview] = useState('');
   const [catalogue, setCatalogue] = useState<ConditionCatalogue | null>(null);
+  const [channels, setChannels] = useState<ChannelStatus[]>([]);
   const [reads, setReads] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -124,6 +247,13 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
    * What a condition may read comes from the server, so this editor cannot
    * offer a field the engine would refuse — or miss one it has just gained.
    */
+  /** Which channels can actually send, so the editor can say when one cannot. */
+  useEffect(() => {
+    void authApi.adminAutomationChannels(adminKey)
+      .then(payload => setChannels((payload || []) as ChannelStatus[]))
+      .catch(() => setChannels([]));
+  }, [adminKey]);
+
   useEffect(() => {
     void authApi.adminAutomationFields(adminKey)
       .then(payload => setCatalogue(payload as ConditionCatalogue))
@@ -173,14 +303,132 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
     }
   };
 
+  /** The actions being edited, whether or not this rule has been saved yet. */
+  const currentActions = useMemo(() => actionsOf(draft ?? selected), [draft, selected]);
+
+  const setActions = (next: NotifyAction[]) => edit({ actions: next });
+
+  const editAction = (index: number, patch: Partial<NotifyAction>) =>
+    setActions(currentActions.map((action, i) => (i === index ? { ...action, ...patch } : action)));
+
+  const addAction = (delayMinutes: number) =>
+    setActions([...currentActions, { ...BLANK_ACTION, delayMinutes }]);
+
+  /**
+   * Which actions run at once, and which wait — grouped the way the canvas
+   * draws them.
+   *
+   * The index is carried alongside each action because every editing handler
+   * addresses actions by position in the saved list, and grouping them for
+   * display must not change what that position means.
+   */
+  const positioned = useMemo(
+    () => currentActions.map((action, index) => ({ action, index })),
+    [currentActions]
+  );
+
+  const delayOfAction = (action: NotifyAction) =>
+    typeof action.delayMinutes === 'number' && action.delayMinutes >= 0
+      ? action.delayMinutes
+      : (selected?.delayMinutes ?? 0);
+
+  const instantActions = positioned.filter(entry => delayOfAction(entry.action) === 0);
+
+  const scheduledGroups = useMemo(() => {
+    const byDelay = new Map<number, Array<{ action: NotifyAction; index: number }>>();
+    for (const entry of positioned) {
+      const delay = delayOfAction(entry.action);
+      if (delay === 0) continue;
+      if (!byDelay.has(delay)) byDelay.set(delay, []);
+      byDelay.get(delay)!.push(entry);
+    }
+    return [...byDelay.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([delayMinutes, items]) => ({ delayMinutes, items }));
+  }, [positioned, selected]);
+
+  const hasScheduled = scheduledGroups.length > 0;
+
+  /** Moving a whole set to a different time, rather than each action in it. */
+  const retimeGroup = (from: number, to: number) =>
+    setActions(currentActions.map(action =>
+      (delayOfAction(action) === from ? { ...action, delayMinutes: to } : action)
+    ));
+
+  /** A new set starts at the first wait nothing else already uses. */
+  const addScheduledSet = () => {
+    const taken = new Set(scheduledGroups.map(group => group.delayMinutes));
+    const next = DELAYS.filter(option => option.minutes > 0).find(option => !taken.has(option.minutes));
+    setActions([...currentActions, { ...BLANK_ACTION, delayMinutes: next?.minutes ?? 1440 }]);
+  };
+
+  const removeAction = (index: number) => setActions(currentActions.filter((_, i) => i !== index));
+
+  const toggleChannel = (index: number, channel: ChannelKey) => {
+    const action = currentActions[index];
+    const on = action.channels.includes(channel);
+    editAction(index, {
+      channels: on ? action.channels.filter(c => c !== channel) : [...action.channels, channel]
+    });
+  };
+
+  /** What one channel says instead of the action's own words. */
+  const editContent = (index: number, channel: ChannelKey, patch: Partial<ChannelContent>) => {
+    const action = currentActions[index];
+    const existing = action.content?.[channel] ?? {};
+    editAction(index, {
+      content: { ...action.content, [channel]: { ...existing, ...patch } }
+    });
+  };
+
+  const editTemplate = (index: number, patch: { name?: string; params?: string[] }) => {
+    const action = currentActions[index];
+    const existing = action.content?.whatsapp?.template
+      ?? action.templates?.whatsapp
+      ?? { name: '', params: [] };
+    editContent(index, 'whatsapp', { template: { ...existing, ...patch } });
+  };
+
+  /** Which channel's panel is open, per action. */
+  const [openChannel, setOpenChannel] = useState<Record<number, string>>({});
+
+  /**
+   * Whether this rule has been narrowed, delayed or guarded.
+   *
+   * A fold that hides a condition somebody set is a trap, so it opens itself
+   * whenever there is something inside worth seeing.
+   */
+  const hasFineTuning = Boolean(selected?.guard || selected?.markUnread === false);
+
+  const fineTuningSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (selected?.guard) parts.push('guarded');
+    if (selected?.markUnread === false) parts.push('no unread badge');
+    return parts.length ? parts.join(' · ') : 'Defaults';
+  }, [selected]);
+
   const save = async () => {
     if (!draft) return;
     setBusy(true);
     setError('');
     try {
+      /*
+       * body, audience and attribution are what a rule was before it could do
+       * more than one thing. They stay as a mirror of the first action so that
+       * anything still reading them — the server's own validation among them —
+       * sees a rule that makes sense.
+       */
+      const actions = actionsOf(draft);
+      const payload = {
+        ...draft,
+        actions,
+        body: actions[0]?.body ?? '',
+        audience: actions[0]?.audience ?? 'both',
+        attribution: actions[0]?.attribution ?? 'system'
+      };
       const saved = draft.id
-        ? await authApi.adminUpdateAutomationRule(adminKey, draft.id, draft)
-        : await authApi.adminCreateAutomationRule(adminKey, draft);
+        ? await authApi.adminUpdateAutomationRule(adminKey, draft.id, payload)
+        : await authApi.adminCreateAutomationRule(adminKey, payload);
       await load();
       setSelectedId(saved.id);
       setDraft(null);
@@ -231,20 +479,253 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
     setDraft(blankRule(event));
   };
 
+  /** One action, drawn the same wherever it sits on the canvas. */
+  const renderAction = (action: NotifyAction, index: number) => {
+                const wantsEmail = action.channels.includes('email');
+                const wantsWhatsApp = action.channels.includes('whatsapp');
+                return (
+                  <div className={cx('action-card')} key={index}>
+                    <div className={cx('action-head')}>
+                      <strong>Action {index + 1}</strong>
+                      {currentActions.length > 1 && (
+                        <button
+                          type="button"
+                          className={cx('drop-action')}
+                          onClick={() => removeAction(index)}
+                          aria-label={`Remove action ${index + 1}`}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div className={cx('addressing')}>
+                      <label className={cx('inline-field')}>
+                        <span>Tell</span>
+                        <select
+                          name={`audience-${index}`}
+                          value={action.audience}
+                          onChange={event => editAction(index, { audience: event.target.value as Rule['audience'] })}
+                        >
+                          {AUDIENCES.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <span className={cx('inline-word')}>on</span>
+                      <div className={cx('channels')}>
+                        {(channels.length ? channels : FALLBACK_CHANNELS).map(channel => {
+                          const on = action.channels.includes(channel.channel);
+                          return (
+                            <label
+                              key={channel.channel}
+                              className={cx('channel', on && 'on', !channel.configured && 'unconfigured')}
+                              title={channel.describes}
+                            >
+                              <input
+                                type="checkbox"
+                                name={`channel-${index}-${channel.channel}`}
+                                checked={on}
+                                onChange={() => toggleChannel(index, channel.channel)}
+                              />
+                              <span>{channel.label}</span>
+                              {!channel.configured && <em>not configured</em>}
+                            </label>
+                          );
+          })}
+                      </div>
+                    </div>
+                    {!action.channels.length && (
+                      <small className={cx('needs-channel')}>Pick at least one — a rule with no channel does nothing.</small>
+                    )}
+
+                    <label className={cx('field')}>
+                      <textarea
+                        name={`body-${index}`}
+                        rows={4}
+                        value={action.body || ''}
+                        placeholder="Thank you for accepting, {{student.firstName}}!"
+                        onChange={event => editAction(index, { body: event.target.value })}
+                      />
+                    </label>
+
+                    <details className={cx('placeholders')}>
+                      <summary>Insert a value from the offer</summary>
+                      <div>
+                        {placeholders.map(placeholder => (
+                          <button
+                            key={placeholder.token}
+                            type="button"
+                            title={placeholder.describes}
+                            onClick={() => editAction(index, { body: `${action.body || ''}${placeholder.token}` })}
+                          >
+                            {placeholder.token}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+
+                    {/*
+                      * One panel per channel this action sends on.
+                      *
+                      * The message above is what every channel says unless a
+                      * channel says otherwise here. That default matters: most
+                      * rules are happy saying one thing everywhere, and asking
+                      * an admin to write the same sentence three times is how
+                      * three sentences end up disagreeing.
+                      */}
+                    {action.channels.filter(channel => channel !== 'inapp').length > 0 && (
+                      <div className={cx('per-channel')}>
+                        <div className={cx('per-channel-tabs')}>
+                          {action.channels.map(channel => {
+                            const own = action.content?.[channel];
+                            /* A registered template is tailoring too — it is the
+                               one thing WhatsApp will actually carry. */
+                            const tailored = Boolean(
+                              own?.body?.trim() || own?.subject?.trim() || own?.template?.name?.trim()
+                            );
+                            return (
+                              <button
+                                key={channel}
+                                type="button"
+                                className={cx('per-channel-tab', openChannel[index] === channel && 'on')}
+                                onClick={() => setOpenChannel({ ...openChannel, [index]: openChannel[index] === channel ? '' : channel })}
+                              >
+                                {SHORT_CHANNEL[channel]}
+                                {tailored && <i className={cx('tailored')} title="Worded for this channel">●</i>}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {action.channels.map(channel => openChannel[index] === channel && (
+                          <div className={cx('per-channel-panel')} key={channel}>
+                            {channel === 'inapp' && (
+                              <p className={cx('per-channel-note')}>
+                                The offer thread carries the message exactly as written above.
+                              </p>
+                            )}
+
+                            {channel === 'email' && (
+                              <>
+                                <label className={cx('field')}>
+                                  <span>Subject</span>
+                                  <input
+                                    type="text"
+                                    name={`subject-${index}`}
+                                    value={action.content?.email?.subject ?? action.subject ?? ''}
+                                    placeholder={selected?.label || 'Uses the rule name when blank'}
+                                    onChange={event => editContent(index, 'email', { subject: event.target.value })}
+                                  />
+                                </label>
+                                <label className={cx('field')}>
+                                  <span>Email wording</span>
+                                  <textarea
+                                    rows={4}
+                                    name={`content-email-${index}`}
+                                    value={action.content?.email?.body ?? ''}
+                                    placeholder="Leave blank to send the message above"
+                                    onChange={event => editContent(index, 'email', { body: event.target.value })}
+                                  />
+                                  <small>A thread line often reads like a fragment as an email. Give it a fuller version here.</small>
+                                </label>
+                              </>
+                            )}
+
+                            {channel === 'sms' && (
+                              <div className={cx('template-box')}>
+                                <strong>DLT-registered template</strong>
+                                <p>
+                                  An SMS to an Indian number must match a template registered on the DLT
+                                  platform, under a registered sender ID — anything else is rejected by the
+                                  operator rather than delivered late. Paste the approved text, with
+                                  {' '}<code>{'{#var#}'}</code> where each value goes.
+                                </p>
+                                <label className={cx('field')}>
+                                  <span>Approved template text</span>
+                                  <textarea
+                                    rows={3}
+                                    name={`sms-template-${index}`}
+                                    value={action.content?.sms?.template?.name ?? ''}
+                                    placeholder="Hi {#var#}, your offer for {#var#} is still open."
+                                    onChange={event => editContent(index, 'sms', {
+                                      template: {
+                                        name: event.target.value,
+                                        params: action.content?.sms?.template?.params ?? []
+                                      }
+                                    })}
+                                  />
+                                </label>
+                                <label className={cx('field')}>
+                                  <span>Values, in order</span>
+                                  <input
+                                    type="text"
+                                    name={`sms-params-${index}`}
+                                    value={(action.content?.sms?.template?.params ?? []).join(', ')}
+                                    placeholder="{{student.firstName}}, {{offer.program}}"
+                                    onChange={event => editContent(index, 'sms', {
+                                      template: {
+                                        name: action.content?.sms?.template?.name ?? '',
+                                        params: event.target.value.split(',').map(p => p.trim()).filter(Boolean)
+                                      }
+                                    })}
+                                  />
+                                  <small>One per {'{#var#}'}, in the order they appear.</small>
+                                </label>
+                              </div>
+                            )}
+
+                            {channel === 'whatsapp' && (
+                              <div className={cx('template-box')}>
+                                <strong>Approved template</strong>
+                                <p>
+                                  WhatsApp only delivers templates you have registered with Meta, unless the student
+                                  messaged you in the last 24 hours — so this replaces the message above rather than
+                                  adding to it.
+                                </p>
+                                <label className={cx('field')}>
+                                  <span>Template name</span>
+                                  <input
+                                    type="text"
+                                    name={`template-${index}`}
+                                    value={action.content?.whatsapp?.template?.name ?? action.templates?.whatsapp?.name ?? ''}
+                                    placeholder="offer_reminder"
+                                    onChange={event => editTemplate(index, { name: event.target.value })}
+                                  />
+                                </label>
+                                <label className={cx('field')}>
+                                  <span>Values, in order</span>
+                                  <input
+                                    type="text"
+                                    name={`params-${index}`}
+                                    value={(action.content?.whatsapp?.template?.params ?? action.templates?.whatsapp?.params ?? []).join(', ')}
+                                    placeholder="{{student.firstName}}, {{offer.program}}"
+                                    onChange={event => editTemplate(index, {
+                                      params: event.target.value.split(',').map(part => part.trim()).filter(Boolean)
+                                    })}
+                                  />
+                                  <small>Comma separated. Placeholders are filled the same way the message is.</small>
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  </div>
+                );
+  };
+
   return (
     <div className={cx('automation')}>
-      <header className={cx('automation-head')}>
-        <div>
-          <h2>Message automation</h2>
-          <p>
-            What a thread says on its own when something happens in it. Rules react only to actions and
-            state changes, never to messages automation itself wrote, so one can never set off another.
-          </p>
-        </div>
-        <button type="button" className={cx('ghost')} onClick={() => void load()} disabled={busy}>
-          Reload
-        </button>
-      </header>
+{/*
+        * No heading here.
+        *
+        * The page above already says "Message automation" and what it is for.
+        * Repeating it in a card of its own cost a fifth of the screen and told
+        * an admin nothing they had not read a centimetre higher up.
+        */}
 
       {error && <p className={cx('automation-error')} role="alert">{error}</p>}
       {note && !error && <p className={cx('automation-note')}>{note}</p>}
@@ -278,10 +759,20 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
                   onClick={() => choose(rule)}
                 >
                   <span className={cx('rule-label')}>{rule.label}</span>
-                  <span className={cx('rule-meta')}>
-                    <em>{rule.attribution === 'organization' ? 'as the organisation' : 'platform notice'}</em>
-                    <em>to {rule.audience === 'both' ? 'both sides' : rule.audience}</em>
-                    {!rule.enabled && <b>Off</b>}
+                  {/*
+                    * Where it goes, on the card.
+                    *
+                    * Without this a rule that reaches a student on WhatsApp
+                    * looks exactly like one that only writes to the thread,
+                    * and the whole point of the change is invisible from the
+                    * list an admin spends most of their time in.
+                    */}
+                  <span className={cx('rule-channels')}>
+                    {channelsOf(rule).map(channel => (
+                      <i key={channel} className={cx('chip', channel)}>{SHORT_CHANNEL[channel]}</i>
+                    ))}
+                    {actionsOf(rule).length > 1 && <i className={cx('chip', 'count')}>{actionsOf(rule).length}</i>}
+                    {!rule.enabled && <i className={cx('chip', 'off')}>Off</i>}
                   </span>
                 </button>
               ))}
@@ -333,141 +824,159 @@ export function AdminAutomation({ adminKey }: { adminKey: string }) {
                 <small>Only you see this. It names the rule in the list.</small>
               </label>
 
-              <label className={cx('field')}>
-                <span>Trigger</span>
-                <select name="event" value={selected.event} onChange={event => edit({ event: event.target.value })}>
-                  {triggers.map(trigger => (
-                    <option key={trigger.event} value={trigger.event}>
-                      {trigger.describes}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/*
+                * The rule drawn as the flow it is.
+                *
+                * A rule is genuinely a sequence — this happens, then if this
+                * holds, do these things now and these things later — and a
+                * stack of labelled fields hid that shape completely. The
+                * nodes down the left are the sequence; the cards beside them
+                * are what an admin actually edits.
+                */}
+              <div className={cx('canvas')}>
 
-              <div className={cx('field-row')}>
-                <label className={cx('field')}>
-                  <span>Who sees it</span>
-                  <select
-                    name="audience"
-                    value={selected.audience}
-                    onChange={event => edit({ audience: event.target.value as Rule['audience'] })}
-                  >
-                    {AUDIENCES.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                <div className={cx('step')}>
+                  <div className={cx('node', 'when')}>WHEN</div>
+                  <div className={cx('step-card')}>
+                    <select name="event" value={selected.event} onChange={event => edit({ event: event.target.value })}>
+                      {triggers.map(trigger => (
+                        <option key={trigger.event} value={trigger.event}>{trigger.describes}</option>
+                      ))}
+                    </select>
+                    <p className={cx('node-note')}>{readsAloud(selected, currentActions, triggers)}</p>
+                  </div>
+                </div>
+
+                <div className={cx('step')}>
+                  <div className={cx('node', 'condition')}><span>IF</span></div>
+                  <div className={cx('step-card')}>
+                    <ConditionBuilder
+                      catalogue={catalogue}
+                      join={toRows(selected.condition).join}
+                      rows={toRows(selected.condition).rows}
+                      cx={cx}
+                      emptyLabel="Every time this happens. Add a test to narrow it."
+                      onChange={(join, rows) => {
+                        const next = fromRows(join, rows as Predicate[]);
+                        edit({ condition: next });
+                        void explain(next, setReads);
+                      }}
+                    />
+                    {!!reads && <small className={cx('node-note')}>Fires when {reads}.</small>}
+                  </div>
+                </div>
+
+                <div className={cx('step', 'last')}>
+                  <div className={cx('node', 'do')}>DO</div>
+                  <div className={cx('do-cards')}>
+
+                    {/* Everything that happens the moment the trigger fires. */}
+                    <section className={cx('act-card', 'instant')}>
+                      <header>
+                        <strong>Instant actions</strong>
+                        <em>As soon as it happens</em>
+                      </header>
+                      {instantActions.map(({ action, index }) => renderAction(action, index))}
+                      {!instantActions.length && <p className={cx('act-empty')}>Nothing happens straight away.</p>}
+                      <button type="button" className={cx('add-action')} onClick={() => addAction(0)}>+ Action</button>
+                    </section>
+
+                    {/*
+                      * One card per distinct wait, the way an admin thinks of
+                      * it: "and then, a week later…". Each carries its own
+                      * timing, and the guard that decides whether it is still
+                      * worth sending when the time comes.
+                      */}
+                    {scheduledGroups.map(group => (
+                      <section className={cx('act-card', 'scheduled')} key={group.delayMinutes}>
+                        <header>
+                          <strong>Scheduled actions</strong>
+                          <label className={cx('delay-pick')}>
+                            <span>Execute</span>
+                            <select
+                              value={String(group.delayMinutes)}
+                              onChange={event => retimeGroup(group.delayMinutes, Number(event.target.value))}
+                            >
+                              {DELAYS.filter(d => d.minutes > 0).map(option => (
+                                <option key={option.minutes} value={option.minutes}>
+                                  {option.label.replace(/^After /i, '')}
+                                </option>
+                              ))}
+                            </select>
+                            <span>after trigger time</span>
+                          </label>
+                        </header>
+                        {group.items.map(({ action, index }) => renderAction(action, index))}
+                        <button
+                          type="button"
+                          className={cx('add-action')}
+                          onClick={() => addAction(group.delayMinutes)}
+                        >
+                          + Action
+                        </button>
+                      </section>
                     ))}
-                  </select>
-                  <small>{AUDIENCES.find(o => o.value === selected.audience)?.describes}</small>
-                </label>
 
-                <label className={cx('field')}>
-                  <span>How it appears</span>
-                  <select
-                    name="attribution"
-                    value={selected.attribution}
-                    onChange={event => edit({ attribution: event.target.value as Rule['attribution'] })}
-                  >
-                    {ATTRIBUTIONS.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                  <small>{ATTRIBUTIONS.find(o => o.value === selected.attribution)?.describes}</small>
-                </label>
-              </div>
-
-              <label className={cx('field')}>
-                <span>Message</span>
-                <textarea
-                  name="body"
-                  rows={5}
-                  value={selected.body || ''}
-                  placeholder="Thank you for accepting, {{student.firstName}}!"
-                  onChange={event => edit({ body: event.target.value })}
-                />
-              </label>
-
-              <div className={cx('placeholders')}>
-                <small>Click to insert. Anything the offer does not have resolves to nothing.</small>
-                <div>
-                  {placeholders.map(placeholder => (
-                    <button
-                      key={placeholder.token}
-                      type="button"
-                      title={placeholder.describes}
-                      onClick={() => edit({ body: `${selected.body || ''}${placeholder.token}` })}
-                    >
-                      {placeholder.token}
+                    <button type="button" className={cx('add-set')} onClick={addScheduledSet}>
+                      + Scheduled actions
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
 
               {/*
-                * A trigger is an event plus the case it applies to. Without this
-                * the nine events were nine rules; with it they are as many as
-                * the admin needs.
+                * The two settings that belong to the rule rather than to any
+                * one action, kept out of the flow so the flow stays readable.
                 */}
-              <div className={cx('field')}>
-                <span>Only when</span>
-                <ConditionBuilder
-                  catalogue={catalogue}
-                  join={toRows(selected.condition).join}
-                  rows={toRows(selected.condition).rows}
-                  cx={cx}
-                  emptyLabel="Every time this happens. Add a test to narrow it."
-                  onChange={(join, rows) => {
-                    const next = fromRows(join, rows as Predicate[]);
-                    edit({ condition: next });
-                    void explain(next, setReads);
-                  }}
-                />
-                {!!reads && <small className={cx('condition-reads')}>Fires when {reads}.</small>}
-              </div>
+              <details className={cx('advanced')} open={hasFineTuning}>
+                <summary>
+                  <span>Rule options</span>
+                  <em>{fineTuningSummary}</em>
+                </summary>
 
-              {/*
-                * Waiting is what turns a notice into a nudge. It is also the one
-                * thing that can make an automated message wrong by the time it
-                * arrives, which is why a wait comes with a reason to still send.
-                */}
-              <label className={cx('field')}>
-                <span>Wait before sending</span>
-                <select
-                  name="delayMinutes"
-                  value={String(selected.delayMinutes ?? 0)}
-                  onChange={event => edit({ delayMinutes: Number(event.target.value) })}
-                >
-                  {DELAYS.map(option => (
-                    <option key={option.minutes} value={option.minutes}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
+                {hasScheduled && (
+                  <div className={cx('field')}>
+                    <span>Only still send if</span>
+                    <ConditionBuilder
+                      catalogue={catalogue}
+                      join={toRows(selected.guard).join}
+                      rows={toRows(selected.guard).rows}
+                      cx={cx}
+                      emptyLabel="Send regardless of what has changed while it waited."
+                      onChange={(join, rows) => edit({ guard: fromRows(join, rows as Predicate[]) })}
+                    />
+                    <small className={cx('condition-help')}>
+                      Re-read at the moment a scheduled action would send, so a reminder written days
+                      ago does not reach someone who has already replied.
+                    </small>
+                  </div>
+                )}
 
-              {(selected.delayMinutes ?? 0) > 0 && (
-                <div className={cx('field')}>
-                  <span>Only still send if</span>
-                  <ConditionBuilder
-                    catalogue={catalogue}
-                    join={toRows(selected.guard).join}
-                    rows={toRows(selected.guard).rows}
-                    cx={cx}
-                    emptyLabel="Send regardless of what has changed while it waited."
-                    onChange={(join, rows) => edit({ guard: fromRows(join, rows as Predicate[]) })}
+                <label className={cx('checkbox')}>
+                  <input
+                    type="checkbox"
+                    name="markUnread"
+                    checked={selected.markUnread ?? true}
+                    onChange={event => edit({ markUnread: event.target.checked })}
                   />
-                  <small className={cx('condition-help')}>
-                    Re-read at the moment it would send, so a reminder written days ago does not
-                    reach someone who has already replied.
-                  </small>
-                </div>
-              )}
+                  <span>Badge the other side as unread</span>
+                </label>
 
-              <label className={cx('checkbox')}>
-                <input
-                  type="checkbox"
-                  name="markUnread"
-                  checked={selected.markUnread ?? true}
-                  onChange={event => edit({ markUnread: event.target.checked })}
-                />
-                <span>Badge the other side as unread</span>
-              </label>
+                {currentActions.some(action => action.channels.includes('inapp')) && (
+                  <label className={cx('field')}>
+                    <span>In the native chat, show it as</span>
+                    <select
+                      name="attribution-0"
+                      value={currentActions[0]?.attribution || 'system'}
+                      onChange={event => editAction(0, { attribution: event.target.value as Rule['attribution'] })}
+                    >
+                      {ATTRIBUTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </details>
 
               <div className={cx('editor-foot')}>
                 <button type="button" className={cx('ghost')} onClick={() => void runPreview()} disabled={!selected.body}>

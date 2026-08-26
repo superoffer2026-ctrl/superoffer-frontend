@@ -103,6 +103,30 @@ class StudentProfileStore extends ObservableStore {
   loaded = false;
   error = '';
 
+  /**
+   * The one answer that changes the shape of the wizard, as the student has
+   * just set it on screen and before it is saved.
+   *
+   * Kept apart from `completion` on purpose: that is the server's version and
+   * stays that way. This is only ever read by the code that decides which
+   * steps apply, so ticking "I need an education loan" adds the co-applicant
+   * to the rail immediately instead of a save later — the student should not
+   * be sent to a step the rail was not showing.
+   */
+  pendingNeedsLoan: string | null = null;
+
+  /** Null puts the question back in the server's hands. */
+  previewNeedsLoan(value: string | null): void {
+    if (this.pendingNeedsLoan === value) return;
+    this.pendingNeedsLoan = value;
+    this.emit();
+  }
+
+  /** What the wizard should believe right now. */
+  get effectiveNeedsLoan(): string {
+    return this.pendingNeedsLoan ?? (this.completion.loanDocuments?.needsLoan || '');
+  }
+
   async load(force = false): Promise<void> {
     if (this.loading || (this.loaded && !force)) return;
     const token = readAccessToken();
@@ -118,6 +142,8 @@ class StudentProfileStore extends ObservableStore {
       ]);
       this.profile = { ...EMPTY_PROFILE, ...profile };
       this.completion = { ...EMPTY_COMPLETION, ...completion };
+      /** The server has now spoken, so the unsaved guess is spent. */
+      this.pendingNeedsLoan = null;
       this.user = user;
       this.loaded = true;
       this.error = '';
@@ -143,6 +169,7 @@ class StudentProfileStore extends ObservableStore {
   reset(): void {
     this.profile = EMPTY_PROFILE;
     this.completion = EMPTY_COMPLETION;
+    this.pendingNeedsLoan = null;
     this.user = null;
     this.loaded = false;
     this.error = '';

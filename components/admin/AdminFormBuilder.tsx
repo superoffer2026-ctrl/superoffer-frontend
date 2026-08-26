@@ -19,23 +19,19 @@ const ROW_IDENTITY = [
 
 const FIELD_TYPES = ['text', 'email', 'tel', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'date'] as const;
 
-/** Option lists the reference endpoints already serve, offered instead of retyping them. */
-const OPTION_SOURCES = [
-  { value: '', label: 'Custom list (typed below)' },
-  { value: 'reference:countries', label: 'Countries' },
-  { value: 'reference:indiaCities', label: 'Indian cities' },
-  { value: 'reference:studyCountries', label: 'Study destinations' },
-  { value: 'reference:fieldsOfStudy', label: 'Fields of study' },
-  { value: 'reference:intakeOptions', label: 'Intakes' },
-  { value: 'reference:startYears', label: 'Start years' },
-  { value: 'reference:qualificationOptions', label: 'Qualifications' },
-  { value: 'reference:educationGapOptions', label: 'Education gap' },
-  { value: 'reference:fundingSourceOptions', label: 'Funding sources' },
-  { value: 'reference:earningMemberOptions', label: 'Earning members' },
-  { value: 'reference:currencyOptions', label: 'Currencies' },
-  { value: 'reference:employmentCategoryOptions', label: 'Employment categories' },
-  { value: 'reference:dialCodes', label: 'Dial codes' }
-];
+/**
+ * The choices a select offers come from a named list the server owns, so this
+ * component asks for them rather than keeping its own copy — a list added in
+ * the Option lists store appears here without a release, and one edited here
+ * changes every field that points at it.
+ */
+interface OptionSet {
+  key: string;
+  label: string;
+  description: string | null;
+  values: string[];
+  usedBy: Array<{ form: string; variant: string; field: string }>;
+}
 
 interface FormField {
   key: string;
@@ -139,6 +135,9 @@ export function AdminFormBuilder({ adminKey }: { adminKey: string }) {
   const [error, setError] = useState('');
   const [dirty, setDirty] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [optionSets, setOptionSets] = useState<OptionSet[]>([]);
+  const [optionDraft, setOptionDraft] = useState<string[] | null>(null);
+  const [optionBusy, setOptionBusy] = useState(false);
 
   const load = useCallback(async (which = variant, form = formKey) => {
     setError('');
@@ -169,6 +168,16 @@ export function AdminFormBuilder({ adminKey }: { adminKey: string }) {
   }, [load, variant, formKey]);
 
   /** Switching form also switches to a variant that form actually has. */
+  /**
+   * The named lists are fetched once and kept beside the form, so the choices a
+   * select offers are editable in the same place the select is configured.
+   */
+  useEffect(() => {
+    void authApi.adminOptionSets(adminKey)
+      .then(payload => setOptionSets((payload?.sets || []) as OptionSet[]))
+      .catch(() => setOptionSets([]));
+  }, [adminKey]);
+
   const chooseForm = (next: string) => {
     const choice = forms.find(entry => entry.key === next);
     setFormKey(next);
@@ -397,492 +406,405 @@ export function AdminFormBuilder({ adminKey }: { adminKey: string }) {
   const section = schema.sections.find(s => s.key === openSection) || schema.sections[0];
   const field = editingField ? section?.fields.find(f => f.key === editingField.key) : undefined;
 
+  /** The list this field borrows its choices from, if it borrows any. */
+  const sourceKey = field?.optionsSource?.startsWith('reference:')
+    ? field.optionsSource.slice('reference:'.length)
+    : '';
+  const sharedList = optionSets.find(set => set.key === sourceKey) || null;
+
+  /** Fields elsewhere that would change with it — the reason editing here is not local. */
+  const alsoUsing = sharedList
+    ? sharedList.usedBy.filter(use => use.field !== field?.label)
+    : [];
+
+  const choices = optionDraft ?? (sharedList ? sharedList.values : field?.options ?? []);
+  const choicesDirty = !!optionDraft && JSON.stringify(optionDraft) !== JSON.stringify(sharedList ? sharedList.values : field?.options ?? []);
+
+  const setChoices = (next: string[]) => {
+    if (sharedList) setOptionDraft(next);
+    else if (field && section) patchField(section.key, field.key, { options: next });
+  };
+
+  const saveSharedList = async () => {
+    if (!sharedList || !optionDraft) return;
+    setOptionBusy(true);
+    try {
+      await authApi.adminSaveOptionSet(adminKey, sharedList.key, { values: optionDraft });
+      const payload = await authApi.adminOptionSets(adminKey);
+      setOptionSets((payload?.sets || []) as OptionSet[]);
+      setOptionDraft(null);
+      flash(`"${sharedList.label}" saved — every field using it now offers these choices.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save that list.');
+    } finally {
+      setOptionBusy(false);
+    }
+  };
+
+  const isChoiceField = field?.type === 'select' || field?.type === 'multiselect';
+
   return (
-    <section className={cx('builder')}>
-      <header className={cx('builder-bar')}>
-        <div className={cx('builder-bar-left')}>
+    <section className={cx('shell')}>
+      {/* One bar: which form, what state it is in, and what can be done to it. */}
+      <header className={cx('bar')}>
+        <div className={cx('bar-pickers')}>
           <label>
             <span>Form</span>
-            <select name="formKey" value={formKey} onChange={event => chooseForm(event.target.value)}>
+            <select value={formKey} onChange={e => chooseForm(e.target.value)}>
               {forms.map(entry => <option key={entry.key} value={entry.key}>{entry.label}</option>)}
             </select>
           </label>
           <label>
-            <span>{currentForm?.owner === 'organization' ? 'Organisation type' : 'Variant'}</span>
-            <select name="variant" value={variant} onChange={event => setVariant(event.target.value)}>
-              {variants.map(v => <option key={v.variant} value={v.variant}>{v.label || v.variant}</option>)}
-              {!variants.some(v => v.variant === variant) && <option value={variant}>{variant}</option>}
+            <span>Variant</span>
+            <select value={variant} onChange={e => { setVariant(e.target.value); void load(e.target.value); }}>
+              {variants.map(entry => <option key={entry.variant} value={entry.variant}>{entry.label}</option>)}
             </select>
           </label>
-          {/* An organisation form has one document per organisation type and no others. */}
-          {!currentForm?.variantsAreFixed && (
+          {currentForm && !currentForm.variantsAreFixed && (
             <button type="button" className={cx('ghost')} onClick={createVariant}>+ New variant</button>
           )}
-          {currentForm && <span className={cx('builder-describes')}>{currentForm.describes}</span>}
-          {health && (
-            <span className={cx('builder-health', health.healthy ? 'ok' : 'warn')}>
-              {health.healthy
-                ? '✓ Live form supports every filter'
-                : `⚠ Live form is missing ${health.missing.length} field${health.missing.length === 1 ? '' : 's'} the engine uses`}
-            </span>
-          )}
+          <p className={cx('bar-describes')}>{currentForm?.describes}</p>
         </div>
 
-        <div className={cx('builder-bar-right')}>
-          {status && <span className={cx('builder-flash')}>{status}</span>}
-          {dirty && <span className={cx('builder-dirty')}>Unsaved changes</span>}
-          <button type="button" className={cx('ghost')} onClick={() => setPreview(!preview)}>
-            {preview ? 'Hide preview' : 'Preview'}
-          </button>
+        <div className={cx('bar-actions')}>
+          {health && (
+            <span className={cx('pill', health.healthy ? 'ok' : 'warn')}>
+              {health.healthy ? '✓ Live form supports every filter' : `⚠ ${health.missing.length} filter${health.missing.length === 1 ? '' : 's'} unsupported`}
+            </span>
+          )}
+          <span className={cx('pill', dirty ? 'draft' : 'clean')}>{dirty ? 'Unsaved draft' : 'Saved'}</span>
+          <button type="button" className={cx('ghost')} onClick={() => setPreview(true)}>Preview</button>
           <button type="button" className={cx('ghost')} onClick={() => void discard()}>Discard draft</button>
-          <button type="button" className={cx('secondary')} disabled={!dirty} onClick={() => void save()}>Save draft</button>
+          <button type="button" className={cx('ghost')} disabled={!dirty} onClick={() => void save()}>Save draft</button>
           <button type="button" className={cx('primary')} onClick={() => void reviewPublish()}>Review &amp; publish</button>
         </div>
       </header>
 
-      {error && <p className={cx('builder-error')}>{error}</p>}
+      {!!status && <p className={cx('flash')}>{status}</p>}
+      {!!error && <p className={cx('flash', 'bad')}>{error}</p>}
 
-      <div className={cx('builder-body')}>
-        <aside className={cx('builder-sections')}>
-          <h3>Sections</h3>
+      <div className={cx('panes')}>
+        {/*
+          * Sections, not a palette of field types. The wizard's steps are the
+          * spine of this form — a generic builder has no such level, and losing
+          * it would mean an admin scrolling one long list of ninety fields.
+          */}
+        <aside className={cx('rail')}>
+          <header>
+            <strong>Sections</strong>
+            <small>{schema.sections.length} steps</small>
+          </header>
           {schema.sections.map((entry, index) => (
-            <div key={entry.key} className={cx('builder-section-row', entry.key === section?.key && 'active')}>
-              <button type="button" className={cx('builder-section-open')} onClick={() => { setOpenSection(entry.key); setEditingField(null); }}>
-                <strong>{entry.label}</strong>
-                <small>{entry.fields.filter(f => f.enabled).length} of {entry.fields.length} fields shown</small>
+            <div key={entry.key} className={cx('rail-row', entry.key === section?.key && 'active', !entry.enabled && 'off')}>
+              <button type="button" className={cx('rail-open')} onClick={() => { setOpenSection(entry.key); setEditingField(null); }}>
+                <span>{entry.label}</span>
+                <small>{entry.fields.filter(f => f.enabled).length} of {entry.fields.length} shown</small>
               </button>
-              <div className={cx('builder-section-tools')}>
-                <button type="button" title="Move up" disabled={index === 0} onClick={() => reorderSection(index, -1)}>↑</button>
-                <button type="button" title="Move down" disabled={index === schema.sections.length - 1} onClick={() => reorderSection(index, 1)}>↓</button>
-                <label title={entry.enabled ? 'Shown to students' : 'Hidden from students'}>
-                  <input type="checkbox" checked={entry.enabled} onChange={e => patchSection(entry.key, { enabled: e.target.checked })} />
-                </label>
+              <div className={cx('rail-tools')}>
+                <button type="button" onClick={() => reorderSection(index, -1)} disabled={index === 0} aria-label="Move up">↑</button>
+                <button type="button" onClick={() => reorderSection(index, 1)} disabled={index === schema.sections.length - 1} aria-label="Move down">↓</button>
+                <input
+                  type="checkbox"
+                  checked={entry.enabled}
+                  title={entry.enabled ? 'Shown to students' : 'Hidden'}
+                  onChange={e => patchSection(entry.key, { enabled: e.target.checked })}
+                />
               </div>
             </div>
           ))}
         </aside>
 
-        {section && (
-          <div className={cx('builder-fields')}>
-            <header className={cx('builder-section-head')}>
-              <label className={cx('builder-inline')}>
-                <span>Section title</span>
-                <input value={section.label} onChange={e => patchSection(section.key, { label: e.target.value })} />
-              </label>
-              <label className={cx('builder-inline')}>
-                <span>Description</span>
-                <input value={section.description || ''} onChange={e => patchSection(section.key, { description: e.target.value })} />
-              </label>
-              <button type="button" className={cx('secondary')} onClick={() => addField(section.key)}>+ Add field</button>
-            </header>
+        {/* The section as a student meets it. Clicking a field opens it on the right. */}
+        <main className={cx('canvas')}>
+          {section && (
+            <>
+              <div className={cx('canvas-head')}>
+                <label className={cx('canvas-title')}>
+                  <span>Section title</span>
+                  <input value={section.label} onChange={e => patchSection(section.key, { label: e.target.value })} />
+                </label>
+                <label className={cx('canvas-title')}>
+                  <span>Description</span>
+                  <input value={section.description || ''} onChange={e => patchSection(section.key, { description: e.target.value })} />
+                </label>
+                <button type="button" className={cx('primary', 'add')} onClick={() => addField(section.key)}>+ Add field</button>
+              </div>
 
-            {/* Headings within the section. Fields point at one, so renaming is a single edit. */}
-            <div className={cx('builder-groups')}>
-              <header>
-                <span>Headings in this section</span>
-                <button type="button" onClick={() => addGroup(section.key)}>+ Add heading</button>
-              </header>
-              {!groupsOf(section.key).length && (
-                <p className={cx('builder-muted')}>No headings — every field renders in one list.</p>
-              )}
-              {groupsOf(section.key).map(group => (
-                <div key={group.key} className={cx('builder-group-row')}>
-                  <input
-                    value={group.label}
-                    aria-label={`Heading ${group.key}`}
-                    onChange={e => patchGroup(section.key, group.key, { label: e.target.value })}
-                  />
-                  <code>{group.key}</code>
-                  <button
-                    type="button"
-                    title="Remove this heading; its fields stay"
-                    onClick={() => removeGroup(section.key, group.key)}
-                  >
-                    ×
-                  </button>
+              <div className={cx('headings')}>
+                <div className={cx('headings-head')}>
+                  <strong>Headings in this section</strong>
+                  <button type="button" className={cx('ghost', 'tiny')} onClick={() => addGroup(section.key)}>+ Add heading</button>
                 </div>
-              ))}
-            </div>
-
-            {!section.enabled && (
-              <p className={cx('builder-notice')}>
-                This section is hidden from students. Answers already given are kept and reappear if you switch it back on.
-              </p>
-            )}
-
-            <ul className={cx('builder-field-list')}>
-              {section.fields.map((entry, index) => (
-                <li key={entry.key} className={cx('builder-field', !entry.enabled && 'off', editingField?.key === entry.key && 'editing')}>
-                  <div className={cx('builder-field-main')}>
-                    <button type="button" onClick={() => setEditingField({ section: section.key, key: entry.key })}>
-                      <strong>{entry.label}</strong>
-                      <small>
-                        {entry.composite ? `composite · ${entry.composite}` : entry.type}
-                        {entry.required && ' · required'}
-                        {entry.visibleWhen && ` · shown when ${entry.visibleWhen.field} = ${entry.visibleWhen.equals.join('/')}`}
-                      </small>
-                      <code>{entry.key}</code>
-                    </button>
+                {groupsOf(section.key).length ? (
+                  <div className={cx('heading-rows')}>
+                    {groupsOf(section.key).map(group => (
+                      <div key={group.key} className={cx('heading-row')}>
+                        <input value={group.label} onChange={e => patchGroup(section.key, group.key, { label: e.target.value })} />
+                        <button type="button" onClick={() => removeGroup(section.key, group.key)} aria-label="Remove heading">×</button>
+                      </div>
+                    ))}
                   </div>
-                  <div className={cx('builder-field-tools')}>
-                    <button type="button" title="Move up" disabled={index === 0} onClick={() => reorderField(section.key, index, -1)}>↑</button>
-                    <button type="button" title="Move down" disabled={index === section.fields.length - 1} onClick={() => reorderField(section.key, index, 1)}>↓</button>
-                    <label title={entry.enabled ? 'Shown' : 'Hidden'}>
-                      <input type="checkbox" checked={entry.enabled} onChange={e => patchField(section.key, entry.key, { enabled: e.target.checked })} />
-                    </label>
-                    <button type="button" className={cx('danger')} title="Remove" onClick={() => removeField(section.key, entry.key)}>✕</button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                ) : (
+                  <p className={cx('muted')}>No headings — every field renders in one list.</p>
+                )}
+              </div>
 
-        {field && section && (
-          <aside className={cx('builder-inspector')}>
-            <header>
-              <h3>{field.label}</h3>
-              <button type="button" onClick={() => setEditingField(null)} aria-label="Close">×</button>
-            </header>
+              <div className={cx('fields')}>
+                {section.fields.map((entry, index) => (
+                  <article
+                    key={entry.key}
+                    className={cx('field-card', entry.key === field?.key && 'selected', !entry.enabled && 'off')}
+                    onClick={() => setEditingField({ section: section.key, key: entry.key })}
+                  >
+                    <div className={cx('field-head')}>
+                      <div>
+                        <strong>{entry.label}</strong>
+                        <small>
+                          {entry.type}
+                          {entry.required ? ' · required' : ''}
+                          {entry.composite ? ' · repeating block' : ''}
+                          {entry.visibleWhen ? ' · conditional' : ''}
+                        </small>
+                      </div>
+                      <div className={cx('field-tools')} onClick={e => e.stopPropagation()}>
+                        <button type="button" onClick={() => reorderField(section.key, index, -1)} disabled={index === 0} aria-label="Move up">↑</button>
+                        <button type="button" onClick={() => reorderField(section.key, index, 1)} disabled={index === section.fields.length - 1} aria-label="Move down">↓</button>
+                        <input
+                          type="checkbox"
+                          checked={entry.enabled}
+                          title={entry.enabled ? 'Shown' : 'Hidden'}
+                          onChange={e => patchField(section.key, entry.key, { enabled: e.target.checked })}
+                        />
+                        <button type="button" className={cx('drop')} onClick={() => removeField(section.key, entry.key)} aria-label="Remove field">×</button>
+                      </div>
+                    </div>
 
-            {field.composite && (
-              <p className={cx('builder-notice')}>
-                This is a repeating block. Its rows are listed below and edit exactly like any other field — a row
-                condition points at another field in the same row. What stays in code is what drives the row set: one
-                academic row per level the student ticks, one income per earner they name.
-              </p>
-            )}
+                    {/* What the student will actually see, not a description of it. */}
+                    <div className={cx('field-preview')}>
+                      {entry.type === 'textarea' ? (
+                        <textarea rows={2} disabled placeholder={entry.placeholder || entry.label} />
+                      ) : entry.type === 'select' || entry.type === 'multiselect' ? (
+                        <select disabled>
+                          <option>{entry.placeholder || `Choose${entry.type === 'multiselect' ? ' one or more' : ''}…`}</option>
+                        </select>
+                      ) : entry.type === 'checkbox' ? (
+                        <label className={cx('preview-check')}><input type="checkbox" disabled /> <span>{entry.label}</span></label>
+                      ) : (
+                        <input disabled type={entry.type === 'number' ? 'number' : 'text'} placeholder={entry.placeholder || entry.label} />
+                      )}
+                    </div>
+                    <code className={cx('field-key')}>{entry.key}</code>
+                  </article>
+                ))}
+                {!section.fields.length && <p className={cx('muted')}>No fields yet. Add one to begin.</p>}
+              </div>
+            </>
+          )}
+        </main>
 
-            <label><span>Label</span>
-              <input value={field.label} onChange={e => patchField(section.key, field.key, { label: e.target.value })} />
-            </label>
+        {/* Properties, including the choices — so a list is edited where it is used. */}
+        <aside className={cx('props')}>
+          {!field && <p className={cx('muted')}>Pick a field to edit it.</p>}
+          {field && section && (
+            <>
+              <header className={cx('props-head')}>
+                <strong>{field.label || 'Untitled field'}</strong>
+                <button type="button" onClick={() => setEditingField(null)} aria-label="Close">×</button>
+              </header>
 
-            <label><span>Key</span>
-              <input
-                value={field.key}
-                onChange={e => patchField(section.key, field.key, { key: slug(e.target.value) })}
-              />
-            </label>
+              <label className={cx('prop')}>
+                <span>Label</span>
+                <input value={field.label} onChange={e => patchField(section.key, field.key, { label: e.target.value })} />
+              </label>
 
-            {!field.composite && (
-              <label><span>Type</span>
+              <label className={cx('prop')}>
+                <span>Key</span>
+                <input value={field.key} onChange={e => patchField(section.key, field.key, { key: e.target.value })} />
+                <small>What the answer is stored as. Changing it on a live form orphans what students already saved.</small>
+              </label>
+
+              <label className={cx('prop')}>
+                <span>Type</span>
                 <select value={field.type} onChange={e => patchField(section.key, field.key, { type: e.target.value })}>
                   {FIELD_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>
-            )}
 
-            <label><span>Help text</span>
-              <input value={field.helpText || ''} onChange={e => patchField(section.key, field.key, { helpText: e.target.value })} />
-            </label>
+              <label className={cx('prop')}>
+                <span>Help text</span>
+                <input value={field.helpText || ''} onChange={e => patchField(section.key, field.key, { helpText: e.target.value })} />
+              </label>
 
-            <label><span>Under which heading</span>
-              <select
-                name="group"
-                value={field.group || ''}
-                onChange={e => patchField(section.key, field.key, { group: e.target.value || undefined })}
-              >
-                <option value="">No heading</option>
-                {groupsOf(section.key).map(group => (
-                  <option key={group.key} value={group.key}>{group.label}</option>
-                ))}
-              </select>
-            </label>
-
-            {!field.composite && (
-              <label><span>Placeholder</span>
+              <label className={cx('prop')}>
+                <span>Placeholder</span>
                 <input value={field.placeholder || ''} onChange={e => patchField(section.key, field.key, { placeholder: e.target.value })} />
               </label>
-            )}
 
-            {/* The fields of one row, edited in place. */}
-            {field.composite && (
-              <div className={cx('builder-rows')}>
-                <header>
-                  <span>Fields in each row</span>
-                  <button type="button" onClick={() => addRowField(section.key, field.key)}>+ Add field</button>
-                </header>
-
-                {!field.itemFields?.length && <p className={cx('builder-muted')}>This block has no editable row fields.</p>}
-
-                {(field.itemFields || []).map((row, index) => (
-                  <div key={row.key} className={cx('builder-row-field', !row.enabled && 'off')}>
-                    <button
-                      type="button"
-                      className={cx('builder-row-open')}
-                      onClick={() => setEditingRow(editingRow === row.key ? null : row.key)}
-                    >
-                      <strong>{row.label}</strong>
-                      <small>{row.type}{row.required ? ' · required' : ''}</small>
-                      <code>{row.key}</code>
-                    </button>
-                    <div className={cx('builder-row-actions')}>
-                      <button type="button" title="Move up" disabled={index === 0}
-                        onClick={() => reorderRowField(section.key, field.key, index, -1)}>↑</button>
-                      <button type="button" title="Move down" disabled={index === (field.itemFields?.length || 0) - 1}
-                        onClick={() => reorderRowField(section.key, field.key, index, 1)}>↓</button>
-                      <input
-                        type="checkbox"
-                        title={row.enabled ? 'Shown' : 'Hidden'}
-                        checked={row.enabled}
-                        onChange={e => patchRowField(section.key, field.key, row.key, { enabled: e.target.checked })}
-                      />
-                      <button type="button" title="Remove" className={cx('builder-row-remove')}
-                        onClick={() => removeRowField(section.key, field.key, row.key)}>×</button>
-                    </div>
-
-                    {editingRow === row.key && (
-                      <div className={cx('builder-row-editor')}>
-                        <label><span>Label</span>
-                          <input value={row.label}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { label: e.target.value })} />
-                        </label>
-                        <label><span>Key</span>
-                          <input value={row.key}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { key: slug(e.target.value) })} />
-                        </label>
-                        <label><span>Type</span>
-                          <select value={row.type}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { type: e.target.value })}>
-                            {FIELD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
-                        </label>
-                        <label><span>Placeholder</span>
-                          <input value={row.placeholder || ''}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { placeholder: e.target.value })} />
-                        </label>
-                        <label><span>Options come from</span>
-                          <select value={row.optionsSource || ''}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { optionsSource: e.target.value })}>
-                            {OPTION_SOURCES.map(source => <option key={source.value} value={source.value}>{source.label}</option>)}
-                          </select>
-                        </label>
-                        {!row.optionsSource && (row.type === 'select' || row.type === 'multiselect') && (
-                          <label><span>Options, one per line</span>
-                            <textarea
-                              rows={3}
-                              value={(row.options || []).join('\n')}
-                              onChange={e => patchRowField(section.key, field.key, row.key, {
-                                options: e.target.value.split('\n').map(o => o.trim()).filter(Boolean)
-                              })}
-                            />
-                          </label>
-                        )}
-                        <label className={cx('builder-check')}>
-                          <input type="checkbox" checked={row.required}
-                            onChange={e => patchRowField(section.key, field.key, row.key, { required: e.target.checked })} />
-                          <span>Required</span>
-                        </label>
-                        {/* A row condition points at another field in the same row. */}
-                        <label><span>Only show when</span>
-                          <select
-                            value={row.visibleWhen?.field || ''}
-                            onChange={e => patchRowField(section.key, field.key, row.key, {
-                              visibleWhen: e.target.value
-                                ? { field: e.target.value, equals: row.visibleWhen?.equals || [] }
-                                : undefined
-                            })}
-                          >
-                            <option value="">Always shown</option>
-                            {(field.itemFields || []).filter(other => other.key !== row.key)
-                              .map(other => <option key={other.key} value={other.key}>{other.label}</option>)}
-                            {ROW_IDENTITY.map(identity => (
-                              <option key={identity.value} value={identity.value}>{identity.label}</option>
-                            ))}
-                          </select>
-                        </label>
-                        {row.visibleWhen?.field && (
-                          <label><span>…equals, one per line</span>
-                            <textarea
-                              rows={3}
-                              value={(row.visibleWhen.equals || []).join('\n')}
-                              onChange={e => patchRowField(section.key, field.key, row.key, {
-                                visibleWhen: {
-                                  field: row.visibleWhen!.field,
-                                  equals: e.target.value.split('\n').map(o => o.trim()).filter(Boolean)
-                                }
-                              })}
-                            />
-                          </label>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <label className={cx('builder-check')}>
-              <input type="checkbox" checked={field.required} onChange={e => patchField(section.key, field.key, { required: e.target.checked })} />
-              <span>Required</span>
-            </label>
-
-            {(field.type === 'select' || field.type === 'multiselect') && (
-              <>
-                <label><span>Options from</span>
-                  <select
-                    value={field.optionsSource || ''}
-                    onChange={e => patchField(section.key, field.key, { optionsSource: e.target.value || undefined })}
-                  >
-                    {OPTION_SOURCES.map(source => <option key={source.value} value={source.value}>{source.label}</option>)}
-                  </select>
-                </label>
-                {!field.optionsSource && (
-                  <label><span>Options, one per line</span>
-                    <textarea
-                      rows={4}
-                      value={(field.options || []).join('\n')}
-                      onChange={e => patchField(section.key, field.key, { options: e.target.value.split('\n').map(o => o.trim()).filter(Boolean) })}
-                    />
-                  </label>
-                )}
-
-                {/* A line under one option, for the places an option needs explaining. */}
-                {!!(field.options || []).length && (
-                  <div className={cx('builder-hints')}>
-                    <small>A line under an option, where one helps. Leave blank for none.</small>
-                    {(field.options || []).map(option => (
-                      <label key={option} className={cx('builder-inline')}>
-                        <span>{option}</span>
-                        <input
-                          value={field.optionHints?.[option] || ''}
-                          onChange={e => patchField(section.key, field.key, {
-                            optionHints: { ...(field.optionHints || {}), [option]: e.target.value }
-                          })}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {field.type === 'number' && (
-              <div className={cx('builder-pair')}>
-                <label><span>Minimum</span>
-                  <input type="number" value={field.validation?.min ?? ''}
-                    onChange={e => patchField(section.key, field.key, { validation: { ...field.validation, min: e.target.value === '' ? undefined : Number(e.target.value) } })} />
-                </label>
-                <label><span>Maximum</span>
-                  <input type="number" value={field.validation?.max ?? ''}
-                    onChange={e => patchField(section.key, field.key, { validation: { ...field.validation, max: e.target.value === '' ? undefined : Number(e.target.value) } })} />
-                </label>
-              </div>
-            )}
-
-            {['text', 'email', 'tel', 'textarea'].includes(field.type) && (
-              <label><span>Pattern (regular expression, optional)</span>
-                <input
-                  value={field.validation?.pattern || ''}
-                  placeholder="^[A-Z]{2}[0-9]{6}$"
-                  onChange={e => patchField(section.key, field.key, { validation: { ...field.validation, pattern: e.target.value || undefined } })}
-                />
+              <label className={cx('prop')}>
+                <span>Under which heading</span>
+                <select value={field.group || ''} onChange={e => patchField(section.key, field.key, { group: e.target.value || undefined })}>
+                  <option value="">No heading</option>
+                  {groupsOf(section.key).map(group => <option key={group.key} value={group.key}>{group.label}</option>)}
+                </select>
               </label>
-            )}
 
-            <fieldset className={cx('builder-conditional')}>
-              <legend>Show only when…</legend>
-              <select
-                value={field.visibleWhen?.field || ''}
-                onChange={e => patchField(section.key, field.key, {
-                  visibleWhen: e.target.value ? { field: e.target.value, equals: field.visibleWhen?.equals || [] } : undefined
-                })}
-              >
-                <option value="">Always shown</option>
-                {section.fields.filter(f => f.key !== field.key && !f.composite).map(f => (
-                  <option key={f.key} value={f.key}>{f.label}</option>
-                ))}
-              </select>
-              {field.visibleWhen && (
-                <input
-                  placeholder="equals these values, comma separated"
-                  value={(field.visibleWhen.equals || []).join(', ')}
-                  onChange={e => patchField(section.key, field.key, {
-                    visibleWhen: { field: field.visibleWhen!.field, equals: e.target.value.split(',').map(v => v.trim()).filter(Boolean) }
-                  })}
-                />
+              <label className={cx('prop', 'check')}>
+                <input type="checkbox" checked={field.required} onChange={e => patchField(section.key, field.key, { required: e.target.checked })} />
+                <span>Required</span>
+              </label>
+
+              {isChoiceField && (
+                <section className={cx('choices')}>
+                  <label className={cx('prop')}>
+                    <span>Choices come from</span>
+                    <select
+                      value={field.optionsSource || ''}
+                      onChange={e => { setOptionDraft(null); patchField(section.key, field.key, { optionsSource: e.target.value || undefined }); }}
+                    >
+                      <option value="">A list only this field uses</option>
+                      {optionSets.map(set => (
+                        <option key={set.key} value={`reference:${set.key}`}>{set.label}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {/*
+                    * A shared list is edited here for convenience, but never
+                    * silently: the fields that would change with it are named,
+                    * and it saves separately from the form draft because it
+                    * takes effect immediately rather than on publish.
+                    */}
+                  {sharedList && (
+                    <p className={cx('shared-note')}>
+                      Shared list. {alsoUsing.length
+                        ? `Also used by ${alsoUsing.map(use => use.field).join(', ')} — editing changes them too.`
+                        : 'No other field uses it yet.'}
+                    </p>
+                  )}
+
+                  <div className={cx('choice-rows')}>
+                    {choices.map((value, index) => (
+                      <div key={index} className={cx('choice-row')}>
+                        <input
+                          value={value}
+                          onChange={e => setChoices(choices.map((entry, i) => (i === index ? e.target.value : entry)))}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setChoices(choices.filter((_, i) => i !== index))}
+                          aria-label="Remove choice"
+                        >×</button>
+                      </div>
+                    ))}
+                    {!choices.length && <p className={cx('muted')}>No choices yet.</p>}
+                  </div>
+
+                  <button type="button" className={cx('ghost', 'tiny')} onClick={() => setChoices([...choices, ''])}>
+                    + Add choice
+                  </button>
+
+                  {sharedList && choicesDirty && (
+                    <div className={cx('choice-save')}>
+                      <button type="button" className={cx('ghost', 'tiny')} onClick={() => setOptionDraft(null)}>Discard</button>
+                      <button type="button" className={cx('primary', 'tiny')} disabled={optionBusy} onClick={() => void saveSharedList()}>
+                        Save shared list
+                      </button>
+                    </div>
+                  )}
+                </section>
               )}
-            </fieldset>
-          </aside>
-        )}
+
+              <label className={cx('prop')}>
+                <span>Show only when</span>
+                <select
+                  value={field.visibleWhen?.field || ''}
+                  onChange={e => patchField(section.key, field.key, {
+                    visibleWhen: e.target.value
+                      ? { field: e.target.value, equals: field.visibleWhen?.equals || [] }
+                      : undefined
+                  })}
+                >
+                  <option value="">Always shown</option>
+                  {section.fields.filter(f => f.key !== field.key).map(f => (
+                    <option key={f.key} value={f.key}>{f.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              {field.visibleWhen && (
+                <label className={cx('prop')}>
+                  <span>…is one of</span>
+                  <input
+                    value={(field.visibleWhen.equals || []).join(', ')}
+                    placeholder="Yes, Maybe"
+                    onChange={e => patchField(section.key, field.key, {
+                      visibleWhen: {
+                        field: field.visibleWhen!.field,
+                        equals: e.target.value.split(',').map(v => v.trim()).filter(Boolean)
+                      }
+                    })}
+                  />
+                </label>
+              )}
+            </>
+          )}
+        </aside>
       </div>
 
-      {preview && (
-        <section className={cx('builder-preview')}>
-          <header><h3>Preview</h3><small>How the draft renders for a student, section by section.</small></header>
-          {schema.sections.filter(s => s.enabled).map(entry => (
-            <article key={entry.key}>
-              <h4>{entry.label}</h4>
-              {entry.description && <p>{entry.description}</p>}
-              <div className={cx('preview-grid')}>
-                {entry.fields.filter(f => f.enabled).map(f => (
-                  <label key={f.key} className={cx(f.wide && 'wide')}>
-                    <span>{f.label}{f.required && <b> *</b>}</span>
-                    {f.composite ? (
-                      <em className={cx('preview-composite')}>{f.composite} block</em>
-                    ) : f.type === 'select' || f.type === 'multiselect' ? (
-                      <select disabled><option>{f.optionsSource ? f.optionsSource.replace('reference:', '') : (f.options || []).join(', ') || 'options'}</option></select>
-                    ) : f.type === 'checkbox' ? (
-                      <input type="checkbox" disabled />
-                    ) : f.type === 'textarea' ? (
-                      <textarea disabled rows={2} placeholder={f.placeholder} />
-                    ) : (
-                      <input disabled type={f.type} placeholder={f.placeholder} />
-                    )}
-                    {f.helpText && <small>{f.helpText}</small>}
-                  </label>
-                ))}
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
-
-      <section className={cx('builder-versions')}>
-        <h3>Version history</h3>
-        {versions.map(entry => (
-          <div key={entry.id} className={cx('builder-version')}>
-            <span className={cx('builder-version-status', entry.status.toLowerCase())}>{entry.status}</span>
-            <strong>v{entry.version}</strong>
-            <small>{entry.publishedAt ? `published ${new Date(entry.publishedAt).toLocaleString()}` : `edited ${new Date(entry.updatedAt).toLocaleString()}`}</small>
-            {entry.publishNote && <em title={entry.publishNote}>published with warnings</em>}
-            {entry.status !== 'DRAFT' && (
-              <button type="button" className={cx('ghost')} onClick={() => void restore(entry.version)}>Restore</button>
-            )}
-          </div>
-        ))}
-        {!versions.length && <p className={cx('builder-muted')}>No versions yet — this form is still the built-in default.</p>}
-      </section>
-
+      {/* Publishing names what the matching engine would lose, before it happens. */}
       {confirming && impact && (
-        <div className={cx('builder-backdrop')} onClick={() => setConfirming(false)}>
-          <div className={cx('builder-dialog')} onClick={event => event.stopPropagation()}>
-            <h3>{impact.safe ? 'Publish this form?' : 'This will break parts of matching'}</h3>
-
-            {impact.safe && (
-              <p>No filters, scores or completion rules are affected. Students see the new form immediately.</p>
+        <div className={cx('backdrop')} onClick={() => setConfirming(false)}>
+          <div className={cx('sheet')} onClick={e => e.stopPropagation()}>
+            <h3>{impact.safe ? 'Ready to publish' : 'Publish would change what students can be matched on'}</h3>
+            {!!impact.warnings.length && <ul>{impact.warnings.map(w => <li key={w}>{w}</li>)}</ul>}
+            {!!impact.missing.length && (
+              <ul>
+                {impact.missing.map(m => (
+                  <li key={`${m.section}-${m.field}`}>
+                    <b>{m.field}</b> is used by {m.usedBy.join(', ')}
+                  </li>
+                ))}
+              </ul>
             )}
-
-            {!impact.safe && (
-              <>
-                <p>You are removing fields the matching engine reads. Publishing anyway will:</p>
-                <ul className={cx('builder-warnings')}>
-                  {impact.warnings.map(warning => <li key={warning}>{warning}</li>)}
-                </ul>
-                <p className={cx('builder-muted')}>
-                  Existing answers are kept and will reappear if you restore the field.
-                </p>
-              </>
-            )}
-
-            <div className={cx('builder-dialog-actions')}>
-              <button type="button" className={cx('ghost')} onClick={() => setConfirming(false)}>Cancel</button>
-              <button type="button" className={cx(impact.safe ? 'primary' : 'danger-solid')} onClick={() => void publish()}>
-                {impact.safe ? 'Publish' : 'Publish anyway'}
-              </button>
-            </div>
+            <footer>
+              <button type="button" className={cx('ghost')} onClick={() => setConfirming(false)}>Keep editing</button>
+              <button type="button" className={cx('primary')} onClick={() => void publish()}>Publish anyway</button>
+            </footer>
           </div>
         </div>
+      )}
+
+      {preview && (
+        <div className={cx('backdrop')} onClick={() => setPreview(false)}>
+          <div className={cx('sheet', 'wide')} onClick={e => e.stopPropagation()}>
+            <h3>{schema.label}</h3>
+            {schema.sections.filter(s => s.enabled).map(entry => (
+              <section key={entry.key} className={cx('preview-section')}>
+                <strong>{entry.label}</strong>
+                <ul>
+                  {entry.fields.filter(f => f.enabled).map(f => (
+                    <li key={f.key}>{f.label}{f.required ? ' *' : ''}</li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+            <footer>
+              <button type="button" className={cx('primary')} onClick={() => setPreview(false)}>Close</button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {!!versions.length && (
+        <details className={cx('versions')}>
+          <summary>Version history</summary>
+          {versions.map(entry => (
+            <div key={entry.version} className={cx('version-row')}>
+              <span>v{entry.version} · {entry.status}</span>
+              <button type="button" className={cx('ghost', 'tiny')} onClick={() => void restore(entry.version)}>Restore</button>
+            </div>
+          ))}
+        </details>
       )}
     </section>
   );

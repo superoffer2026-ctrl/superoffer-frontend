@@ -235,6 +235,32 @@
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
 }
 
+/* This sheet never styled the tick at all, so its two dropdowns rendered a
+   bare ✓ against every option — funding sources and earning members both
+   looked as though everything had already been picked. */
+.option-check {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--slate-200, #d7e0da);
+  border-radius: 4px;
+  font-size: 11px;
+  /* Transparent rather than absent, so an unchosen row keeps its width. */
+  color: transparent;
+}
+/* The box is the thing you click, so it goes once there is nothing left to
+   click it for. The mark stays, without its square, in the slot the box held —
+   so rows keep their alignment and a chosen option still reads as chosen. */
+.option-check.checked {
+  border-color: transparent;
+  background: transparent;
+  color: var(--primary, #087a50);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .combo-list li {
   display: flex;
   align-items: center;

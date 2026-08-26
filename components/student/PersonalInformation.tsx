@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { authApi, type ApiError } from '@/lib/api/auth-api';
+import { useNextStepPath, useStepBadge } from '@/lib/forms/use-profile-steps';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { classNames } from '@/lib/cx';
 import type { CountryInfo } from '@/lib/options/geo';
@@ -19,6 +20,10 @@ export function PersonalInformation() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnToReview = searchParams.get('from') === 'review';
+  /** Numbered against the steps this student actually has. */
+  const stepBadge = useStepBadge('personal-information');
+  /** Continue follows the published order, not a name typed in here. */
+  const nextStep = useNextStepPath('personal-information');
 
   const [countries, setCountries] = useState<CountryInfo[]>([]);
   const [countryCityOptions, setCountryCityOptions] = useState<Record<string, string[]>>({});
@@ -212,7 +217,7 @@ export function PersonalInformation() {
     try {
       await authApi.saveStudentPersonalInformation(token, payload);
       await profile.refresh();
-      router.push(returnToReview ? '/student/review' : '/student/study-preferences');
+      router.push(returnToReview ? '/student/review' : nextStep());
     } catch (e) {
       if ((e as ApiError).status === 401) {
         handleUnauthorized();
@@ -239,7 +244,7 @@ export function PersonalInformation() {
                 <p>{fields.description || 'Your information is securely saved to your student profile.'}</p>
               </div>
             </div>
-            <span className={cx('step-badge')}>STEP 1 OF 9</span>
+            <span className={cx('step-badge')}>{stepBadge}</span>
           </div>
 
           <div className={cx('field-grid')}>

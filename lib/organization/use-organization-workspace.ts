@@ -254,6 +254,17 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
           return;
         }
 
+        /*
+         * An unapproved organisation may sign in, but the workspace has nothing
+         * to show it: every call behind it returns 403 by design. Send it to
+         * the page where it can actually do something instead of loading a
+         * shell full of empty panels.
+         */
+        if (account.approval_status && account.approval_status !== 'APPROVED') {
+          router.replace('/organization/verification');
+          return;
+        }
+
         setUser({ full_name: account.full_name || '', email: account.email || '' });
         setRole(
           (account.organization?.organizationType as Role) || organizationTypeFromRole(account.role)
