@@ -369,6 +369,15 @@
   font-size: 12.5px;
 }
 
+.reading-institution-link {
+  display: inline-block;
+  margin-top: 3px;
+  color: var(--ow-green);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.reading-institution-link:hover { text-decoration: underline }
+
 .header-offer-status {
   padding: 6px 12px;
   border-radius: 99px;
@@ -400,12 +409,20 @@
 }
 
 .offer-detail-hero > h1 {
-  margin: 9px 0 20px;
+  margin: 9px 0 10px;
   font-family: var(--ow-display);
   font-size: clamp(23px, 2.1vw, 29px);
   line-height: 1.14;
   letter-spacing: -.035em;
   color: var(--ow-ink);
+}
+
+.offer-hero-description {
+  margin: 0 0 20px;
+  color: #47554d;
+  font-size: 13.5px;
+  line-height: 1.6;
+  max-width: 65ch;
 }
 
 /* The facts of the offer, as a plain table of pairs — no cross of rules. */
@@ -425,6 +442,11 @@
 
 .offer-key-terms > div:nth-child(odd) { border-left: 0 }
 .offer-key-terms > div:nth-child(-n+2) { border-top: 0 }
+
+/* An odd count (some offers skip the value field) leaves the last cell alone in its
+   row otherwise — matches only when it's both odd-positioned and last, i.e. exactly
+   the orphan case, so a full four-cell offer is untouched. */
+.offer-key-terms > div:nth-child(odd):last-child { grid-column: 1 / -1 }
 
 .offer-key-terms small {
   display: block;
@@ -472,18 +494,56 @@
   line-height: 1.65;
 }
 
-.offer-conditions > button {
-  margin-top: 12px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ow-green);
-  font-size: 12.5px;
-  font-weight: 800;
-  cursor: pointer;
+.offer-more-details {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--ow-line-soft);
 }
 
-.offer-conditions > button:hover { text-decoration: underline }
+.offer-more-details h3 {
+  margin: 0 0 12px;
+  font-family: var(--ow-display);
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+
+.offer-more-details-grid {
+  display: grid;
+  /* Two columns, not three: an offer states anywhere from one figure to a dozen,
+     and a fixed three-wide grid left a lone trailing cell more often than not —
+     one empty column wide, reading as an unfinished card. Two columns are wrong
+     half as often, and the rule below closes the gap whenever the count is odd. */
+  grid-template-columns: repeat(2, 1fr);
+  border: 1px solid var(--ow-line-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.offer-more-details-grid > div {
+  padding: 13px 15px;
+  border-left: 1px solid var(--ow-line-soft);
+  border-top: 1px solid var(--ow-line-soft);
+}
+.offer-more-details-grid > div:nth-child(odd) { border-left: 0 }
+.offer-more-details-grid > div:nth-child(-n+2) { border-top: 0 }
+/* An odd total leaves the last cell alone in its row — matches only that exact
+   case (odd-positioned AND last), so a full, even-count offer is untouched. */
+.offer-more-details-grid > div:nth-child(odd):last-child { grid-column: 1 / -1; border-left: 0 }
+
+.offer-more-details-grid small {
+  display: block;
+  color: var(--ow-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.offer-more-details-grid strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 13.5px;
+  letter-spacing: -.01em;
+}
 
 .offer-next-steps {
   margin-top: 24px;

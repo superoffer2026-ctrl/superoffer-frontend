@@ -624,7 +624,7 @@ export function AdminPage() {
                         <div>
                           <small>{roleLabel(item.role)}</small>
                           <strong>{item.organization?.name || item.full_name}</strong>
-                          <span>{item.full_name} · {item.email} · Submitted {mediumDate(item.submitted_at)}</span>
+                          <span>{[item.full_name, item.email].filter(Boolean).join(' · ')} · Submitted {mediumDate(item.submitted_at)}</span>
                         </div>
                         <span
                           className={cx(

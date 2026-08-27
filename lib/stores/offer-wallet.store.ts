@@ -24,8 +24,11 @@ export interface StudentOffer {
   institution: string;
   initial: string;
   logo?: string;
+  institutionWebsite: string;
+  institutionDescription: string;
   program: string;
   headline: string;
+  description: string;
   received: string;
   /** The unformatted timestamps, for screens that need the date parts. */
   receivedAt: string;

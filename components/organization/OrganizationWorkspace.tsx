@@ -261,22 +261,28 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                         */}
                       <section className={cx('candidate-snapshot')} aria-label="Candidate snapshot">
                         {(role === 'BANK'
-                          ? ['budget', 'docs', 'cgpa', 'scores', 'destination', 'interests']
-                          : ['cgpa', 'scores', 'docs', 'budget', 'destination', 'interests']
+                          ? ['coApplicantIncome', 'existingEmi', 'loanAmountRequested', 'budget', 'destination', 'workExperience']
+                          : ['cgpa', 'scores', 'budget', 'destination', 'interests', 'workExperience']
                         ).map(key => {
-                          const verified = Number(candidate.documentsVerified) || 0;
+                          const readiness = candidate.loanReadiness;
+                          const years = Number(candidate.workExperienceYears) || 0;
                           const cells: Record<string, { label: string; value: string; tone?: string }> = {
                             cgpa: { label: 'CGPA / MARKS', value: candidate.cgpa },
                             scores: { label: 'TEST SCORES', value: candidate.examScore },
                             budget: { label: 'BUDGET', value: candidate.budget },
-                            /* Nothing verified is a warning, not an achievement in green. */
-                            docs: {
-                              label: 'VERIFIED DOCS',
-                              value: `${verified}/5 verified`,
-                              tone: verified >= 5 ? 'good' : verified > 0 ? 'partial' : 'none'
-                            },
                             destination: { label: 'DESTINATION', value: candidate.targetCountry },
-                            interests: { label: 'FUTURE INTERESTS', value: candidate.futureInterests }
+                            interests: { label: 'FUTURE INTERESTS', value: candidate.futureInterests },
+                            /* Always stated — "0 years" is the student's own answer, not a missing field,
+                               so it must not be filtered out the way a genuinely absent value would be. */
+                            workExperience: { label: 'WORK EXPERIENCE', value: `${years} ${years === 1 ? 'year' : 'years'}` },
+                            /* From the loan-eligibility details the student filled in on their own dashboard —
+                               absent until they have named a co-applicant, which the empty cell already says. */
+                            coApplicantIncome: { label: 'CO-APPLICANT INCOME', value: readiness ? `${money(readiness.monthlyIncome)}/mo` : '' },
+                            existingEmi: { label: 'EXISTING EMI', value: readiness ? `${money(readiness.existingEmi)}/mo` : '' },
+                            loanAmountRequested: {
+                              label: 'LOAN AMOUNT REQUESTED',
+                              value: readiness?.loanAmountRequested ? money(readiness.loanAmountRequested) : ''
+                            }
                           };
                           const cell = cells[key];
                           if (!cell || !isStated(cell.value)) return null;
@@ -288,6 +294,12 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                           );
                         })}
                       </section>
+
+                      {role === 'BANK' && !candidate.loanReadiness && (
+                        <p className={cx('snapshot-note')}>
+                          No financial details yet — they appear once the student names a co-applicant and agrees to a credit check from their dashboard.
+                        </p>
+                      )}
 
                       {/*
                         * Whether the household can carry a loan at all. Shown only to a
@@ -320,6 +332,16 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                               <strong>{money(candidate.loanReadiness.existingEmi)}/mo</strong>
                             </div>
                             <div>
+                              <small>HAS EXISTING LOAN</small>
+                              <strong>{candidate.loanReadiness.hasExistingLoan || 'Not stated'}</strong>
+                            </div>
+                            <div>
+                              <small>LOAN AMOUNT REQUESTED</small>
+                              <strong>
+                                {candidate.loanReadiness.loanAmountRequested ? money(candidate.loanReadiness.loanAmountRequested) : 'Not stated'}
+                              </strong>
+                            </div>
+                            <div>
                               <small>CREDIT BAND</small>
                               <strong>
                                 {candidate.loanReadiness.creditBand
@@ -332,11 +354,15 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                               <small>SUPPORTS ABOUT</small>
                               <strong>{money(candidate.loanReadiness.indicativeAmount)}</strong>
                             </div>
+                            {/* From the student's own onboarding, not this loan-eligibility form — the
+                                broader household picture a co-applicant's figures alone don't give. */}
                             <div>
-                              <small>DOCUMENTS</small>
-                              <strong>
-                                {candidate.loanReadiness.documentsVerified}/{candidate.loanReadiness.documentsExpected} verified
-                              </strong>
+                              <small>FUNDING SOURCE</small>
+                              <strong>{candidate.loanReadiness.fundingSource || 'Not stated'}</strong>
+                            </div>
+                            <div>
+                              <small>FAMILY EARNERS</small>
+                              <strong>{candidate.loanReadiness.earningMembers || 'Not stated'}</strong>
                             </div>
                           </div>
 

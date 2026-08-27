@@ -88,6 +88,40 @@ export function StudentOfferInbox() {
   const isStated = (value: string | undefined) =>
     !!value && !['—', '-', '–', 'N/A', 'TBD'].includes(value.trim());
 
+  /** Every category-specific figure an organisation can attach to an offer, beyond
+   *  the headline value already shown above — a lender's or university's terms are
+   *  rarely just one number, and the rest were being collected and simply dropped. */
+  const DETAIL_FIELDS: Array<{ key: keyof StudentOffer; label: string; format?: (raw: string) => string }> = [
+    { key: 'location', label: 'LOCATION' },
+    { key: 'tuitionFee', label: 'TUITION FEE' },
+    { key: 'scholarshipPct', label: 'SCHOLARSHIP', format: raw => `${raw}%` },
+    { key: 'durationYears', label: 'DURATION', format: raw => `${raw} ${raw === '1' ? 'year' : 'years'}` },
+    { key: 'qsRanking', label: 'QS RANKING' },
+    { key: 'placementHighlights', label: 'PLACEMENT HIGHLIGHTS' },
+    { key: 'loanAmount', label: 'LOAN AMOUNT' },
+    { key: 'interestRate', label: 'INTEREST RATE' },
+    { key: 'emi', label: 'EMI' },
+    { key: 'moratorium', label: 'MORATORIUM' },
+    { key: 'processingFee', label: 'PROCESSING FEE' },
+    { key: 'tenure', label: 'TENURE' },
+    { key: 'amount', label: 'AMOUNT' },
+    { key: 'coverage', label: 'COVERAGE' },
+    { key: 'eligibility', label: 'ELIGIBILITY' },
+    { key: 'visaServices', label: 'VISA SERVICES' },
+    { key: 'accommodationSupport', label: 'ACCOMMODATION SUPPORT' },
+    { key: 'supportServices', label: 'SUPPORT SERVICES' }
+  ];
+
+  const offerDetails = (offer: StudentOffer) =>
+    DETAIL_FIELDS
+      .map(field => {
+        const raw = offer[field.key];
+        const stringValue = raw === undefined || raw === null ? '' : String(raw);
+        return { ...field, value: stringValue };
+      })
+      .filter(field => isStated(field.value))
+      .map(field => ({ ...field, value: field.format ? field.format(field.value) : field.value }));
+
   const heroLabel =
     selected?.category === 'Bank' ? 'FINANCE PROPOSAL'
       : selected?.category === 'Scholarship' ? 'SCHOLARSHIP AWARD'
@@ -197,6 +231,11 @@ export function StudentOfferInbox() {
                     <small>{selected.category.toUpperCase()} OFFER</small>
                     <h2>{selected.institution}</h2>
                     <p className={cx('reading-course')}>{selected.program}</p>
+                    {isStated(selected.institutionWebsite) && (
+                      <a className={cx('reading-institution-link')} href={selected.institutionWebsite} target="_blank" rel="noreferrer">
+                        {selected.institutionWebsite.replace(/^https?:\/\//, '')} ↗
+                      </a>
+                    )}
                   </div>
                 </div>
                 <span
@@ -215,6 +254,7 @@ export function StudentOfferInbox() {
                 <section className={cx('offer-detail-hero')}>
                   <small>{heroLabel}</small>
                   <h1>{selected.headline}</h1>
+                  {isStated(selected.description) && <p className={cx('offer-hero-description')}>{selected.description}</p>}
                   <div className={cx('offer-key-terms')}>
                     <div><small>{selected.category === 'Bank' ? 'PRODUCT' : 'PROGRAMME'}</small><strong>{selected.program}</strong></div>
                     {isStated(selected.value) && (
@@ -240,14 +280,30 @@ export function StudentOfferInbox() {
                     })()}
                   </div>
                 </section>
-                <section className={cx('offer-conditions')}>
-                  <div><h3>Offer details</h3><p>{selected.conditions}</p></div>
-                  <button>View complete terms →</button>
-                </section>
-                <section className={cx('offer-next-steps')}>
-                  <div><small>NEXT STEPS</small><strong>To progress this offer</strong></div>
-                  <ul>{selected.nextSteps.map(step => <li key={step}>{step}</li>)}</ul>
-                </section>
+
+                {!!offerDetails(selected).length && (
+                  <section className={cx('offer-more-details')}>
+                    <h3>More details</h3>
+                    <div className={cx('offer-more-details-grid')}>
+                      {offerDetails(selected).map(field => (
+                        <div key={field.key}><small>{field.label}</small><strong>{field.value}</strong></div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {isStated(selected.conditions) && (
+                  <section className={cx('offer-conditions')}>
+                    <div><h3>Offer details</h3><p>{selected.conditions}</p></div>
+                  </section>
+                )}
+
+                {!!selected.nextSteps.length && (
+                  <section className={cx('offer-next-steps')}>
+                    <div><small>NEXT STEPS</small><strong>To progress this offer</strong></div>
+                    <ul>{selected.nextSteps.map(step => <li key={step}>{step}</li>)}</ul>
+                  </section>
+                )}
               </div>
 
               <footer className={cx('offer-decision-bar')}>

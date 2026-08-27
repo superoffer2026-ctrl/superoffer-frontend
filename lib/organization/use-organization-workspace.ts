@@ -647,6 +647,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
           examScore: student.examScore,
           budget: student.budget,
           documentsVerified: student.documentsVerified,
+          workExperienceYears: student.workExperienceYears,
           skills: student.skills,
           bio: student.bio,
           intake: student.intake,

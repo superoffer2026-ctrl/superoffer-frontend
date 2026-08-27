@@ -8,18 +8,14 @@ import { loadFormSchema } from './use-form-schema';
 /**
  * Sections that apply to some students and not others, and what decides it.
  *
- * A co-applicant is the person who takes the loan. A student paying by
- * scholarship or savings has none, so asking them for a parent's PAN, income
- * and credit consent is not a spare question — it is collecting a third
- * party's financial identity for a reason nobody could give.
- *
- * Stated here rather than inside the rail so the wizard, the step guard and
- * anything else that walks the steps all read the same rule.
+ * Empty today — the co-applicant section that used to live here was pulled out
+ * of the wizard entirely (it has no `route`, so it never reaches this list to
+ * begin with) and lives on the dashboard's loan flow instead. Kept as a named
+ * mechanism because a future conditional wizard section will need the same
+ * hook, read by the wizard, the step guard and anything else that walks the
+ * steps alike.
  */
-export const SECTION_APPLIES: Record<string, (answers: { needsLoan: string }) => boolean> = {
-  /** Hidden only once they have said no; an unanswered profile still shows it. */
-  coApplicant: answers => answers.needsLoan !== 'no'
-};
+export const SECTION_APPLIES: Record<string, (answers: { needsLoan: string }) => boolean> = {};
 
 export const sectionApplies = (sectionKey: string, needsLoan: string) =>
   SECTION_APPLIES[sectionKey] ? SECTION_APPLIES[sectionKey]({ needsLoan }) : true;

@@ -9,6 +9,7 @@ import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/StudentExtraPage.module.css';
+import { CoApplicantPanel } from './CoApplicantPanel';
 import { StudentWorkspaceRail } from './StudentWorkspaceRail';
 
 const cx = classNames(styles);
@@ -25,7 +26,7 @@ const TITLES: Record<ExtraPageKey, string> = {
 const DESCRIPTIONS: Record<ExtraPageKey, string> = {
   'saved-universities': 'Compare universities you want to revisit.',
   scholarships: 'Explore awards matched to your profile and goals.',
-  'loan-eligibility': 'Upload documents so lenders can confirm your eligibility.',
+  'loan-eligibility': 'Get matched with verified banks for an education loan.',
   notifications: 'Stay on top of offers, documents, and deadlines.'
 };
 
@@ -57,12 +58,8 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('All destinations');
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [busyDocument, setBusyDocument] = useState('');
-  const [employmentCategoryOptions, setEmploymentCategoryOptions] = useState<string[]>([]);
-  const [error, setError] = useState('');
 
-  /** The loan answers and the document checklist all come from the completion endpoint. */
-  const { needsLoan, employmentCategory, required: loanDocuments } = profile.completion.loanDocuments;
+  const { needsLoan } = profile.completion.loanDocuments;
   const wantsLoan: boolean | null = needsLoan === 'yes' ? true : needsLoan === 'no' ? false : null;
 
   const loadNotifications = useCallback(async () => {
@@ -75,12 +72,6 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   useEffect(() => {
     if (page === 'saved-universities' || page === 'scholarships') void wallet.load();
     if (page === 'notifications') void loadNotifications();
-    if (page === 'loan-eligibility') {
-      void authApi
-        .getFinancialInformationReferenceData()
-        .then(options => setEmploymentCategoryOptions(options.employmentCategoryOptions))
-        .catch(() => setEmploymentCategoryOptions([]));
-    }
   }, [page, wallet, loadNotifications]);
 
   /** Both answers live in the profile's financial section — the same place the
@@ -92,47 +83,7 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
     await profile.refresh();
   };
 
-  const setEmploymentCategory = (value: string) => void writeFinancial({ employmentCategory: value });
   const chooseWantsLoan = (value: boolean) => void writeFinancial({ needsLoan: value ? 'yes' : 'no' });
-
-  /** Loan paperwork is stored alongside every other document, keyed by the field's label. */
-  const documentFor = (label: string) => profile.profile.documents.find(document => document.documentType === label);
-
-  const uploadDocument = async (label: string, file?: File) => {
-    if (!file) return;
-    const token = readAccessToken();
-    if (!token) return;
-
-    setBusyDocument(label);
-    setError('');
-    try {
-      const existing = documentFor(label);
-      if (existing) await authApi.replaceStudentDocument(token, existing.id, file);
-      else await authApi.uploadStudentDocument(token, label, file);
-      await profile.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'That file could not be uploaded.');
-    } finally {
-      setBusyDocument('');
-    }
-  };
-
-  const removeDocument = async (label: string) => {
-    const existing = documentFor(label);
-    const token = readAccessToken();
-    if (!existing || !token) return;
-
-    setBusyDocument(label);
-    setError('');
-    try {
-      await authApi.deleteStudentDocument(token, existing.id);
-      await profile.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'That file could not be removed.');
-    } finally {
-      setBusyDocument('');
-    }
-  };
 
   const title = TITLES[page] || 'Student workspace';
   const description = DESCRIPTIONS[page] || '';
@@ -170,10 +121,12 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
     <div className={cx('host')}>
       <StudentWorkspaceRail />
       <main className={cx('student-extra')}>
-        <header>
-          <div><span>STUDENT WORKSPACE</span><h1>{title}</h1><p>{description}</p></div>
-          {actionRoute && <Link href={actionRoute}>{actionLabel}</Link>}
-        </header>
+        {page !== 'loan-eligibility' && (
+          <header>
+            <div><span>STUDENT WORKSPACE</span><h1>{title}</h1><p>{description}</p></div>
+            {actionRoute && <Link href={actionRoute}>{actionLabel}</Link>}
+          </header>
+        )}
 
         {isCardPage && (
           <div className={cx('search')}>
@@ -239,64 +192,7 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
               </div>
             )}
 
-            {wantsLoan === true && (
-              <section className={cx('loan-documents')}>
-                <header>
-                  <span>VERIFICATION</span>
-                  <h2>Upload your documents</h2>
-                  <p>These help lenders confirm eligibility once you&apos;re ready to proceed — upload whenever you&apos;re ready.</p>
-                </header>
-                <label className={cx('doc-employment')}>
-                  Employment category
-                  <select value={employmentCategory} onChange={event => setEmploymentCategory(event.target.value)}>
-                    <option value="" disabled>Select employment category</option>
-                    {employmentCategoryOptions.map(option => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                </label>
-                {!employmentCategory && (
-                  <p className={cx('section-subtitle')}>Select an employment category to see the documents you need.</p>
-                )}
-                {error && <p className={cx('section-subtitle')}>{error}</p>}
-                {employmentCategory && (
-                  <div className={cx('doc-list')}>
-                    {loanDocuments.map(doc => {
-                      const uploaded = documentFor(doc.label);
-                      return (
-                        <div key={doc.key} className={cx('doc-row')}>
-                          <span className={cx('doc-row-label')}>{doc.label}</span>
-                          <div className={cx('doc-row-control')}>
-                            {!uploaded && (
-                              <label className={cx('doc-upload-btn')}>
-                                <span>{busyDocument === doc.label ? '⬆ Uploading…' : '⬆ Upload'}</span>
-                                <input
-                                  type="file"
-                                  accept="image/png,image/jpeg,application/pdf"
-                                  onChange={event => void uploadDocument(doc.label, event.target.files?.[0])}
-                                />
-                              </label>
-                            )}
-                            {uploaded && (
-                              <div className={cx('doc-file-chip')}>
-                                <span className={cx('file-icon')}>📄</span>
-                                <span className={cx('file-name')}>{uploaded.fileName}</span>
-                                <button
-                                  type="button"
-                                  className={cx('file-remove')}
-                                  onClick={() => void removeDocument(doc.label)}
-                                  aria-label="Remove file"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            )}
+            {wantsLoan === true && <CoApplicantPanel />}
           </section>
         )}
 

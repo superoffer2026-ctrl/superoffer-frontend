@@ -55,7 +55,7 @@ export function StudyPreferences() {
 
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [mbbsOnlyCountries, setMbbsOnlyCountries] = useState<string[]>([]);
-  /** "What do you want to study?" — MBBS-only for MBBS-only countries, the full subject list otherwise. */
+  /** "What do you want to study?" — MBBS-only for MBBS-only countries, the full degree-level list otherwise. */
   const [fieldOptions, setFieldOptions] = useState<string[]>([]);
   /** "Program of Interest" — always the full subject list. */
   const [programOptions, setProgramOptions] = useState<string[]>([]);
@@ -116,7 +116,7 @@ export function StudyPreferences() {
         if (cancelled) return;
         setCountryOptions(options.studyCountries);
         setMbbsOnlyCountries(options.mbbsOnlyCountries);
-        setFieldOptions(options.fieldsOfStudy);
+        setFieldOptions(options.studyLevels);
         setProgramOptions(options.fieldsOfStudy);
         setIntakeOptions(options.intakeOptions);
         setStartYearOptions(options.startYears.map(Number));

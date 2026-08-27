@@ -1,5 +1,6 @@
-import { CoApplicant } from '@/components/student/CoApplicant';
+import { redirect } from 'next/navigation';
 
+/** No longer a wizard step — the parent/guardian details now live on the dashboard's loan flow. */
 export default function CoApplicantPage() {
-  return <CoApplicant />;
+  redirect('/student/loan-eligibility');
 }

@@ -174,6 +174,7 @@ export const authApi = {
   getStudyPreferencesReferenceData: (): Promise<{
     studyCountries: string[];
     mbbsOnlyCountries: string[];
+    studyLevels: string[];
     fieldsOfStudy: string[];
     intakeOptions: string[];
     startYears: string[];

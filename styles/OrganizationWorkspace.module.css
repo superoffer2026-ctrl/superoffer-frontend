@@ -3476,7 +3476,8 @@
 .verdict-unlikely .readiness-verdict strong{color:#a8332a}
 .verdict-likely{background:#f1f9f4;border-color:#cfe8db}
 .verdict-unlikely{background:#fdf1ef;border-color:#f0cfcb}
-.readiness-figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:10px 12px;background:#fff;border:1px solid #e4eae6;border-radius:8px}
+.readiness-figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:10px 12px;background:#fff;border:1px solid #e4eae6;border-radius:8px}
+@media(max-width:900px){.readiness-figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .readiness-figures small{display:block;font-size:9px;font-weight:700;letter-spacing:.04em;color:#7c887f}
 .readiness-figures strong{display:block;font-size:13px;color:#172019;font-variant-numeric:tabular-nums}
 .readiness-figures .stale{display:block;font-size:9.5px;font-style:normal;color:#a8332a}
@@ -3582,7 +3583,12 @@
      without it the box collapses and overflow:hidden eats the content. */
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  /* Fixed at 3, not auto-fit: up to six cells divide evenly into two full rows this
+     way. Auto-fit computed 4 columns at typical widths, so a 5th/6th cell landed
+     alone in a mostly-empty last row — no divider on its right, and its own cell
+     stretched to match a taller neighbour while the row's empty tail stayed blank. */
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  align-items: stretch;
   margin-top: 4px;
   border: 1px solid #dfe6e1;
   border-radius: 12px;
@@ -3595,6 +3601,17 @@
 .candidate-snapshot > div {
   padding: 12px 14px;
   box-shadow: -1px -1px 0 #dfe6e1;
+}
+/* A count not divisible by 3 leaves the last cell alone in its row — matches only
+   that exact case (first-of-row AND last), so a full row stays untouched. */
+.candidate-snapshot > div:nth-child(3n+1):last-child { grid-column: 1 / -1 }
+
+@media (max-width: 720px) {
+  .candidate-snapshot { grid-template-columns: repeat(2, minmax(110px, 1fr)); }
+  /* Two columns now, not three — the orphan rule above keys off position 3n+1,
+     which is the wrong cell here, so it is reset and re-applied for every-other. */
+  .candidate-snapshot > div:nth-child(3n+1):last-child { grid-column: auto }
+  .candidate-snapshot > div:nth-child(odd):last-child { grid-column: 1 / -1 }
 }
 
 .candidate-snapshot small {
@@ -3611,6 +3628,14 @@
   color: #172019;
   font-size: 14px;
   letter-spacing: -.01em;
+}
+
+.snapshot-note {
+  margin: 4px 0 0;
+  color: #6b7871;
+  font-size: 12px;
+  line-height: 1.5;
+  font-style: italic;
 }
 
 /* Verification is a state, so it carries a colour that means something. */

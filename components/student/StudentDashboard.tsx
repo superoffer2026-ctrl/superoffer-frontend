@@ -55,6 +55,9 @@ const greeting = () => {
 const RING_RADIUS = 46;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
+const NUDGE_RING_RADIUS = 27;
+const NUDGE_RING_LENGTH = 2 * Math.PI * NUDGE_RING_RADIUS;
+
 export function StudentDashboard() {
   const profile = useStudentProfile();
   const walletStore = useStore(offerWalletStore);
@@ -72,10 +75,13 @@ export function StudentDashboard() {
     void walletStore.load();
   }, [walletStore]);
 
-  /** Nudges an incomplete profile once per session — dismissing it (or continuing) shouldn't re-pop on every dashboard visit. */
+  /** Nudges an incomplete profile once per session — dismissing it (or continuing) shouldn't re-pop on every dashboard visit.
+   *  Delayed so the dashboard itself is visible first, rather than popping over a blank page. */
   useEffect(() => {
     if (!profile.loaded || isSubmitted) return;
-    if (!readSession(PROFILE_NUDGE_SEEN_KEY)) setShowProfileNudge(true);
+    if (readSession(PROFILE_NUDGE_SEEN_KEY)) return;
+    const timer = setTimeout(() => setShowProfileNudge(true), 1500);
+    return () => clearTimeout(timer);
   }, [profile.loaded, isSubmitted]);
 
   const dismissNudge = () => {
@@ -92,20 +98,30 @@ export function StudentDashboard() {
     return Number.isNaN(date.getTime()) ? '' : `on ${date.toLocaleDateString()}`;
   })();
 
-  /** Which loan documents are needed, and whether they are all in, is decided server-side. */
-  const { needsLoan, complete: loanDocumentsComplete } = profile.completion.loanDocuments;
+  const { needsLoan } = profile.completion.loanDocuments;
 
-  const bankOffersState: 'ask' | 'upload' | 'complete' | 'declined' = (() => {
+  const bankOffersState: 'ask' | 'progress' | 'declined' = (() => {
     if (!needsLoan) return 'ask';
     if (needsLoan === 'no') return 'declined';
-    return loanDocumentsComplete ? 'complete' : 'upload';
+    return 'progress';
   })();
 
-  const answerLoanQuestion = async (wantsLoan: boolean) => {
+  /** One click: say yes, then go straight to the parent/guardian details — no separate gate to click through. */
+  const startLoanApplication = async () => {
     const token = readAccessToken();
     if (!token) return;
-    await authApi.saveStudentFinancial(token, { needsLoan: wantsLoan ? 'yes' : 'no' });
+    await authApi.saveStudentFinancial(token, { needsLoan: 'yes' });
     await profile.refresh();
+    router.push('/student/loan-eligibility');
+  };
+
+  /** The whole card is the tap target; only a fresh "yes" needs saving first. */
+  const openLoanCard = () => {
+    if (bankOffersState === 'progress') {
+      router.push('/student/loan-eligibility');
+      return;
+    }
+    void startLoanApplication();
   };
 
   const goToOffers = () => router.push('/student/offers');
@@ -124,11 +140,11 @@ export function StudentDashboard() {
         time: 'Profile',
         route: STEP_ROUTES[section.key] || '/student/review'
       })),
-    ...(needsLoan === 'yes' && !loanDocumentsComplete
+    ...(needsLoan === 'yes'
       ? [{
-          key: 'loan-documents',
-          title: 'Upload your loan documents',
-          description: 'Lenders need these before they can confirm your eligibility',
+          key: 'loan-application',
+          title: 'Finish your loan application',
+          description: 'Add your parent or guardian’s details so lenders can confirm your eligibility',
           time: 'Finance',
           route: '/student/loan-eligibility'
         }]
@@ -180,18 +196,35 @@ export function StudentDashboard() {
       {showProfileNudge && (
         <div className={cx('profile-nudge-backdrop')} onClick={dismissNudge}>
           <div className={cx('profile-nudge-card')} onClick={event => event.stopPropagation()}>
-            <button type="button" className={cx('profile-nudge-close')} onClick={dismissNudge} aria-label="Close">×</button>
-            <div className={cx('profile-nudge-icon')}>✓</div>
-            <h2>Complete your profile</h2>
-            <p>
-              Your profile is {completionPercent}% complete. Finish every section so universities, banks and consultants can
-              discover and match you with the right offers.
-            </p>
-            <div className={cx('profile-nudge-actions')}>
-              <Link className={cx('profile-nudge-primary')} href="/student/personal-information" onClick={dismissNudge}>
-                Continue profile <b>→</b>
-              </Link>
-              <button type="button" className={cx('profile-nudge-secondary')} onClick={dismissNudge}>Maybe later</button>
+            <div className={cx('nudge-hero')}>
+              <img src="/students-campus.png" alt="" />
+              <div className={cx('nudge-hero-fade')} />
+              <button type="button" className={cx('profile-nudge-close')} onClick={dismissNudge} aria-label="Close">×</button>
+              <div className={cx('nudge-ring')} role="img" aria-label={`Profile strength ${completionPercent} percent`}>
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <circle cx="32" cy="32" r={NUDGE_RING_RADIUS} className={cx('nudge-ring-track')} />
+                  <circle
+                    cx="32" cy="32" r={NUDGE_RING_RADIUS}
+                    className={cx('nudge-ring-value')}
+                    strokeDasharray={NUDGE_RING_LENGTH}
+                    strokeDashoffset={NUDGE_RING_LENGTH - (NUDGE_RING_LENGTH * Math.min(100, Math.max(0, completionPercent))) / 100}
+                  />
+                </svg>
+                <strong>{completionPercent}<i>%</i></strong>
+              </div>
+            </div>
+
+            <div className={cx('nudge-body')}>
+              <span className={cx('nudge-kicker')}>YOU&rsquo;RE ON YOUR WAY 🚀</span>
+              <h2>Let&rsquo;s get you discovered, {firstName}!</h2>
+              <p>A few minutes now and universities and banks can start finding you.</p>
+
+              <div className={cx('profile-nudge-actions')}>
+                <Link className={cx('profile-nudge-primary')} href="/student/personal-information" onClick={dismissNudge}>
+                  Continue profile <b>→</b>
+                </Link>
+                <button type="button" className={cx('profile-nudge-secondary')} onClick={dismissNudge}>Maybe later</button>
+              </div>
             </div>
           </div>
         </div>
@@ -278,58 +311,32 @@ export function StudentDashboard() {
           )}
         </Reveal>
 
-        {/* Finance is the one place amber appears, so it reads as its own track. */}
-        <section className={cx('loan-card', `loan-${bankOffersState}`)}>
-          <div className={cx('loan-mark')}>₹</div>
+        {/* Finance is the one place amber appears, so it reads as its own track. The whole card is the tap target. */}
+        <button type="button" className={cx('loan-card', `loan-${bankOffersState}`)} onClick={openLoanCard}>
+          <div className={cx('loan-icon')}>⚡</div>
           <div className={cx('loan-copy')}>
-            <span>BANK OFFERS</span>
+            <span>BANK OFFERS <b className={cx('loan-badge')}>24 HRS</b></span>
             {bankOffersState === 'ask' && (
               <>
-                <h2>Get bank offers by filling your documents</h2>
-                <p>Tell us if you&apos;d like an education loan — we&apos;ll match you with lenders once your documents are in.</p>
+                <h2>Get bank loans within 24 hours</h2>
+                <p>Tell us about your parent or guardian and we&apos;ll match you with lenders ready to fund your studies abroad.</p>
               </>
             )}
-            {bankOffersState === 'upload' && (
+            {bankOffersState === 'progress' && (
               <>
-                <h2>Upload your documents to get bank offers</h2>
-                <p>Complete your verification documents so our lending partners can send you matched loan offers.</p>
-              </>
-            )}
-            {bankOffersState === 'complete' && (
-              <>
-                <h2>Your documents are with our lending partners</h2>
-                <p>We&apos;ve shared your details with verified banks — check My Offers for matched loan offers.</p>
+                <h2>Your loan application is in progress</h2>
+                <p>Pick up where you left off — we&apos;re matching you with lenders once your details are in.</p>
               </>
             )}
             {bankOffersState === 'declined' && (
               <>
                 <h2>Not looking for a loan right now</h2>
-                <p>Changed your mind? You can still get matched with bank offers anytime.</p>
+                <p>Changed your mind? Get bank loans within 24 hours, anytime.</p>
               </>
             )}
           </div>
-          {bankOffersState === 'ask' && (
-            <div className={cx('loan-actions')}>
-              <button type="button" onClick={() => void answerLoanQuestion(true)}>Yes, get bank offers</button>
-              <button type="button" className={cx('ghost')} onClick={() => void answerLoanQuestion(false)}>No, not now</button>
-            </div>
-          )}
-          {bankOffersState === 'upload' && (
-            <div className={cx('loan-actions')}>
-              <Link href="/student/loan-eligibility">Upload documents <b>→</b></Link>
-            </div>
-          )}
-          {bankOffersState === 'complete' && (
-            <div className={cx('loan-actions')}>
-              <Link href="/student/offers">View offers <b>→</b></Link>
-            </div>
-          )}
-          {bankOffersState === 'declined' && (
-            <div className={cx('loan-actions')}>
-              <button type="button" onClick={() => void answerLoanQuestion(true)}>Get bank offers</button>
-            </div>
-          )}
-        </section>
+          <span className={cx('loan-arrow')} aria-hidden="true">→</span>
+        </button>
 
         <section className={cx('stage-track')} aria-label="Your opportunity journey">
           {STAGES.map((stage, index) => (

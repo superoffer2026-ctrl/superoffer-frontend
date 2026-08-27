@@ -246,7 +246,12 @@ export interface LoanReadiness {
   coApplicantRelationship: string;
   monthlyIncome: number;
   existingEmi: number;
+  hasExistingLoan: string;
+  loanAmountRequested: number;
   employmentType: string;
+  /** From onboarding's Financial Information step, not the loan-eligibility form. */
+  fundingSource: string;
+  earningMembers: string;
   /** A band, never a score. */
   creditBand: string | null;
   creditOutcome: string | null;
@@ -412,6 +417,7 @@ export interface WorkspaceCandidate {
   examScore: string;
   budget: string;
   documentsVerified: number;
+  workExperienceYears: number;
   skills: string[];
   bio: string;
   intake: string;
