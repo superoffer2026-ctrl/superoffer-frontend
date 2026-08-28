@@ -30,6 +30,34 @@ const EMPTY_FORM: AuthFormState = {
   remember: true
 };
 
+/** Toggles a password input between hidden and plain text. */
+function PasswordVisibilityToggle({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      className="password-toggle"
+      onClick={onToggle}
+      tabIndex={-1}
+      aria-label={visible ? 'Hide password' : 'Show password'}
+      aria-pressed={visible}
+    >
+      {visible ? (
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.06" />
+          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.22 4.44" />
+          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+          <line x1="1" y1="1" x2="23" y2="23" />
+        </svg>
+      ) : (
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,6 +66,8 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const set = <K extends keyof AuthFormState>(key: K, value: AuthFormState[K]) =>
     setForm(current => ({ ...current, [key]: value }));
@@ -246,15 +276,21 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Password
-                <input name="password" type="password" value={form.password} minLength={8} required
-                  placeholder="8+ characters with a letter and number"
-                  onChange={event => set('password', event.target.value)} />
+                <div className="password-field">
+                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} minLength={8} required
+                    placeholder="8+ characters with a letter and number"
+                    onChange={event => set('password', event.target.value)} />
+                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
+                </div>
               </label>
               <label>
                 Confirm password
-                <input name="confirmPassword" type="password" value={form.confirmPassword} minLength={8} required
-                  placeholder="Re-enter your password"
-                  onChange={event => set('confirmPassword', event.target.value)} />
+                <div className="password-field">
+                  <input name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} minLength={8} required
+                    placeholder="Re-enter your password"
+                    onChange={event => set('confirmPassword', event.target.value)} />
+                  <PasswordVisibilityToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} />
+                </div>
               </label>
             </div>
           )}
@@ -273,9 +309,12 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label className="full">
                 Password
-                <input name="password" type="password" value={form.password} minLength={8} required
-                  placeholder="8+ characters with a letter and number"
-                  onChange={event => set('password', event.target.value)} />
+                <div className="password-field">
+                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} minLength={8} required
+                    placeholder="8+ characters with a letter and number"
+                    onChange={event => set('password', event.target.value)} />
+                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
+                </div>
               </label>
             </div>
           )}
@@ -289,8 +328,11 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Password
-                <input name="password" type="password" value={form.password} required placeholder="Enter your password"
-                  onChange={event => set('password', event.target.value)} />
+                <div className="password-field">
+                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} required placeholder="Enter your password"
+                    onChange={event => set('password', event.target.value)} />
+                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
+                </div>
               </label>
               <label className="remember">
                 <input type="checkbox" name="remember" checked={form.remember}
