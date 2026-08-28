@@ -249,7 +249,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
             <div className="form-grid">
               <label className="full">
                 Organization name
-                <input name="organization" value={form.organization} required placeholder="Your organization's legal name"
+                <input name="organization" autoComplete="organization" value={form.organization} required placeholder="Your organization's legal name"
                   onChange={event => set('organization', event.target.value)} />
               </label>
               <label>
@@ -261,23 +261,23 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Country
-                <input name="country" value={form.country} placeholder="Country"
+                <input name="country" autoComplete="country-name" value={form.country} placeholder="Country"
                   onChange={event => set('country', event.target.value)} />
               </label>
               <label className="full">
                 Official email
-                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                <input name="email" type="email" autoComplete="username" value={form.email} required placeholder="you@example.com"
                   onChange={event => set('email', event.target.value)} />
               </label>
               <label>
                 Phone number
-                <input name="phone" value={form.phone} required placeholder="+91 00000 00000"
+                <input name="phone" autoComplete="tel" value={form.phone} required placeholder="+91 00000 00000"
                   onChange={event => set('phone', event.target.value)} />
               </label>
               <label>
                 Password
                 <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} minLength={8} required
+                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password} minLength={8} required
                     placeholder="8+ characters with a letter and number"
                     onChange={event => set('password', event.target.value)} />
                   <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
@@ -286,7 +286,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               <label>
                 Confirm password
                 <div className="password-field">
-                  <input name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} minLength={8} required
+                  <input name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" value={form.confirmPassword} minLength={8} required
                     placeholder="Re-enter your password"
                     onChange={event => set('confirmPassword', event.target.value)} />
                   <PasswordVisibilityToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} />
@@ -299,18 +299,18 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
             <div className="form-grid">
               <label className="full">
                 Full name
-                <input name="fullName" value={form.fullName} required placeholder="Your full name"
+                <input name="fullName" autoComplete="name" value={form.fullName} required placeholder="Your full name"
                   onChange={event => set('fullName', event.target.value)} />
               </label>
               <label className="full">
                 Email address
-                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                <input name="email" type="email" autoComplete="username" value={form.email} required placeholder="you@example.com"
                   onChange={event => set('email', event.target.value)} />
               </label>
               <label className="full">
                 Password
                 <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} minLength={8} required
+                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password} minLength={8} required
                     placeholder="8+ characters with a letter and number"
                     onChange={event => set('password', event.target.value)} />
                   <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
@@ -323,13 +323,13 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
             <div>
               <label>
                 Email address
-                <input name="email" type="email" value={form.email} required placeholder="you@example.com"
+                <input name="email" type="email" autoComplete="username" value={form.email} required placeholder="you@example.com"
                   onChange={event => set('email', event.target.value)} />
               </label>
               <label>
                 Password
                 <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} value={form.password} required placeholder="Enter your password"
+                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={form.password} required placeholder="Enter your password"
                     onChange={event => set('password', event.target.value)} />
                   <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
                 </div>
