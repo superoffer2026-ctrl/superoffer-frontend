@@ -46,6 +46,26 @@ const CODED_KEYS = [...FINANCE_KEYS, ...IDENTITY_KEYS];
 
 const hasAnswer = (values: Record<string, unknown>, key: string) => String(values[key] ?? '').trim() !== '';
 
+/** Fixed question numbers — matches the order a lender actually cares about, not the filtered/active list. */
+const FIELD_NUMBER: Record<FinanceKey, number> = {
+  relationship: 1, employmentType: 2, monthlyIncome: 3, hasExistingLoan: 4, existingEmi: 5, loanAmountRequested: 6
+};
+
+const icon = (paths: string) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: paths }} />
+);
+
+const FIELD_ICON: Record<FinanceKey, ReturnType<typeof icon>> = {
+  relationship: icon('<circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>'),
+  employmentType: icon('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
+  monthlyIncome: icon('<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>'),
+  hasExistingLoan: icon('<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>'),
+  existingEmi: icon('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  loanAmountRequested: icon('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>')
+};
+
+const SHIELD_ICON = icon('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>');
+
 /**
  * Financial eligibility for an education loan, and an optional credit check on
  * whoever is supporting it — one page, not a multi-step quiz, so a student can
@@ -204,59 +224,89 @@ export function CoApplicantPanel() {
 
   const verdict = eligibility ? VERDICT_COPY[eligibility.verdict] : null;
 
-  const renderField = (key: FinanceKey | IdentityKey) => {
-    const def = fieldByKey.get(key);
-    if (!def) return null;
-    const invalid = touched[key] && !hasAnswer(values, key);
+  const answeredCount = activeFinanceKeys.filter(key => hasAnswer(values, key)).length;
+  const progressPct = Math.round((answeredCount / activeFinanceKeys.length) * 100);
 
+  /** Just the control — pills or input, no label/wrapper. Shared by the quiz cards and the plain identity fields. */
+  const renderControl = (key: FinanceKey | IdentityKey, def: NonNullable<ReturnType<typeof fieldByKey.get>>) => {
     if (def.type === 'select') {
       return (
-        <div key={key} className={cx('form-field', 'wide')}>
-          <span className={cx('field-label')}>{def.label}</span>
-          <div className={cx('quiz-pills')}>
-            {(def.options || []).map(option => (
-              <button
-                key={option}
-                type="button"
-                className={cx('quiz-pill', values[key] === option && 'is-selected')}
-                onClick={() => setField(key, option)}
-              >
-                {option}
-                {values[key] === option && <span className={cx('quiz-pill-check')}>✓</span>}
-              </button>
-            ))}
-          </div>
-          {invalid && <small className={cx('field-error')}>This is needed</small>}
+        <div className={cx('quiz-pills')}>
+          {(def.options || []).map(option => (
+            <button
+              key={option}
+              type="button"
+              className={cx('quiz-pill', values[key] === option && 'is-selected')}
+              onClick={() => setField(key, option)}
+            >
+              {option}
+              {values[key] === option && <span className={cx('quiz-pill-check')}>✓</span>}
+            </button>
+          ))}
         </div>
       );
     }
 
-    const isAmount = def.type === 'number';
-    return (
-      <label key={key} className={cx('form-field', invalid && 'field-invalid')}>
-        <span className={cx('field-label')}>{def.label}</span>
-        {isAmount ? (
-          <div className={cx('quiz-amount')}>
-            <span>₹</span>
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder={def.placeholder}
-              value={String(values[key] ?? '')}
-              onChange={event => setField(key, event.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, [key]: true }))}
-            />
-          </div>
-        ) : (
+    if (def.type === 'number') {
+      return (
+        <div className={cx('quiz-amount')}>
+          <span>₹</span>
           <input
-            type={def.type === 'date' ? 'date' : def.type === 'tel' ? 'tel' : 'text'}
+            type="number"
+            min={0}
+            inputMode="numeric"
             placeholder={def.placeholder}
             value={String(values[key] ?? '')}
-            onChange={event => setField(key, key === 'panNumber' ? event.target.value.toUpperCase() : event.target.value)}
+            onChange={event => setField(key, event.target.value)}
             onBlur={() => setTouched(t => ({ ...t, [key]: true }))}
           />
-        )}
+        </div>
+      );
+    }
+
+    return (
+      <input
+        type={def.type === 'date' ? 'date' : def.type === 'tel' ? 'tel' : 'text'}
+        placeholder={def.placeholder}
+        value={String(values[key] ?? '')}
+        onChange={event => setField(key, key === 'panNumber' ? event.target.value.toUpperCase() : event.target.value)}
+        onBlur={() => setTouched(t => ({ ...t, [key]: true }))}
+      />
+    );
+  };
+
+  /** A finance question as its own card — numbered and icon-led, so the page reads like a short guided quiz. */
+  const renderQuizCard = (key: FinanceKey) => {
+    const def = fieldByKey.get(key);
+    if (!def) return null;
+    const invalid = touched[key] && !hasAnswer(values, key);
+    const answered = hasAnswer(values, key);
+
+    return (
+      <div key={key} className={cx('quiz-card', answered && 'is-answered', invalid && 'field-invalid')}>
+        <div className={cx('quiz-card-icon')}>{FIELD_ICON[key]}</div>
+        <div className={cx('quiz-card-body')}>
+          <span className={cx('quiz-card-eyebrow')}>QUESTION {FIELD_NUMBER[key]} OF 6</span>
+          <span className={cx('quiz-card-label')}>{def.label}</span>
+          {renderControl(key, def)}
+          {def.helpText && <small className={cx('field-hint')}>{def.helpText}</small>}
+          {invalid && <small className={cx('field-error')}>This is needed</small>}
+        </div>
+      </div>
+    );
+  };
+
+  /** Plain labelled field — used for the identity block, which stays a simple grid, not a quiz card. */
+  const renderField = (key: FinanceKey | IdentityKey) => {
+    const def = fieldByKey.get(key);
+    if (!def) return null;
+    const invalid = touched[key] && !hasAnswer(values, key);
+    const wide = def.type === 'select';
+
+    return (
+      <label key={key} className={cx('form-field', wide && 'wide', invalid && 'field-invalid')}>
+        <span className={cx('field-label')}>{def.label}</span>
+        {renderControl(key, def)}
         {def.helpText && <small className={cx('field-hint')}>{def.helpText}</small>}
         {invalid && <small className={cx('field-error')}>This is needed</small>}
       </label>
@@ -272,10 +322,16 @@ export function CoApplicantPanel() {
           A lender reads this person's income and credit record, not yours — a few details here is what lets
           them tell you whether they can help.
         </p>
+        <div className={cx('quiz-progress-wrap')}>
+          <div className={cx('quiz-progress')}>
+            <div className={cx('quiz-progress-fill')} style={{ width: `${progressPct}%` }} />
+          </div>
+          <span className={cx('quiz-progress-label')}>{answeredCount} of {activeFinanceKeys.length} answered</span>
+        </div>
       </header>
 
-      <div className={cx('form-grid')}>
-        {FINANCE_KEYS.filter(key => key !== 'existingEmi' || emiApplies).map(renderField)}
+      <div className={cx('quiz-list')}>
+        {activeFinanceKeys.map(renderQuizCard)}
       </div>
 
       {error && <p className={cx('error')} role="alert">{error}</p>}
@@ -290,11 +346,16 @@ export function CoApplicantPanel() {
       <hr className={cx('divider')} />
 
       <section className={cx('credit')}>
-        <h3>Check {supporterPhrase} CIBIL score</h3>
-        <p className={cx('credit-explainer')}>
-          Want to understand the credit profile better? This is a <strong>soft check — it does not affect the
-          score.</strong> A lender still runs its own formal check later, and only once invited to.
-        </p>
+        <div className={cx('credit-head')}>
+          <div className={cx('credit-badge')}>{SHIELD_ICON}</div>
+          <div>
+            <h3>Check {supporterPhrase} CIBIL score</h3>
+            <p className={cx('credit-explainer')}>
+              Want to understand the credit profile better? This is a <strong>soft check — it does not affect
+              the score.</strong> A lender still runs its own formal check later, and only once invited to.
+            </p>
+          </div>
+        </div>
 
         <div className={cx('form-grid')}>
           {IDENTITY_KEYS.map(renderField)}
