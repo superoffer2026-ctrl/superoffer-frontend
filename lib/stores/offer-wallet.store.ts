@@ -8,6 +8,21 @@ export type OfferCategory = 'University' | 'Bank' | 'Scholarship' | 'Consultancy
 export type OfferDecisionStatus = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
 export type JourneyStage = 'Received' | 'Viewed' | 'Compared' | 'Shortlisted' | 'Accepted' | 'Declined';
 
+/** Mirrors the server's frozen copy; see `Offer.programSnapshot`. */
+export interface OfferSnapshot {
+  capturedAt?: string;
+  university?: {
+    name?: string; city?: string | null; country?: string | null;
+    website?: string | null; logoUrl?: string | null; coverUrl?: string | null;
+  };
+  program?: {
+    name?: string; degreeLevel?: string | null; fieldOfStudy?: string | null;
+    durationMonths?: number | null; studyMode?: string | null; campusLocation?: string | null;
+    intakes?: string[]; tuitionFee?: string | null; currency?: string | null;
+    scholarshipInfo?: string | null; imageUrl?: string | null; url?: string | null;
+  };
+}
+
 export interface OfferMessage {
   /** 'system' is the platform speaking for neither side — a notice, not a reply. */
   from: 'institution' | 'student' | 'system';
@@ -37,6 +52,8 @@ export interface StudentOffer {
   location: string;
   intake: string;
   deadline: string;
+  /** University and programme as they were the day this offer was sent. */
+  snapshot?: OfferSnapshot;
   valueLabel: string;
   value: string;
   conditions: string;

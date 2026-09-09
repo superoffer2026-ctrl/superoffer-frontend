@@ -20,6 +20,8 @@ export interface FormFieldDef {
   optionsSource?: string;
   validation?: { min?: number; max?: number; minLength?: number; maxLength?: number; pattern?: string; message?: string };
   visibleWhen?: { field: string; equals: string[] };
+  /** Renames the field for rows that match — a school row's score is a percentage. */
+  labelWhen?: { field: string; equals: string[]; label: string; placeholder?: string };
   composite?: string;
   /** For a composite: the fields of one row, editable like any other. */
   itemFields?: FormFieldDef[];
@@ -144,6 +146,22 @@ export function isFieldVisible(field: FormFieldDef, values: Record<string, unkno
   if (!wanted.length) return true;
   if (Array.isArray(actual)) return actual.some(entry => wanted.includes(String(entry)));
   return wanted.includes(String(actual ?? ''));
+}
+
+/**
+ * The field as one row asks it, with any `labelWhen` override applied — so the
+ * wizard shows the same wording the server uses in its error message.
+ */
+export function fieldAsAsked(field: FormFieldDef, values: Record<string, unknown>): FormFieldDef {
+  const rule = field.labelWhen;
+  if (!rule) return field;
+  const actual = values[rule.field];
+  const wanted = rule.equals || [];
+  const matches = Array.isArray(actual)
+    ? actual.some(entry => wanted.includes(String(entry)))
+    : wanted.includes(String(actual ?? ''));
+  if (!matches) return field;
+  return { ...field, label: rule.label, ...(rule.placeholder ? { placeholder: rule.placeholder } : {}) };
 }
 
 /**

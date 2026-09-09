@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authApi } from '@/lib/api/auth-api';
+import { isPasswordValid, passwordProblems } from '@/lib/auth/password-rules';
+import { PasswordInput } from '@/components/shared/PasswordInput';
 import { classNames } from '@/lib/cx';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
@@ -16,7 +18,7 @@ import { StudentWorkspaceRail } from './StudentWorkspaceRail';
 const cx = classNames({ ...pageStyles, ...settingsStyles });
 
 const SECTIONS = [
-  { id: 'account', label: 'Account', description: 'Email and password', icon: '○' },
+  { id: 'account', label: 'Account', description: 'WhatsApp number and password', icon: '○' },
   { id: 'preferences', label: 'Notifications & Privacy', description: 'Offers, messages and visibility', icon: '◉' },
   { id: 'help', label: 'Help & support', description: 'FAQs and contact', icon: '?' }
 ];
@@ -32,9 +34,6 @@ export function StudentSettings() {
   const router = useRouter();
 
   const [activeSection, setActiveSection] = useState('account');
-  const [editingEmail, setEditingEmail] = useState(false);
-  const [emailDraft, setEmailDraft] = useState('');
-  const [emailError, setEmailError] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [nameError, setNameError] = useState('');
@@ -47,7 +46,8 @@ export function StudentSettings() {
   const [saving, setSaving] = useState(false);
 
   const settings = profile.profile.settings as Record<string, unknown>;
-  const email = profile.user?.email || profile.profile.personal['email'] || '';
+  /** The account identifier, not the contact address on the profile — a student has no account email. */
+  const whatsappNumber = profile.user?.phone || '';
   const fullName = profile.user?.full_name || profile.profile.personal['fullName'] || '';
 
   /** Notification toggles default to on until the student turns one off. */
@@ -89,28 +89,6 @@ export function StudentSettings() {
     setTimeout(() => setDiscoveryFlash(''), 3500);
   };
 
-  const saveEmail = async () => {
-    const value = emailDraft.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      setEmailError('Enter a valid email address');
-      return;
-    }
-    const token = readAccessToken();
-    if (!token) return;
-
-    setSaving(true);
-    try {
-      await authApi.updateAccount(token, { email: value });
-      await profile.refresh();
-      setEditingEmail(false);
-      flash('Email address updated.');
-    } catch (e) {
-      setEmailError(e instanceof Error ? e.message : 'That email could not be saved.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const saveName = async () => {
     const value = nameDraft.trim();
     if (value.length < 2) {
@@ -143,7 +121,7 @@ export function StudentSettings() {
   const savePassword = async () => {
     const { current, next, confirm } = passwordForm;
     if (!current.trim()) { setPasswordError('Enter your current password'); return; }
-    if (next.length < 8) { setPasswordError('New password must be at least 8 characters'); return; }
+    if (!isPasswordValid(next)) { setPasswordError(''); return; }
     if (next !== confirm) { setPasswordError('New password and confirmation do not match'); return; }
 
     const token = readAccessToken();
@@ -210,30 +188,14 @@ export function StudentSettings() {
               <header><h2>Account</h2><p>Your sign-in details and account access.</p></header>
               {flashMessage && <p className={cx('settings-flash')}>{flashMessage}</p>}
 
-              {!editingEmail && (
-                <div className={cx('professional-setting-row')}>
-                  <div><strong>Email address</strong><small>{email || 'Not set'}</small></div>
-                  <button type="button" onClick={() => { setEmailDraft(email); setEmailError(''); setEditingEmail(true); }}>
-                    Edit
-                  </button>
+              {/* Read-only: the number is the account, so changing it means proving the new one with a code. */}
+              <div className={cx('professional-setting-row')}>
+                <div>
+                  <strong>WhatsApp number</strong>
+                  <small>{whatsappNumber || 'Not set'}</small>
                 </div>
-              )}
-              {editingEmail && (
-                <div className={cx('professional-setting-row')}>
-                  <div style={{ flex: 1 }}>
-                    <strong>Email address</strong>
-                    <div className={cx('inline-edit')} style={{ marginTop: 6 }}>
-                      <input
-                        type="email" value={emailDraft} placeholder="you@example.com" autoComplete="email"
-                        onChange={event => setEmailDraft(event.target.value)}
-                      />
-                      <button type="button" disabled={saving} onClick={() => void saveEmail()}>Save</button>
-                      <button type="button" onClick={() => setEditingEmail(false)}>Cancel</button>
-                    </div>
-                    {emailError && <p className={cx('field-error')}>{emailError}</p>}
-                  </div>
-                </div>
-              )}
+                <span className={cx('account-pill')}>Sign-in number</span>
+              </div>
 
               {!editingPassword && (
                 <div className={cx('professional-setting-row')}>
@@ -243,18 +205,22 @@ export function StudentSettings() {
               )}
               {editingPassword && (
                 <form className={cx('password-form')} onSubmit={event => { event.preventDefault(); void savePassword(); }}>
-                  <input
-                    type="password" name="currentPassword" placeholder="Current password" autoComplete="current-password"
+                  <PasswordInput
+                    name="currentPassword" placeholder="Current password" autoComplete="current-password"
                     value={passwordForm.current}
                     onChange={event => setPasswordForm(current => ({ ...current, current: event.target.value }))}
                   />
-                  <input
-                    type="password" name="newPassword" placeholder="New password (min. 8 characters)" autoComplete="new-password"
+                  <PasswordInput
+                    name="newPassword" placeholder="New password" autoComplete="new-password"
                     value={passwordForm.next}
                     onChange={event => setPasswordForm(current => ({ ...current, next: event.target.value }))}
                   />
-                  <input
-                    type="password" name="confirmPassword" placeholder="Confirm new password" autoComplete="new-password"
+                  {passwordProblems(passwordForm.next) && (
+                    <p className={cx('field-error')}>{passwordProblems(passwordForm.next)}</p>
+                  )}
+
+                  <PasswordInput
+                    name="confirmPassword" placeholder="Confirm new password" autoComplete="new-password"
                     value={passwordForm.confirm}
                     onChange={event => setPasswordForm(current => ({ ...current, confirm: event.target.value }))}
                   />

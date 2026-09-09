@@ -1,0 +1,84 @@
+.groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: clamp(30px, 3.6vw, 44px);
+}
+
+.group h3 {
+  margin: 0 0 14px;
+  color: var(--ink-3);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.list { display: grid; gap: 10px; }
+
+.item {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  box-shadow: var(--sh-1);
+  transition: border-color 0.25s ease, box-shadow 0.3s var(--ease), background-color 0.25s ease;
+}
+.item:hover { border-color: var(--line-2); box-shadow: var(--sh-2); }
+.item[open] { border-color: var(--em-line); background: rgba(236, 253, 245, 0.4); }
+
+.item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.45;
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.22s ease;
+}
+.item summary::-webkit-details-marker { display: none; }
+.item summary:hover { color: var(--em); }
+.item summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: var(--r-lg); }
+.item[open] summary { color: var(--em); }
+
+.item summary i {
+  position: relative;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+.item summary i::before,
+.item summary i::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.3s var(--ease), opacity 0.25s ease;
+}
+.item summary i::before { width: 11px; height: 1.6px; transform: translate(-50%, -50%); }
+.item summary i::after { width: 1.6px; height: 11px; transform: translate(-50%, -50%); }
+.item[open] summary i::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+
+.item > p {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.65;
+  animation: answerIn 0.32s var(--ease);
+}
+
+@keyframes answerIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 940px) {
+  .groups { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+}

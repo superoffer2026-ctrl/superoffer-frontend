@@ -178,3 +178,32 @@
   .nav-item { width: auto; white-space: nowrap; }
   .nav-item em { display: none; }
 }
+
+
+/* ── Subscriptions: sold offline, recorded here ───────────────────────────── */
+
+.bill-panel { display: flex; flex-direction: column; gap: 18px; }
+.bill-muted { color: var(--muted); font-size: 14px; }
+.bill-sub { display: block; font-size: 12px; color: var(--muted); }
+.bill-error { padding: 11px 14px; border-radius: 10px; background: #ffebe8; color: #a43b2e; font-size: 13px; }
+.bill-suspended td { background: #fff7f6; }
+.bill-actions { white-space: nowrap; display: flex; gap: 8px; }
+.bill-actions button, .bill-form button {
+  border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #24463a;
+  padding: 7px 12px; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.bill-actions button:hover, .bill-form button:hover { border-color: var(--green); color: var(--green); }
+.bill-danger:hover { border-color: #d8a49c !important; color: #a43b2e !important; }
+.bill-primary { background: var(--green) !important; border-color: var(--green) !important; color: #fff !important; }
+.bill-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.bill-drawer {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 18px 20px; background: #fff; border: 1px solid var(--line); border-radius: 14px;
+}
+.bill-drawer h3 { margin: 0; font-size: 15px; }
+.bill-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.bill-form label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 800; color: var(--muted); }
+.bill-form input, .bill-form select {
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; background: #fbfcfb;
+}

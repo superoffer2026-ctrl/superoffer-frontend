@@ -17,3 +17,6 @@ root-artifacts/
 out/
 next-env.d.ts
 .next-verify/
+
+# Google Stitch design exports (reference only, not app code)
+stitch_superoffer_reverse_admissions_platform*/

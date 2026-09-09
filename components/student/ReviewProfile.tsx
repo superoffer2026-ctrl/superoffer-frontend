@@ -132,6 +132,7 @@ export function ReviewProfile() {
               {summaryItem('Email', personal['email'])}
               {summaryItem('Mobile', personal['mobileNumber'])}
               {summaryItem('Country', personal['country'])}
+              {summaryItem('State', personal['state'])}
               {summaryItem('City', personal['city'])}
             </div>
           </div>
@@ -166,7 +167,11 @@ export function ReviewProfile() {
             <div className={cx('summary-list')}>
               {summaryItem('Highest Qualification', academic['qualificationLevel'] as string)}
               {summaryItem('Institution', academic['institution'] as string)}
-              {summaryItem('CGPA / Percentage', academic['score'] as string)}
+              {/* A school leaver's score is a percentage; only a tertiary one can be a CGPA. */}
+              {summaryItem(
+                ['11th', '12th'].includes(academic['qualificationLevel'] as string) ? 'Percentage' : 'CGPA / Percentage',
+                academic['score'] as string
+              )}
               {summaryItem('Completion Year', academic['graduationYear'] as string)}
             </div>
           </div>

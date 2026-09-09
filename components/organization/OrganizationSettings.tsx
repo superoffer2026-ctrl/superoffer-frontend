@@ -3,6 +3,7 @@
 import { classNames } from '@/lib/cx';
 import { SETTINGS_TABS, type useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
 import styles from '@/styles/OrganizationWorkspace.module.css';
+import { PasswordInput } from '@/components/shared/PasswordInput';
 
 const cx = classNames(styles);
 
@@ -12,7 +13,8 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
   const {
     role, cfg, settingsTab, setSettingsTab, orgName, setOrgName, orgDomain, setOrgDomain, orgCity, setOrgCity,
     orgDescription, setOrgDescription, saveOrgProfile, currentPlan, planQuotaLabel, profilesViewed, quotaPercent, remainingCredits,
-    planOptions, advancedFeatures, choosePlan, teamMembers, openInviteModal, resendInvite, removeOfficer,
+    planOptions, advancedFeatures, billing, fmtDate, profile, uploadOrganizationImage,
+    teamMembers, openInviteModal, resendInvite, removeOfficer,
     notificationPrefs, persistNotificationPrefs, passwordForm, setPasswordForm, changePassword, logout, notify
   } = workspace;
 
@@ -50,6 +52,51 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
               Organisation description
               <textarea value={orgDescription} onChange={event => setOrgDescription(event.target.value)} />
             </label>
+
+            {/*
+              * The logo and cover a student sees on every offer.
+              *
+              * Uploaded here because they are the organisation's to maintain —
+              * once an admin has approved them, what they look like is not
+              * something SuperOffer should be researching on their behalf.
+              * Uploads save immediately; there is nothing to lose by not pressing
+              * Save afterwards.
+              */}
+            <label className={cx('wide', 'image-field')}>
+              Logo
+              <div className={cx('image-row')}>
+                {profile?.logoUrl
+                  ? <img src={profile.logoUrl} alt="Organisation logo" className={cx('image-preview', 'image-preview-logo')} />
+                  : <span className={cx('image-preview', 'image-preview-logo', 'image-empty')}>No logo</span>}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadOrganizationImage('logo', file);
+                  }}
+                />
+              </div>
+              <small>Shown beside your name on every offer a student receives.</small>
+            </label>
+
+            <label className={cx('wide', 'image-field')}>
+              Cover image
+              <div className={cx('image-row')}>
+                {profile?.coverUrl
+                  ? <img src={profile.coverUrl} alt="Campus cover" className={cx('image-preview')} />
+                  : <span className={cx('image-preview', 'image-empty')}>No cover image</span>}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={event => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadOrganizationImage('cover', file);
+                  }}
+                />
+              </div>
+              <small>A campus photo, used where the offer has room for one.</small>
+            </label>
           </div>
           <footer><button className={cx('uni-primary')} onClick={() => void saveOrgProfile()}>Save changes</button></footer>
         </section>
@@ -85,18 +132,84 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  className={cx(plan.name !== currentPlan ? 'uni-primary' : 'uni-secondary')}
-                  disabled={plan.name === currentPlan}
-                  onClick={() => choosePlan(plan.name)}
-                >
-                  {plan.name === currentPlan ? 'Current plan' : `Choose ${plan.name}`}
-                </button>
+                {/* No button: plans are agreed with the SuperOffer team and paid offline. */}
+                <span className={cx('plan-marker', plan.name === currentPlan && 'plan-marker-current')}>
+                  {plan.name === currentPlan ? 'Your current plan' : 'Available'}
+                </span>
               </article>
             ))}
           </div>
-          <p className={cx('subscription-note')}>Your plan and quota are stored on your organisation record. Billing is not connected yet.</p>
+          {billing && (
+            <>
+              <div className={cx('billing-summary')}>
+                <div>
+                  <span>BILLING PERIOD</span>
+                  <strong>
+                    {billing.subscription.periodStart
+                      ? `${fmtDate(billing.subscription.periodStart)} — ${fmtDate(billing.subscription.periodEnd)}`
+                      : 'No active subscription'}
+                  </strong>
+                  {billing.subscription.invoiceNumber && <small>Invoice {billing.subscription.invoiceNumber}</small>}
+                </div>
+                <div>
+                  <span>PAYMENT</span>
+                  <strong className={cx('pay-' + billing.subscription.paymentStatus.toLowerCase())}>
+                    {billing.subscription.paymentStatus === 'NONE' ? 'Not billed' : billing.subscription.paymentStatus}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Unpaid never blocks anything on its own — it asks, and a person decides. */}
+              {billing.subscription.suspended ? (
+                <p className={cx('billing-alert', 'billing-alert-stop')}>
+                  Your account is suspended. {billing.subscription.suspensionReason || ''} Please contact the SuperOffer team.
+                </p>
+              ) : billing.subscription.overdue ? (
+                <p className={cx('billing-alert', 'billing-alert-stop')}>
+                  Payment is overdue for invoice {billing.subscription.invoiceNumber}. Your access continues for now —
+                  please settle it to avoid interruption.
+                </p>
+              ) : billing.subscription.unpaid ? (
+                <p className={cx('billing-alert')}>
+                  Payment pending for invoice {billing.subscription.invoiceNumber}. Once our team records your transfer,
+                  it will show as paid here.
+                </p>
+              ) : null}
+
+              <h3 className={cx('billing-heading')}>Billing history</h3>
+              {billing.invoices.length === 0 ? (
+                <p className={cx('subscription-note')}>No invoices yet.</p>
+              ) : (
+                <div className={cx('invoice-table-wrap')}>
+                  <table className={cx('invoice-table')}>
+                    <thead>
+                      <tr>
+                        <th>Invoice</th><th>Plan</th><th>Period</th><th>Amount</th>
+                        <th>Status</th><th>Paid on</th><th>Reference</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {billing.invoices.map(inv => (
+                        <tr key={inv.invoiceNumber}>
+                          <td>{inv.invoiceNumber}</td>
+                          <td>{inv.plan}</td>
+                          <td>{fmtDate(inv.periodStart)} — {fmtDate(inv.periodEnd)}</td>
+                          <td className={cx('invoice-amount')}>{inv.currency} {inv.amount}</td>
+                          <td><span className={cx('pay-' + inv.status.toLowerCase())}>{inv.status}</span></td>
+                          <td>{inv.paidAt ? fmtDate(inv.paidAt) : '—'}</td>
+                          <td>{inv.paymentRef || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+          <p className={cx('subscription-note')}>
+            Plans are arranged with the SuperOffer team and paid offline. This page shows what you are on and what has
+            been received — to change plan, talk to us.
+          </p>
         </section>
       )}
 
@@ -168,18 +281,18 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
             <div className={cx('settings-form')}>
               <label>
                 Current password
-                <input type="password" placeholder="••••••••" value={passwordForm.current}
+                <PasswordInput placeholder="••••••••" autoComplete="current-password" value={passwordForm.current}
                   onChange={event => setPasswordForm({ ...passwordForm, current: event.target.value })} />
               </label>
               <label></label>
               <label>
                 New password
-                <input type="password" placeholder="••••••••" value={passwordForm.next}
+                <PasswordInput placeholder="••••••••" autoComplete="new-password" value={passwordForm.next}
                   onChange={event => setPasswordForm({ ...passwordForm, next: event.target.value })} />
               </label>
               <label>
                 Confirm new password
-                <input type="password" placeholder="••••••••" value={passwordForm.confirm}
+                <PasswordInput placeholder="••••••••" autoComplete="new-password" value={passwordForm.confirm}
                   onChange={event => setPasswordForm({ ...passwordForm, confirm: event.target.value })} />
               </label>
             </div>

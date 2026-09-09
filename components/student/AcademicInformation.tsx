@@ -136,6 +136,8 @@ export function AcademicInformation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Labels come worded for the row: `labelWhen` in the schema renames the score
+   *  field to "Percentage" for 11th and 12th, where there is no CGPA to give. */
   const fieldsFor = (level: Qualification) => rows.forRow({ level, ...(levelValues[level] || {}) });
   const isSelected = (level: Qualification) => !!selected[level];
   const selectedLevels = (): Qualification[] => levels.filter(level => selected[level]);

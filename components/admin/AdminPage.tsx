@@ -8,11 +8,13 @@ import { readSession, removeSession, writeSession } from '@/lib/storage';
 import styles from '@/styles/AdminPage.module.css';
 import { AdminAutomation } from './AdminAutomation';
 import { AdminAdmissions } from './AdminAdmissions';
+import { AdminBilling } from './AdminBilling';
 import { AdminFormBuilder } from './AdminFormBuilder';
+import { PasswordInput } from '@/components/shared/PasswordInput';
 
 const cx = classNames(styles);
 
-type AdminView = 'dashboard' | 'queue' | 'audit' | 'auth-logs' | 'form-builder' | 'automation' | 'admissions';
+type AdminView = 'dashboard' | 'queue' | 'audit' | 'auth-logs' | 'form-builder' | 'automation' | 'admissions' | 'billing';
 
 const STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 
@@ -141,6 +143,11 @@ function evidenceGaps(row: {
  * disagree about which page you are on.
  */
 const PAGES: Record<AdminView, { eyebrow: string; title: string; describes: string }> = {
+  billing: {
+    eyebrow: 'REVENUE',
+    title: 'Subscriptions',
+    describes: 'What each organisation is on, and whether the money has arrived.'
+  },
   dashboard: {
     eyebrow: 'OVERVIEW',
     title: 'Platform dashboard',
@@ -185,7 +192,8 @@ const NAV_GROUPS: Array<{ title: string; items: Array<{ view: AdminView; label: 
     items: [
       { view: 'dashboard', label: 'Dashboard', describes: 'Health and what needs attention' },
       { view: 'queue', label: 'Verification queue', describes: 'Organisations awaiting review' },
-      { view: 'admissions', label: 'Admissions', describes: 'Accepted offers to verify' }
+      { view: 'admissions', label: 'Admissions', describes: 'Accepted offers to verify' },
+      { view: 'billing', label: 'Subscriptions', describes: 'Plans sold, and money received' }
     ]
   },
   {
@@ -449,7 +457,8 @@ export function AdminPage() {
             <form onSubmit={event => { event.preventDefault(); void connect(); }}>
               <label>
                 Admin approval key
-                <input type="password" name="key" required value={adminKey} onChange={event => setAdminKey(event.target.value)} />
+                <PasswordInput name="key" required autoComplete="current-password"
+                  value={adminKey} onChange={event => setAdminKey(event.target.value)} />
               </label>
               {error && <p className={cx('message', 'error')}>{error}</p>}
               <button className={cx('primary', 'wide')} disabled={loading}>
@@ -756,6 +765,7 @@ export function AdminPage() {
             )}
 
             {view === 'admissions' && <AdminAdmissions adminKey={adminKey} />}
+            {view === 'billing' && <AdminBilling adminKey={adminKey} />}
 
             {view === 'form-builder' && <AdminFormBuilder adminKey={adminKey} />}
 

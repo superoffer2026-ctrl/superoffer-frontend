@@ -59,7 +59,12 @@ export function removeSession(key: string): void {
   }
 }
 
-/** The access token is written to localStorage or sessionStorage depending on "remember me". */
+/**
+ * Sign-in writes the token to localStorage, so a session survives closing the
+ * tab. sessionStorage is still read here because tokens written by older builds
+ * — back when a "keep me signed in" checkbox chose between the two — are still
+ * live in people's browsers, and reading both keeps them signed in.
+ */
 export function readAccessToken(): string {
   return readLocal('superoffer_access_token') || readSession('superoffer_access_token') || '';
 }

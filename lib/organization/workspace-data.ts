@@ -16,6 +16,53 @@ export type BankEvaluationMode = 'ACADEMIC_ONLY' | 'UNIVERSITY_OFFER_ONLY' | 'AC
 export type UniversityOfferStatus = 'Offer Sent' | 'Shortlisted' | 'Selected' | 'Admitted';
 export type SettingsTab = 'org' | 'subscription' | 'accreditation' | 'team' | 'notifications' | 'security';
 
+/** One answered field: what was asked, and what they said. */
+/**
+ * The university and programme as they stood when an offer was sent.
+ *
+ * Frozen on the offer, so editing a programme later cannot rewrite what a
+ * student was already promised.
+ */
+export interface OfferSnapshot {
+  capturedAt?: string;
+  university?: {
+    name?: string; city?: string | null; country?: string | null;
+    website?: string | null; logoUrl?: string | null; coverUrl?: string | null;
+  };
+  program?: {
+    name?: string; degreeLevel?: string | null; fieldOfStudy?: string | null;
+    durationMonths?: number | null; studyMode?: string | null; campusLocation?: string | null;
+    intakes?: string[]; tuitionFee?: string | null; currency?: string | null;
+    scholarshipInfo?: string | null; imageUrl?: string | null; url?: string | null;
+  };
+}
+
+export interface RecordField { label: string; value: string }
+
+/** A repeating entry — a qualification, an exam sitting, a job, a project. */
+export interface RecordEntry { fields: RecordField[] }
+
+/**
+ * The student profile as answered, not as summarised.
+ *
+ * The candidate card flattens everything to fit a list; this is what an
+ * organisation is actually paying to read. Empty sections arrive empty, so a
+ * gap on screen is a gap in the record.
+ */
+export interface StudentRecord {
+  personal: RecordField[];
+  preferences: RecordField[];
+  education: (RecordEntry & { level: string })[];
+  educationGap: string;
+  englishExams: (RecordEntry & { exam: string })[];
+  competitiveExams: (RecordEntry & { exam: string })[];
+  work: { status: string; summary: RecordField[]; roles: (RecordEntry & { role: string; company: string })[] };
+  financial: RecordField[];
+  projects: (RecordEntry & { title: string })[];
+  achievements: string[];
+  links: string[];
+}
+
 export interface NegotiationMessage { from: 'institution' | 'student' | 'system'; author: string; body: string; time: string; automatic?: boolean; }
 
 export interface Offer {
@@ -191,6 +238,8 @@ export interface WorkspaceStudent {
   id: string;
   name: string;
   initials: string;
+  /** Every answer the student gave, section by section — the record behind the card. */
+  detail?: StudentRecord;
   photo?: string;
   course: string;
   country: string;
@@ -211,7 +260,6 @@ export interface WorkspaceStudent {
   gmat?: number;
   backlogs: number;
   workExperienceYears: number;
-  visaRefused: boolean;
   documentsVerified: number;
   examScore: string;
   budget: string;
@@ -226,10 +274,8 @@ export interface WorkspaceStudent {
   bio: string;
   color: string;
   eligible: boolean;
-  eligibilityNote: string;
   submittedAt: string;
   needsLoan: string;
-  employmentCategory: string;
   financialDocuments?: Array<{ key: string; label: string; uploaded: boolean }>;
   universityInterests?: UniversityInterest[];
   counterparty?: Counterparty;
@@ -371,6 +417,9 @@ export interface OrganizationOffer {
 }
 
 export interface OrganizationProfile {
+  /** Resolved image URLs; the stored reference stays on the server. */
+  logoUrl?: string | null;
+  coverUrl?: string | null;
   id: string;
   name: string;
   organizationType: string;
@@ -434,6 +483,8 @@ export interface WorkspaceCandidate {
   counterparty?: Counterparty;
   /** Whether this household could carry a loan. Lenders only. */
   loanReadiness?: LoanReadiness;
+  /** The student's answers in full — what an organisation is paying to read. */
+  detail?: StudentRecord;
   deadline: string;
   received: string;
   status: 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
