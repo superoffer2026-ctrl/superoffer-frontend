@@ -1,0 +1,319 @@
+/* Landing design system.
+   Tokens are declared on .host so every section module inherits them through the
+   DOM, and the reveal/stagger rules use data-attributes so a single definition
+   works across the per-section CSS Modules without re-declaring hashed names. */
+
+.host {
+  /* ink */
+  --ink: #111113;
+  --ink-2: #52525b;
+  --ink-3: #71717a;
+  --ink-4: #a1a1aa;
+  /* surfaces */
+  --paper: #ffffff;
+  --soft: #fafafa;
+  --soft-2: #f4f4f5;
+  /* hairlines */
+  --line: rgba(17, 17, 19, 0.06);
+  --line-2: rgba(17, 17, 19, 0.12);
+  --line-3: rgba(17, 17, 19, 0.18);
+  /* signature emerald */
+  --em: #047857;
+  --em-deep: #065f46;
+  --em-bright: #059669;
+  --em-soft: #ecfdf5;
+  --em-soft-2: #d1fae5;
+  --em-line: #a7f3d0;
+  --em-ink: #064e3b;
+  /* supporting accents (opportunity categories) */
+  --amber: #b45309;
+  --amber-soft: #fffbeb;
+  --amber-line: #fde68a;
+  --sky: #0369a1;
+  --sky-soft: #f0f9ff;
+  --sky-line: #bae6fd;
+  --coral: #c2410c;
+  --coral-soft: #fff7ed;
+  --coral-line: #fed7aa;
+  --teal: #0f766e;
+  --teal-soft: #f0fdfa;
+  --teal-line: #99f6e4;
+  --violet: #6d28d9;
+  --violet-soft: #f5f3ff;
+  --violet-line: #ddd6fe;
+  /* depth */
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.012);
+  --sh-2: 0 8px 24px -4px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.025);
+  --sh-3: 0 16px 36px -8px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  --sh-4: 0 24px 48px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  /* geometry */
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 26px;
+  --r-full: 9999px;
+  --maxw: 1280px;
+  --gutter: clamp(18px, 4.5vw, 32px);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --nav-h: 76px;
+
+  display: block;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+.host * { box-sizing: border-box; }
+.host img { max-width: 100%; }
+
+/* ------------------------------------------------------------- structure */
+
+.main { padding-top: var(--nav-h); }
+
+.shell {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* Anchor targets clear the fixed header. */
+.section { width: 100%; padding: clamp(56px, 8vw, 104px) 0; background: var(--paper); scroll-margin-top: calc(var(--nav-h) + 16px); }
+.section.tight { padding: clamp(40px, 5vw, 64px) 0; }
+.section.roomy { padding: clamp(72px, 10vw, 132px) 0; }
+
+/* --------------------------------------------------------------- heading */
+
+.eyebrow {
+  display: block;
+  color: var(--em);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.head { max-width: 720px; }
+.head.centered { max-width: 760px; margin-inline: auto; text-align: center; }
+.head.wide { max-width: 860px; }
+
+.head h2 {
+  margin: 12px 0 0;
+  font-size: clamp(27px, 3.6vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.16;
+  text-wrap: balance;
+}
+
+.head h2 em { color: var(--em); font-style: normal; }
+
+.head p {
+  margin: 14px 0 0;
+  color: var(--ink-2);
+  font-size: clamp(15px, 1.15vw, 17px);
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+}
+
+/* --------------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s var(--ease),
+    transform 0.25s var(--ease), color 0.2s ease;
+}
+
+.btn svg { transition: transform 0.25s var(--ease); }
+.btn:hover svg { transform: translateX(4px); }
+.btn:active { transform: scale(0.985); }
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.btn.dark {
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.btn.dark:hover { background: #27272a; box-shadow: var(--sh-3); transform: translateY(-1px); }
+.btn.dark:hover:active { transform: scale(0.985); }
+
+.btn.emerald {
+  color: #fff;
+  background: var(--em);
+  box-shadow: 0 1px 2px rgba(4, 120, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.btn.emerald:hover { background: var(--em-deep); box-shadow: 0 12px 28px -8px rgba(4, 120, 87, 0.45); transform: translateY(-1px); }
+
+.btn.outline { color: var(--ink); background: var(--paper); border-color: var(--line-2); box-shadow: var(--sh-1); }
+.btn.outline:hover { border-color: rgba(17, 17, 19, 0.3); background: rgba(17, 17, 19, 0.02); transform: translateY(-1px); }
+
+.btn.glass { color: #fff; background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+.btn.glass:hover { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.35); transform: translateY(-1px); }
+
+.btn.small { height: 38px; padding: 0 16px; font-size: 13px; }
+.btn.block { width: 100%; }
+
+/* Text link with a travelling arrow. */
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--em);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.textLink svg { transition: transform 0.25s var(--ease); }
+.textLink:hover { color: var(--em-deep); }
+.textLink:hover svg { transform: translateX(4px); }
+
+/* ------------------------------------------------------- capability strip
+
+   A slim three-across row that closes a section. Deliberately not a card grid:
+   it should read as the last line of the section it belongs to, not as a new
+   block that interrupts the page. */
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: clamp(24px, 3vw, 34px);
+  padding-top: clamp(20px, 2.4vw, 28px);
+  border-top: 1px solid var(--line);
+}
+
+.strip > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 clamp(16px, 2vw, 28px);
+  border-left: 1px solid var(--line);
+}
+.strip > div:first-child { padding-left: 0; border-left: 0; }
+.strip > div:last-child { padding-right: 0; }
+
+.strip i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--em-soft);
+  color: var(--em);
+  transition: background-color 0.28s ease, color 0.28s ease, transform 0.3s var(--ease);
+}
+.strip > div:hover i { background: var(--em); color: #fff; transform: scale(1.06); }
+
+.strip b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -0.016em; line-height: 1.35; }
+.strip p { margin: 5px 0 0; color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+
+@media (max-width: 860px) {
+  .strip { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .strip > div { padding: 0; border-left: 0; }
+}
+
+/* ----------------------------------------------------------------- chips */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--em-line);
+  border-radius: var(--r-full);
+  background: var(--em-soft);
+  color: var(--em-ink);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.pill.neutral { border-color: var(--line-2); background: var(--paper); color: var(--ink-2); }
+.pill.dark { border-color: rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.08); color: #d1fae5; }
+
+/* Pulsing status dot used on live/verified chips. */
+.dot {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--em-bright);
+}
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: soPing 2.4s var(--ease) infinite;
+}
+
+@keyframes soPing {
+  0% { opacity: 0.7; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(2.6); }
+}
+
+/* --------------------------------------------------- scroll reveal system */
+
+.host [data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.75s var(--ease), transform 0.9s var(--ease);
+}
+.host [data-reveal][data-visible="true"] { opacity: 1; transform: none; }
+
+.host [data-stagger] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s var(--ease) calc(var(--i, 0) * 90ms),
+    transform 0.8s var(--ease) calc(var(--i, 0) * 90ms);
+}
+.host [data-visible="true"] [data-stagger] { opacity: 1; transform: none; }
+
+/* Hero elements animate on mount rather than on scroll. */
+.host [data-enter] { animation: soEnter 0.85s var(--ease) both; animation-delay: calc(var(--i, 0) * 110ms); }
+
+@keyframes soEnter {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 720px) {
+  .host { --nav-h: 66px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .host *,
+  .host *::before,
+  .host *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .host [data-reveal],
+  .host [data-stagger],
+  .host [data-enter] { opacity: 1 !important; transform: none !important; }
+}

@@ -1,0 +1,88 @@
+.host { width: 100%; border-top: 1px solid var(--line); background: var(--paper); }
+
+.inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(40px, 5vw, 64px) var(--gutter) clamp(28px, 3vw, 40px);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: clamp(28px, 3.5vw, 40px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
+.brand small {
+  padding-left: 14px;
+  border-left: 1px solid var(--line-2);
+  color: var(--ink-3);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--em-line);
+  border-radius: var(--r-full);
+  background: var(--em-soft);
+  color: var(--em-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 28px 20px;
+  padding: clamp(28px, 3.5vw, 44px) 0;
+}
+
+.columns h4 {
+  margin: 0 0 14px;
+  color: var(--ink-3);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.columns nav { display: flex; flex-direction: column; gap: 9px; }
+.columns a {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.24s var(--ease);
+}
+.columns a:hover { color: var(--ink); transform: translateX(3px); }
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: clamp(20px, 2.5vw, 28px);
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.bottom > div { display: inline-flex; align-items: center; gap: 20px; }
+.bottom span { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (max-width: 900px) {
+  .columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bottom { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .bottom > div { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

@@ -1,0 +1,26 @@
+.brand { display: inline-flex; align-items: center; gap: 9px; }
+
+.mark {
+  flex: 0 0 auto;
+  border-radius: 28%;
+  box-shadow: 0 2px 8px -2px rgba(4, 120, 87, 0.45);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.brand:hover .mark { transform: translateY(-1px); box-shadow: 0 6px 14px -4px rgba(4, 120, 87, 0.5); }
+
+.word {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.word em { color: var(--em); font-style: normal; }
+
+.onDark .word { color: #fff; }
+.onDark .word em { color: #6ee7b7; }
+
+@media (max-width: 720px) {
+  .word { font-size: 16px; }
+}

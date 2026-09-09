@@ -1,0 +1,132 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: clamp(32px, 4vw, 52px);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(22px, 2.4vw, 30px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  background: var(--paper);
+  box-shadow: var(--sh-1);
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.3s ease;
+}
+.step:hover {
+  transform: translateY(-5px);
+  border-color: rgba(4, 120, 87, 0.3);
+  box-shadow: 0 24px 48px -18px rgba(17, 17, 19, 0.16);
+}
+
+.stepTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+.num {
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: rgba(17, 17, 19, 0.16);
+  transition: color 0.3s ease;
+}
+.step:hover .num { color: var(--em); }
+
+.stage {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: var(--r-full);
+  background: var(--soft-2);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.step:hover .stage { background: var(--em-soft); color: var(--em); }
+.stage.on { background: var(--em-soft-2); color: var(--em-ink); }
+
+.step h3 {
+  margin: 20px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  line-height: 1.3;
+  transition: color 0.25s ease;
+}
+.step:hover h3 { color: var(--em); }
+.step > div > p { margin: 10px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+
+/* ------------------------------------------------- inline preview panels */
+
+.panel {
+  margin-top: 26px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--soft);
+}
+.panel.accent { border-color: var(--em-line); background: rgba(236, 253, 245, 0.7); }
+
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.panelHead > span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
+.panelHead svg { color: var(--em); }
+.panelHead b { font-size: 12px; font-weight: 700; color: var(--em-ink); }
+.panelHead .chip {
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  background: var(--em);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.track { height: 5px; margin-top: 10px; border-radius: var(--r-full); background: rgba(17, 17, 19, 0.08); overflow: hidden; }
+.track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--em), #10b981);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.3s var(--ease) 0.4s;
+}
+[data-visible="true"] .track i { transform: scaleX(1); }
+
+.panelFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.panelFoot em { color: var(--em); font-style: normal; font-weight: 700; }
+.panelFoot .go { display: inline-flex; align-items: center; gap: 5px; color: var(--em); font-weight: 700; }
+.panelFoot .go svg { transition: transform 0.25s var(--ease); }
+.step:hover .panelFoot .go svg { transform: translateX(4px); }
+
+.rows { display: grid; gap: 7px; margin-top: 11px; }
+.rows > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.rows b { font-weight: 600; }
+.rows em { color: var(--em); font-style: normal; font-weight: 700; }
+
+.panel > p { margin: 8px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink); }
+
+@media (max-width: 940px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .step { flex-direction: row; align-items: stretch; gap: 24px; }
+  .step > div:first-child { flex: 1; }
+  .step .panel { flex: 0 0 clamp(200px, 30%, 280px); margin-top: 0; align-self: center; }
+}
+@media (max-width: 640px) {
+  .step { flex-direction: column; gap: 0; border-radius: var(--r-xl); }
+  .step .panel { flex: none; margin-top: 22px; }
+}

@@ -1,0 +1,96 @@
+.panel {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(40px, 6vw, 76px) clamp(24px, 4vw, 56px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-2xl);
+  background: radial-gradient(120% 140% at 50% -20%, #1b3b30 0%, #14181a 46%, #0d0f10 100%);
+  box-shadow: 0 34px 80px -30px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  text-align: center;
+}
+
+/* Ambient emerald light above the fold of the panel. */
+.panel::before {
+  content: "";
+  position: absolute;
+  top: -180px;
+  left: 50%;
+  width: 520px;
+  height: 420px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.22);
+  filter: blur(80px);
+  transform: translateX(-50%);
+  animation: ctaGlow 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ctaGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.inner { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.08);
+  color: #6ee7b7;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.panel h2 {
+  margin: 20px 0 0;
+  font-size: clamp(28px, 4.6vw, 50px);
+  font-weight: 700;
+  letter-spacing: -0.034em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.panel > div > p {
+  margin: 16px auto 0;
+  max-width: 56ch;
+  color: rgba(226, 232, 240, 0.76);
+  font-size: clamp(14.5px, 1.15vw, 16.5px);
+  line-height: 1.65;
+}
+
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 28px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.proof li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(226, 232, 240, 0.62);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: color 0.22s ease;
+}
+.proof li:hover { color: #fff; }
+.proof li svg { color: #34d399; flex: 0 0 auto; }
+
+@media (max-width: 560px) {
+  .panel { border-radius: var(--r-xl); }
+  .actions { flex-direction: column; align-items: stretch; }
+  .actions > * { width: 100%; }
+  .proof { gap: 10px 18px; }
+}
