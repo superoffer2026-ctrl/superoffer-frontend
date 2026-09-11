@@ -1,0 +1,223 @@
+/* The profile wizard as a journey: a bright sky with landmarks behind, and a
+   white card in front where a guide asks one question per step. Each step
+   tints the sky with its own colours (--sky-a/b/c, set inline from
+   lib/models/wizard-copy.ts) so moving forward feels like moving somewhere. */
+
+.scene {
+  --ink: #111113;
+  --ink-2: #52525b;
+  --ink-3: #71717a;
+  --line: rgba(17, 17, 19, 0.08);
+  --em: #047857;
+  --em-soft: #ecfdf5;
+  --violet: #6d5dfc;
+  --violet-soft: #f1efff;
+  --r-xl: 18px;
+  --r-2xl: 24px;
+  --r-3xl: 30px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sky-a: #e8e6ff;
+  --sky-b: #e0f2ff;
+  --sky-c: #ffe9dc;
+
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 48%, var(--sky-c) 100%);
+  transition: background 0.8s ease;
+}
+.scene * { box-sizing: border-box; }
+
+/* ------------------------------------------------------------- backdrop */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sky :global(.wizard-scene-svg) { width: 100%; height: 100%; display: block; }
+
+.sky :global(.wz-cloud) { animation: drift 38s linear infinite; }
+.sky :global(.wz-cloud-b) { animation-duration: 52s; animation-delay: -18s; }
+.sky :global(.wz-cloud-c) { animation-duration: 44s; animation-delay: -30s; }
+.sky :global(.wz-plane) { animation: fly 34s linear infinite; }
+
+@keyframes drift { from { transform: translateX(-140px); } to { transform: translateX(1740px); } }
+@keyframes fly { from { transform: translateX(-200px) translateY(20px); } to { transform: translateX(1700px) translateY(-30px); } }
+
+/* ---------------------------------------------------------------- stage */
+
+.stage {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(18px, 4vh, 44px) clamp(14px, 3vw, 32px) clamp(28px, 6vh, 64px);
+}
+
+.frame {
+  width: min(1180px, 100%);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-3xl);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 30px 70px -30px rgba(20, 30, 60, 0.35), 0 4px 14px -6px rgba(20, 30, 60, 0.12);
+  animation: rise 0.6s var(--ease) both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+/* ----------------------------------------------------------------- head */
+
+.frameHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px clamp(18px, 3vw, 32px) 0;
+}
+.frameHead h1 { margin: 0; font-size: clamp(18px, 1.6vw, 22px); font-weight: 700; letter-spacing: -0.02em; }
+.headRight { display: flex; align-items: center; gap: 10px; }
+.counter {
+  display: inline-grid;
+  place-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #f2f2f6;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.exit {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #f2f2f6;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.exit:hover { background: #e8e8ee; color: var(--ink); }
+
+.segments {
+  display: flex;
+  gap: 6px;
+  padding: 14px clamp(18px, 3vw, 32px) 18px;
+  border-bottom: 1px solid var(--line);
+}
+.segment {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 999px;
+  background: #e6e6ec;
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s var(--ease);
+}
+.segment.complete { background: #b9c4ff; }
+.segment.current { background: linear-gradient(90deg, #4f8cff, var(--violet)); }
+.segment.disabled { cursor: not-allowed; }
+a.segment:hover { transform: scaleY(1.6); }
+
+/* ------------------------------------------------------------------ ask */
+
+.ask {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px clamp(18px, 3vw, 32px) 0;
+}
+.guide { flex: 0 0 auto; width: 52px; height: 52px; animation: bob 4s ease-in-out infinite; }
+.guide :global(.wizard-guide) { width: 100%; height: 100%; display: block; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+.bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 16px 20px;
+  border-radius: var(--r-xl);
+  border-top-left-radius: 6px;
+  background: #f5f6fa;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 16px;
+  border: 8px solid transparent;
+  border-right-color: #f5f6fa;
+  border-left: 0;
+}
+.question { margin: 0; font-size: clamp(17px, 1.6vw, 21px); font-weight: 700; letter-spacing: -0.015em; line-height: 1.3; }
+.lede { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+
+/* ----------------------------------------------------------------- body */
+
+.body {
+  --wz-side: 300px;
+  --wz-gap: clamp(18px, 2.5vw, 30px);
+  --wz-pad: clamp(18px, 3vw, 32px);
+  display: grid;
+  grid-template-columns: var(--wz-side) minmax(0, 1fr);
+  gap: var(--wz-gap);
+  padding: 22px var(--wz-pad) 0;
+}
+.side {
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.picture { border-radius: var(--r-2xl); overflow: hidden; box-shadow: 0 10px 30px -18px rgba(20, 30, 60, 0.4); }
+.picture :global(.wizard-illustration) { width: 100%; height: auto; display: block; }
+
+.tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: var(--r-xl);
+  background: linear-gradient(135deg, var(--violet-soft), #fff0f7);
+  border: 1px solid #e9e4ff;
+  color: #4b3fc9;
+}
+.tipIcon { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 999px; background: #fff; color: var(--violet); }
+.tip p { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.5; }
+
+/* The step's own form sits here; its stylesheet strips its old card chrome
+   and turns its action row into the sticky Continue bar (see each
+   styles/<Step>.module.css, "wizard frame" block). */
+.form { min-width: 0; display: flex; flex-direction: column; }
+
+/* ----------------------------------------------------------- responsive */
+
+@media (max-width: 960px) {
+  .body { --wz-side: 0px; --wz-gap: 0px; grid-template-columns: 1fr; gap: 18px; }
+  .side { position: static; flex-direction: row; align-items: stretch; }
+  .picture { flex: 0 0 200px; }
+  .tip { flex: 1; align-items: center; }
+}
+@media (max-width: 640px) {
+  .stage { padding: 0; }
+  .body { --wz-pad: 16px; padding: 18px var(--wz-pad) 0; }
+  .frame { border-radius: 0; min-height: 100vh; box-shadow: none; }
+  .side { flex-direction: column; }
+  .picture { flex: none; max-height: 170px; }
+  .picture :global(.wizard-illustration) { height: 170px; object-fit: cover; }
+  .guide { width: 42px; height: 42px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame, .guide, .sky :global(.wz-cloud), .sky :global(.wz-plane) { animation: none !important; }
+}

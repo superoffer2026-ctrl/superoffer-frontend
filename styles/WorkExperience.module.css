@@ -300,3 +300,63 @@
     flex: 1 1 100%;
   }
 }
+
+/* ── Wizard frame ──────────────────────────────────────────────────────────
+   This step renders inside the wizard card drawn by StudentPortalShell
+   (styles/student/Wizard.module.css), which owns the title, progress,
+   question and illustration. The step's own chrome steps back, and its
+   action row becomes the sticky Continue bar across the bottom of the card. */
+
+.host { min-height: 0; background: transparent; }
+.step-page { max-width: none; margin: 0; padding: 0; }
+.profile-form-card { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.card-head { display: none; }
+
+.step-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 28px calc(-1 * var(--wz-pad, 0px)) 0 calc(-1 * (var(--wz-side, 0px) + var(--wz-gap, 0px) + var(--wz-pad, 0px)));
+  padding: 16px clamp(18px, 3vw, 32px) 20px;
+  border-top: 1px solid rgba(17, 17, 19, 0.08);
+  border-radius: 0 0 30px 30px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.step-actions .button { margin: 0; }
+.step-actions .button.secondary { grid-column: 1; justify-self: start; }
+.step-actions .button.primary { grid-column: 2; justify-self: center; }
+.step-actions .save-message { grid-column: 3; justify-self: end; margin: 0; }
+
+.button.primary {
+  min-width: min(300px, 100%);
+  height: 54px;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 32px;
+  border-radius: 16px;
+  background: linear-gradient(95deg, #4f8cff 0%, #7b6cff 55%, #b48cff 100%);
+  color: #fff;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 14px 30px -12px rgba(88, 96, 255, 0.55);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.2s ease;
+}
+.button.primary::before { content: "✦"; font-size: 15px; line-height: 1; }
+.button.primary:hover { background: linear-gradient(95deg, #4f8cff 0%, #7b6cff 55%, #b48cff 100%); transform: translateY(-2px); box-shadow: 0 18px 34px -12px rgba(88, 96, 255, 0.65); filter: saturate(1.08); }
+.button.primary:disabled { opacity: 0.6; transform: none; box-shadow: none; cursor: wait; }
+.button.secondary { border: 0; background: transparent; color: #52525b; padding: 10px 6px; font-weight: 700; }
+.button.secondary:hover { color: #111113; text-decoration: underline; text-underline-offset: 4px; }
+
+@media (max-width: 640px) {
+  .step-actions { grid-template-columns: 1fr; border-radius: 0; padding: 12px 16px 16px; }
+  .step-actions .button.primary { grid-column: 1; justify-self: stretch; min-width: 0; width: 100%; }
+  .step-actions .button.secondary { grid-column: 1; justify-self: center; order: 2; }
+  .step-actions .save-message { grid-column: 1; justify-self: center; }
+}

@@ -2,13 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { classNames } from '@/lib/cx';
 import { useProfileSteps } from '@/lib/forms/use-profile-steps';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
+import { wizardCopyFor } from '@/lib/models/wizard-copy';
 import styles from '@/styles/StudentPortalShell.module.css';
+import wizardStyles from '@/styles/student/Wizard.module.css';
+import { WizardScene } from './wizard/WizardScene';
+import { WizardGuide, WizardIllustration } from './wizard/WizardIllustration';
 
 const cx = classNames(styles);
+const wz = classNames(wizardStyles);
 
 export function StudentPortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '';
@@ -45,7 +50,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
    *  keep it in view without fighting manual scroll. */
   useEffect(() => {
     if (isOffers || currentIndex === lastScrolledIndex.current) return;
-    const current = stepperNav.current?.querySelector<HTMLElement>(`.${styles['stepper-node']}.${styles.current}`);
+    const current = stepperNav.current?.querySelector<HTMLElement>('[aria-current="step"]');
     if (current) {
       current.scrollIntoView({ block: 'nearest', inline: 'center' });
       lastScrolledIndex.current = currentIndex;
@@ -56,72 +61,89 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
    *  furthest step ever reached, not the current one. */
   const isAccessible = (index: number) => isDashboard || isOffers || index <= furthestIndex;
 
-  return (
-    <div className={cx('host')}>
-      <div className={cx('student-portal', isOffers && 'offers-mode')}>
-        {!isOffers && (
-          <>
-            <header className={cx('wizard-header')}>
-              <Link className={cx('portal-brand')} href="/student/personal-information">
-                <img src="/superoffer-brand-mark.png" alt="SuperOffer" />
-                <strong>SuperOffer</strong>
-              </Link>
+  /**
+   * Non-wizard pages bring their own chrome (StudentWorkspaceShell), so this
+   * shell steps aside for them. For a wizard step it draws the whole scene:
+   * the sky and landmarks behind, and the card the conversation happens in.
+   */
+  if (isOffers) {
+    return <div className={cx('host')}>{children}</div>;
+  }
 
+  const copy = wizardCopyFor(steps[currentIndex]?.path || '');
+  const stepTitle = steps[currentIndex]?.title || 'Your profile';
+  const skyStyle = { '--sky-a': copy.sky[0], '--sky-b': copy.sky[1], '--sky-c': copy.sky[2] } as CSSProperties;
+
+  return (
+    <div className={wz('scene')} style={skyStyle}>
+      <div className={wz('sky')} aria-hidden="true"><WizardScene /></div>
+
+      <div className={wz('stage')}>
+        <section className={wz('frame')} aria-labelledby="wizard-step-title">
+          <header className={wz('frameHead')}>
+            <h1 id="wizard-step-title">{stepTitle}</h1>
+            <div className={wz('headRight')}>
+              <span className={wz('counter')}>{currentIndex + 1}/{steps.length}</span>
               {/*
                 * A way out. Every step saves on Continue, so leaving mid-wizard
                 * keeps whatever was already saved and loses only the step in
                 * progress — the same as closing the tab, but findable.
                 */}
-              <Link className={cx('wizard-exit')} href="/student/dashboard" title="Back to dashboard">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <Link className={wz('exit')} href="/student/dashboard" title="Back to dashboard" aria-label="Exit to dashboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <span>Exit to dashboard</span>
               </Link>
-            </header>
+            </div>
+          </header>
 
-            <nav className={cx('wizard-stepper')} ref={stepperNav} aria-label="Profile creation steps">
-              {steps.map((item, i) => {
-                const accessible = isAccessible(i);
-                const complete = isComplete(i);
-                const nodeClass = cx(
-                  'stepper-node',
-                  currentIndex === i && 'current',
-                  complete && 'complete',
-                  !accessible && 'disabled'
-                );
-                const dot = <span className={cx('stepper-dot')}>{complete ? '✓' : i + 1}</span>;
-                const label = <span className={cx('stepper-label')}>{item.title}</span>;
+          {/* One segment per step: filled once done, bright for the one open now. */}
+          <nav className={wz('segments')} ref={stepperNav} aria-label="Profile creation steps">
+            {steps.map((item, i) => {
+              const accessible = isAccessible(i);
+              const complete = isComplete(i);
+              const segmentClass = wz('segment', currentIndex === i && 'current', complete && 'complete', !accessible && 'disabled');
+              return accessible ? (
+                <Link
+                  key={item.path}
+                  className={segmentClass}
+                  href={`/student/${item.path}${fromReview ? '?from=review' : ''}`}
+                  aria-current={currentIndex === i ? 'step' : undefined}
+                  title={item.title}
+                  aria-label={item.title}
+                />
+              ) : (
+                <span key={item.path} className={segmentClass} title={item.title} aria-label={item.title} />
+              );
+            })}
+          </nav>
 
-                return (
-                  <span key={item.path} style={{ display: 'contents' }}>
-                    {accessible ? (
-                      <Link
-                        className={nodeClass}
-                        href={`/student/${item.path}${fromReview ? '?from=review' : ''}`}
-                        aria-current={currentIndex === i ? 'step' : undefined}
-                        title={item.title}
-                      >
-                        {dot}
-                        {label}
-                      </Link>
-                    ) : (
-                      <a className={nodeClass} aria-disabled="true" title={item.title} onClick={event => event.preventDefault()}>
-                        {dot}
-                        {label}
-                      </a>
-                    )}
-                    {i < steps.length - 1 && <span className={cx('stepper-line', complete && 'filled')}></span>}
-                  </span>
-                );
-              })}
-            </nav>
-          </>
-        )}
+          <div className={wz('ask')}>
+            <span className={wz('guide')}><WizardGuide /></span>
+            <div className={wz('bubble')}>
+              <p className={wz('question')}>{copy.question}</p>
+              <p className={wz('lede')}>{copy.lede}</p>
+            </div>
+          </div>
 
-        <main className={cx('student-content')}>{children}</main>
+          <div className={wz('body')}>
+            <aside className={wz('side')}>
+              <div className={wz('picture')}><WizardIllustration name={copy.illustration} /></div>
+              <div className={wz('tip')}>
+                <span className={wz('tipIcon')} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z" />
+                  </svg>
+                </span>
+                <p>{copy.tip}</p>
+              </div>
+            </aside>
+
+            <main className={wz('form')}>{children}</main>
+          </div>
+        </section>
       </div>
     </div>
   );
