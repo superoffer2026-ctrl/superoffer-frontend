@@ -142,11 +142,11 @@
 
 .mailbox-kinds .active b { color: var(--ow-green) }
 
-/* A segmented control that wraps onto a second row when the pane is narrow,
-   so the last option is never pushed out of view. */
+/* A segmented control: the three decisions side by side on the first row,
+   and "All" on its own full-width row beneath them. */
 .compact-offer-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin-top: 13px;
   padding: 3px;
@@ -160,9 +160,8 @@
   align-items: center;
   gap: 5px;
   justify-content: center;
-  flex: 1 1 auto;
   min-width: 0;
-  padding: 7px 8px;
+  padding: 7px 6px;
   border: 0;
   border-radius: 7px;
   background: none;
@@ -175,6 +174,7 @@
 }
 
 .compact-offer-filters button:hover { color: var(--ow-ink) }
+.compact-offer-filters .filter-all { grid-column: 1 / -1 }
 
 .compact-offer-filters button b {
   min-width: 16px;

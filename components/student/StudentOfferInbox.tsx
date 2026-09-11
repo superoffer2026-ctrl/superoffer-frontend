@@ -145,10 +145,10 @@ export function StudentOfferInbox() {
                 </small>
               </button>
               <div className={cx('compact-offer-filters')}>
-                <button className={cx(filter === 'All' && 'active')} onClick={() => setFilter('All')}>All <b>{offers.length}</b></button>
                 <button className={cx(filter === 'Accepted' && 'active')} onClick={() => setFilter('Accepted')}>Accepted <b>{count('Accepted')}</b></button>
                 <button className={cx(filter === 'Shortlisted' && 'active')} onClick={() => setFilter('Shortlisted')}>Shortlisted <b>{count('Shortlisted')}</b></button>
                 <button className={cx(filter === 'Rejected' && 'active')} onClick={() => setFilter('Rejected')}>Rejected <b>{count('Rejected')}</b></button>
+                <button className={cx('filter-all', filter === 'All' && 'active')} onClick={() => setFilter('All')}>All <b>{offers.length}</b></button>
               </div>
 
               {presentCategories.length > 1 && (
