@@ -80,7 +80,7 @@ export function StudentWorkspaceShell({
       <div className={cx('scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} aria-hidden={!menuOpen} />
       <aside className={cx('sidebar', menuOpen && 'open')}>
         <Link className={cx('brand')} href="/student/dashboard">
-          <span className={cx('brandMark')}><BrandMark size={30} wordmark={false} /></span>
+          <span className={cx('brandMark')}><BrandMark size={34} wordmark={false} /></span>
           <span className={cx('brandText')}><b>SuperOffer</b><small>Candidate Portal</small></span>
         </Link>
 
@@ -92,9 +92,11 @@ export function StudentWorkspaceShell({
               onClick={() => setMenuOpen(false)}
               className={cx('navItem', pathname.startsWith(item.href) && 'active')}
               aria-current={pathname.startsWith(item.href) ? 'page' : undefined}
+              aria-label={item.label}
+              data-label={item.label}
             >
-              <Icon name={item.icon} size={18} />
-              {item.label}
+              <Icon name={item.icon} size={20} />
+              <span className={cx('navLabel')}>{item.label}</span>
               {item.href === '/student/offers' && unread > 0 && <span className={cx('navBadge')}>{unread > 99 ? '99+' : unread}</span>}
             </Link>
           ))}
@@ -102,7 +104,7 @@ export function StudentWorkspaceShell({
 
         <div className={cx('sideSpacer')} />
 
-        <Link className={cx('userCard')} href="/student/profile">
+        <Link className={cx('userCard')} href="/student/profile" aria-label="Your profile" title={profile.fullName}>
           <span className={cx('userAvatar')}>
             {profile.initials}
             {isSubmitted && <i><Icon name="check" size={9} /></i>}
