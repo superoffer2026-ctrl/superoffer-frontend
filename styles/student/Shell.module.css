@@ -65,9 +65,10 @@
 }
 
 .brand { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 2px 0 4px; }
-.brand .brandText { display: none; }
 .brandMark { flex: 0 0 auto; }
-.brand .brandText { display: flex; flex-direction: column; line-height: 1; }
+.brand .brandText { flex-direction: column; line-height: 1; }
+/* Icon rail: the mark alone. The wordmark returns in the mobile drawer. */
+.brand .brandText { display: none; }
 .brand .brandText b { font-size: 15px; font-weight: 700; letter-spacing: -0.025em; }
 .brand .brandText small { margin-top: 3px; color: var(--em); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 
