@@ -110,7 +110,6 @@ export function FinancialInformation() {
   const nextStep = useNextStepPath('financial-information');
 
   const [fundingOptions, setFundingOptions] = useState<string[]>([]);
-  const [employmentOptions, setEmploymentOptions] = useState<string[]>([]);
   const [currencyOptions, setCurrencyOptions] = useState<string[]>([]);
   const [earningOptions, setEarningOptions] = useState<string[]>([]);
 
@@ -118,13 +117,10 @@ export function FinancialInformation() {
   const [earningMembers, setEarningMembers] = useState<string[]>([]);
   const [incomes, setIncomes] = useState<Record<IncomeField, string>>({ fatherIncome: '', motherIncome: '', guardianIncome: '' });
   const [currency, setCurrency] = useState('');
-  const [employmentCategory, setEmploymentCategory] = useState('');
   const [needsLoan, setNeedsLoan] = useState('');
-  const [declarationAccurate, setDeclarationAccurate] = useState(false);
-  const [declarationConsent, setDeclarationConsent] = useState(false);
 
-  const [openField, setOpenField] = useState<'funding' | 'employment' | 'earning' | null>(null);
-  const [queries, setQueries] = useState({ funding: '', employment: '', earning: '' });
+  const [openField, setOpenField] = useState<'funding' | 'earning' | null>(null);
+  const [queries, setQueries] = useState({ funding: '', earning: '' });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -132,7 +128,7 @@ export function FinancialInformation() {
   const seeded = useRef(false);
 
   /** Fields this step draws by hand; anything else the schema declares is added below. */
-  const FIN_CODED = ['fundingSource', 'earningMembers', 'earnerIncomes', 'fatherIncome', 'motherIncome', 'guardianIncome', 'annualHouseholdIncome', 'currency', 'employmentCategory', 'needsLoan', 'declarationAccurate', 'declarationConsent'];
+  const FIN_CODED = ['fundingSource', 'earningMembers', 'earnerIncomes', 'fatherIncome', 'motherIncome', 'guardianIncome', 'annualHouseholdIncome', 'currency', 'needsLoan'];
 
   /** What the published form says about the fields drawn by hand below. */
   const fields = useSectionFields('financialInformation', FIN_CODED);
@@ -160,15 +156,12 @@ export function FinancialInformation() {
     if (!saved['fundingSource']) return;
     setFundingSource(String(saved['fundingSource'] || ''));
     setCurrency(String(saved['currency'] || ''));
-    setEmploymentCategory(String(saved['employmentCategory'] || ''));
     setNeedsLoan(String(saved['needsLoan'] || ''));
     setIncomes({
       fatherIncome: String(saved['fatherIncome'] || ''),
       motherIncome: String(saved['motherIncome'] || ''),
       guardianIncome: String(saved['guardianIncome'] || '')
     });
-    setDeclarationAccurate(Boolean(saved['declarationAccurate']));
-    setDeclarationConsent(Boolean(saved['declarationConsent']));
     setEarningMembers((saved['earningMembers'] as string[]) || []);
   }, [profile.loaded, profile.profile.financial]);
 
@@ -184,7 +177,6 @@ export function FinancialInformation() {
         const options = await authApi.getFinancialInformationReferenceData();
         if (cancelled) return;
         setFundingOptions(options.fundingSourceOptions);
-        setEmploymentOptions(options.employmentCategoryOptions);
         setCurrencyOptions(options.currencyOptions);
         setEarningOptions(options.earningMemberOptions);
       } catch {
@@ -238,10 +230,7 @@ export function FinancialInformation() {
     fundingSource: stillAsks('fundingSource') && !fundingSource,
     earningMembers: stillAsks('earningMembers') && !earningMembers.length,
     currency: stillAsks('currency') && !currency,
-    employmentCategory: stillAsks('employmentCategory') && !employmentCategory,
     needsLoan: stillAsks('needsLoan') && !needsLoan,
-    declarationAccurate: stillAsks('declarationAccurate') && !declarationAccurate,
-    declarationConsent: stillAsks('declarationConsent') && !declarationConsent,
     fatherIncome: fields.shows('earnerIncomes') && isEarningSelected('Father') && !incomes.fatherIncome.trim(),
     motherIncome: fields.shows('earnerIncomes') && isEarningSelected('Mother') && !incomes.motherIncome.trim(),
     guardianIncome: fields.shows('earnerIncomes') && isEarningSelected('Guardian') && !incomes.guardianIncome.trim()
@@ -275,10 +264,7 @@ export function FinancialInformation() {
         guardianIncome: incomes.guardianIncome || undefined,
         annualHouseholdIncome,
         currency,
-        employmentCategory,
         needsLoan,
-        declarationAccurate,
-        declarationConsent
       });
 
       await profile.refresh();
@@ -438,33 +424,8 @@ export function FinancialInformation() {
                 <div className={cx('computed-income')}>
                   {householdIncomeTotal().toLocaleString('en-US')} {currency}
                 </div>
-                <small className={cx('field-hint')}>
-                  Auto-calculated as the sum of {earningMembers.join(' + ')} income.
-                </small>
               </div>
             )}
-
-            <SingleComboField
-              label={fields.labelOf('employmentCategory', 'Employment Category')}
-              placeholder="Search employment category"
-              toggleLabel="Toggle employment category"
-              emptyText="No matching option"
-              options={filtered(employmentOptions, queries.employment)}
-              selected={employmentCategory}
-              open={openField === 'employment'}
-              query={queries.employment}
-              invalid={!!showError('employmentCategory')}
-              error="Select your employment category"
-              onOpen={() => { setOpenField('employment'); setQueries(c => ({ ...c, employment: '' })); }}
-              onClose={() => setOpenField(current => (current === 'employment' ? null : current))}
-              onQueryChange={value => setQueries(c => ({ ...c, employment: value }))}
-              onSelect={value => {
-                setEmploymentCategory(current => (current === value ? '' : value));
-                markTouched('employmentCategory');
-                setQueries(c => ({ ...c, employment: '' }));
-                setOpenField(null);
-              }}
-            />
           </div>
 
           <h3 className={cx('section-title')}>{fields.groupLabel('loan', 'Education Loan')}</h3>
@@ -489,33 +450,10 @@ export function FinancialInformation() {
             </label>
             {needsLoan === 'yes' && (
               <small className={cx('field-hint')}>
-                You can check indicative eligibility and upload verification documents anytime from Loan eligibility in your dashboard.
+                You can check your CIBIL score and get loans from banks once you enter the dashboard.
               </small>
             )}
             {showError('needsLoan') && <small className={cx('field-error')}>Let us know if you&apos;ll need an education loan</small>}
-          </div>
-
-          <h3 className={cx('section-title')}>{fields.groupLabel('declaration', 'Declaration')}</h3>
-          <div className={cx('declaration-group')}>
-            <label className={cx('declaration-item')}>
-              <input
-                type="checkbox"
-                checked={declarationAccurate}
-                onChange={event => setDeclarationAccurate(event.target.checked)}
-              />
-              <span>I confirm that the financial information provided is accurate.</span>
-            </label>
-            <label className={cx('declaration-item')}>
-              <input
-                type="checkbox"
-                checked={declarationConsent}
-                onChange={event => setDeclarationConsent(event.target.checked)}
-              />
-              <span>I consent to the verification of my financial information.</span>
-            </label>
-            {(showError('declarationAccurate') || showError('declarationConsent')) && (
-              <small className={cx('field-error')}>Please accept both declarations to continue</small>
-            )}
           </div>
 
           {submitted && formInvalid && (

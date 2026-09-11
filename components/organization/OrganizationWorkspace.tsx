@@ -57,6 +57,32 @@ const NAV_ICONS: Record<string, ReactElement> = {
   )
 };
 
+type Cx = typeof cx;
+
+/** One label-and-value pair per answered field. */
+function RecordGrid({ fields, cx }: { fields: { label: string; value: string }[]; cx: Cx }) {
+  if (!fields.length) return null;
+  return (
+    <dl className={cx('record-grid')}>
+      {fields.map(field => (
+        <div key={field.label}>
+          <dt>{field.label}</dt>
+          <dd>{field.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function RecordSection({ title, fields, cx }: { title: string; fields: { label: string; value: string }[]; cx: Cx }) {
+  return (
+    <section className={cx('record-block')}>
+      <h3>{title}</h3>
+      <RecordGrid fields={fields} cx={cx} />
+    </section>
+  );
+}
+
 export function OrganizationWorkspace(options: WorkspaceOptions) {
   const workspace = useOrganizationWorkspace(options);
   const {
@@ -295,6 +321,110 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                         })}
                       </section>
 
+                      {/*
+                        * The record itself, below the snapshot.
+                        *
+                        * The cells above are the summary; this is what the student
+                        * actually filled in across nine steps, and what an
+                        * organisation is paying to read. Sections the student left
+                        * empty are not rendered at all — an empty heading reads as a
+                        * fault in the page rather than a gap in the answers.
+                        */}
+                      {candidate.detail && (
+                        <div className={cx('record')}>
+                          {!!candidate.detail.personal.length && (
+                            <RecordSection title="Personal details" fields={candidate.detail.personal} cx={cx} />
+                          )}
+
+                          {!!candidate.detail.preferences.length && (
+                            <RecordSection title="Study preferences" fields={candidate.detail.preferences} cx={cx} />
+                          )}
+
+                          {!!candidate.detail.education.length && (
+                            <section className={cx('record-block')}>
+                              <h3>Education history</h3>
+                              {candidate.detail.education.map((row, index) => (
+                                <article key={`${row.level}-${index}`} className={cx('record-entry')}>
+                                  <h4>{row.level}</h4>
+                                  <RecordGrid fields={row.fields} cx={cx} />
+                                </article>
+                              ))}
+                              {candidate.detail.educationGap && (
+                                <p className={cx('record-note')}>Education gap: {candidate.detail.educationGap}</p>
+                              )}
+                            </section>
+                          )}
+
+                          {(!!candidate.detail.englishExams.length || !!candidate.detail.competitiveExams.length) && (
+                            <section className={cx('record-block')}>
+                              <h3>Tests</h3>
+                              {[...candidate.detail.englishExams, ...candidate.detail.competitiveExams].map((row, index) => (
+                                <article key={`${row.exam}-${index}`} className={cx('record-entry')}>
+                                  <h4>{row.exam}</h4>
+                                  <RecordGrid fields={row.fields} cx={cx} />
+                                </article>
+                              ))}
+                            </section>
+                          )}
+
+                          {(candidate.detail.work.status || !!candidate.detail.work.roles.length) && (
+                            <section className={cx('record-block')}>
+                              <h3>Work experience</h3>
+                              {candidate.detail.work.status && (
+                                <p className={cx('record-note')}>Status: {candidate.detail.work.status}</p>
+                              )}
+                              {!!candidate.detail.work.summary.length && (
+                                <RecordGrid fields={candidate.detail.work.summary} cx={cx} />
+                              )}
+                              {candidate.detail.work.roles.map((row, index) => (
+                                <article key={`${row.role}-${index}`} className={cx('record-entry')}>
+                                  <h4>{row.role}{row.company ? ` · ${row.company}` : ''}</h4>
+                                  <RecordGrid fields={row.fields} cx={cx} />
+                                </article>
+                              ))}
+                            </section>
+                          )}
+
+                          {!!candidate.detail.projects.length && (
+                            <section className={cx('record-block')}>
+                              <h3>Projects</h3>
+                              {candidate.detail.projects.map((row, index) => (
+                                <article key={`${row.title}-${index}`} className={cx('record-entry')}>
+                                  <h4>{row.title}</h4>
+                                  <RecordGrid fields={row.fields} cx={cx} />
+                                </article>
+                              ))}
+                            </section>
+                          )}
+
+                          {!!candidate.detail.achievements.length && (
+                            <section className={cx('record-block')}>
+                              <h3>Achievements</h3>
+                              <div className={cx('record-tags')}>
+                                {candidate.detail.achievements.map(item => <span key={item}>{item}</span>)}
+                              </div>
+                            </section>
+                          )}
+
+                          {!!candidate.detail.links.length && (
+                            <section className={cx('record-block')}>
+                              <h3>Links</h3>
+                              <div className={cx('record-links')}>
+                                {candidate.detail.links.map(href => (
+                                  <a key={href} href={href} target="_blank" rel="noreferrer noopener">{href}</a>
+                                ))}
+                              </div>
+                            </section>
+                          )}
+
+                          {/* A university sees how the family plans to pay; the lender panel
+                              below carries the underwriting view for banks. */}
+                          {!!candidate.detail.financial.length && (
+                            <RecordSection title="Financial background" fields={candidate.detail.financial} cx={cx} />
+                          )}
+                        </div>
+                      )}
+
                       {role === 'BANK' && !candidate.loanReadiness && (
                         <p className={cx('snapshot-note')}>
                           No financial details yet — they appear once the student names a co-applicant and agrees to a credit check from their dashboard.
@@ -434,21 +564,24 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                             ))}
                           </div>
                         </div>
-                        <button type="button" onClick={() => notify('Opening verified student documents')}>View verified dossier →</button>
+                        {/*
+                          * No "verified dossier" link: there is no dossier, and no
+                          * document-verification workflow behind one. Offering it implied
+                          * SuperOffer had checked and vouched for this student's papers,
+                          * which is a claim the MVP cannot stand behind.
+                          */}
                       </section>
 
-                      <section className={cx('offer-conditions')} style={{ marginTop: 0 }}>
-                        <div>
-                          <h3>Terms &amp; Requirements</h3>
-                          <p>{candidate.conditions}</p>
-                        </div>
-                        <button type="button" onClick={() => notify('Viewing full terms')}>Edit offer terms →</button>
-                      </section>
-
-                      <section className={cx('offer-next-steps')}>
-                        <div><small>ACTION CHECKLIST</small><strong>To progress this candidate</strong></div>
-                        <ul>{candidate.nextSteps.map(step => <li key={step}>{step}</li>)}</ul>
-                      </section>
+                      {/*
+                        * Terms & Requirements and the action checklist are gone for now.
+                        * Both promised a post-admission workflow the MVP does not have —
+                        * conditional offers, transcript and document verification, steps
+                        * that could be worked through and ticked off. The checklist was
+                        * three hardcoded lines shown to every candidate, and the terms
+                        * box invited an edit that led nowhere. `conditions` and
+                        * `nextSteps` are still carried on the offer, so restoring this
+                        * needs the workflow behind it, not the data.
+                        */}
                     </div>
                   </div>
 

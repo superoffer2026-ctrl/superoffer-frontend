@@ -54,7 +54,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
     productInviteDraft, setProductInviteDraft, addProductToInvite, removeProductFromInvite, availableProductsForInvite,
     activePresetCategories, getPresetsByCategory, selectPreset, sendProductInvite,
     offerDraft, setOfferDraft, onOfferCourseChange, onOfferProductChange, saveOffer,
-    catalogDraft, setCatalogDraft, saveCatalogItem,
+    catalogDraft, setCatalogDraft, saveCatalogItem, uploadProgramImage,
     quickInvite, setQuickInvite, sendQuickInvite, offerTemplates,
     templateDraft, setTemplateDraft, saveTemplate,
     negotiationOffer, setNegotiationOffer, negotiationReply, setNegotiationReply, sendNegotiationReply,
@@ -653,17 +653,18 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
               {productForm.shows('category') && (
                 <label>
                   {productForm.labelOf('category', 'Product Category')}
-                  <select
+                  {/*
+                    * Shown, not asked. A university issues places and a bank issues
+                    * money; offering both as a choice let a university create a
+                    * financial product it could never actually put in front of a
+                    * student. The value follows the organisation type.
+                    */}
+                  <input
                     name="pCategory"
-                    required
-                    value={catalogDraft.category || ''}
-                    onChange={event => setCatalogDraft({ ...catalogDraft, category: event.target.value })}
-                    style={SELECT_CHEVRON}
-                  >
-                    <option value="" disabled>Select a category...</option>
-                    <option value="Academic Product">Academic Product</option>
-                    <option value="Financial Product">Financial Product</option>
-                  </select>
+                    readOnly
+                    value={catalogDraft.category || (role === 'BANK' ? 'Financial Product' : 'Academic Product')}
+                    aria-readonly="true"
+                  />
                 </label>
               )}
               {productForm.shows('name') && (
@@ -688,6 +689,115 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                     onChange={event => setCatalogDraft({ ...catalogDraft, url: event.target.value })}
                   />
                 </label>
+              )}
+
+              {/*
+                * The academic shape of a programme: what a student compares one
+                * university against another on. Universities only — a lender's
+                * product has no degree level and no intake.
+                */}
+              {role === 'UNIVERSITY' && (
+                <>
+                  <label>
+                    Degree level
+                    <select
+                      value={catalogDraft.degreeLevel || ''}
+                      onChange={event => setCatalogDraft({ ...catalogDraft, degreeLevel: event.target.value })}
+                      style={SELECT_CHEVRON}
+                    >
+                      <option value="">Not stated</option>
+                      {["Bachelor's", "Master's", 'PhD', 'Diploma', 'Certificate'].map(level => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Field of study
+                    <input
+                      value={catalogDraft.fieldOfStudy || ''}
+                      placeholder="e.g. Data Science"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, fieldOfStudy: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Duration (months)
+                    <input
+                      type="number" min={1} max={120}
+                      value={catalogDraft.durationMonths ?? ''}
+                      placeholder="e.g. 18"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, durationMonths: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Study mode
+                    <select
+                      value={catalogDraft.studyMode || ''}
+                      onChange={event => setCatalogDraft({ ...catalogDraft, studyMode: event.target.value })}
+                      style={SELECT_CHEVRON}
+                    >
+                      <option value="">Not stated</option>
+                      {['On campus', 'Online', 'Hybrid'].map(mode => <option key={mode} value={mode}>{mode}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    Campus / location
+                    <input
+                      value={catalogDraft.campusLocation || ''}
+                      placeholder="e.g. Toronto, Canada"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, campusLocation: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Available intakes
+                    <input
+                      value={catalogDraft.intakesText ?? (catalogDraft.intakes || []).join(', ')}
+                      placeholder="Fall, Winter"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, intakesText: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Tuition fee
+                    <input
+                      type="number" min={0} step="0.01"
+                      value={catalogDraft.tuitionFee ?? ''}
+                      placeholder="e.g. 24500"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, tuitionFee: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Currency
+                    <input
+                      value={catalogDraft.currency || ''}
+                      placeholder="e.g. CAD"
+                      maxLength={3}
+                      onChange={event => setCatalogDraft({ ...catalogDraft, currency: event.target.value.toUpperCase() })}
+                    />
+                  </label>
+                  <label className={cx('product-wide')}>
+                    Scholarship information (optional)
+                    <input
+                      value={catalogDraft.scholarshipInfo || ''}
+                      placeholder="e.g. Up to 30% merit scholarship"
+                      onChange={event => setCatalogDraft({ ...catalogDraft, scholarshipInfo: event.target.value })}
+                    />
+                  </label>
+                  {catalogDraft.id && (
+                    <label className={cx('product-wide')}>
+                      Programme image (optional)
+                      {catalogDraft.imageUrl && (
+                        <img src={catalogDraft.imageUrl} alt="Programme" className={cx('product-image-preview')} />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        onChange={event => {
+                          const file = event.target.files?.[0];
+                          if (file) void uploadProgramImage(catalogDraft.id, file);
+                        }}
+                      />
+                    </label>
+                  )}
+                </>
               )}
 
               {/* Whatever the admin added beyond the three fields above. */}

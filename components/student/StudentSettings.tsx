@@ -216,6 +216,7 @@ export function StudentSettings() {
                   {passwordProblems(passwordForm.next) && (
                     <p className={cx('field-error')}>{passwordProblems(passwordForm.next)}</p>
                   )}
+
                   <PasswordInput
                     name="confirmPassword" placeholder="Confirm new password" autoComplete="new-password"
                     value={passwordForm.confirm}

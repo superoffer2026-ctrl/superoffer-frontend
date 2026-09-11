@@ -128,6 +128,8 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [presetConditions, setPresetConditions] = useState<ConditionPreset[]>([]);
   const [planOptions, setPlanOptions] = useState<PlanOption[]>([]);
+  /** What this organisation was sold and what has been received. Read-only. */
+  const [billing, setBilling] = useState<Awaited<ReturnType<typeof authApi.organizationBilling>> | null>(null);
   const [bankEvaluationModeOptions, setBankEvaluationModeOptions] = useState<BankEvaluationModeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -206,6 +208,20 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     return next;
   }, []);
 
+  const loadBilling = useCallback(async (token: string) => {
+    /** A suspended organisation can still read its own bill, so this must not
+     *  take the workspace down with it if anything else is refused. */
+    try {
+      setBilling(await authApi.organizationBilling(token));
+    } catch {
+      setBilling(null);
+    }
+  }, []);
+
+  /** Dates on a bill read better long-form than as an ISO string. */
+  const fmtDate = (value: string | null) =>
+    value ? new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
   const loadProducts = useCallback(async (token: string) => {
     setApiProducts(((await authApi.organizationProducts(token)) || []) as Record<string, any>[]);
   }, []);
@@ -272,6 +288,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
 
         await Promise.all([
           loadProfile(token),
+          loadBilling(token),
           loadProducts(token),
           loadTemplates(token),
           loadStudents(token, filters),
@@ -670,13 +687,20 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
           counterparty: student.counterparty,
           /** Present only for lenders, and only once the family has agreed. */
           loanReadiness: student.loanReadiness,
+          /** The answers themselves, for the profile a university is paying to read. */
+          detail: student.detail,
           deadline: offer ? longDate(offer.expiresAt) : 'No invitation sent',
           received: offer ? shortDate(offer.sentAt) : shortDate(student.submittedAt),
           status,
-          conditions: offer?.conditions || student.eligibilityNote,
-          nextSteps: offer?.nextSteps?.length
-            ? offer.nextSteps
-            : ['Review the verified profile', 'Shortlist or reject the candidate', 'Send an invitation with your terms'],
+          /** An offer's own conditions, or none — there is no stand-in to invent. */
+          conditions: offer?.conditions || '',
+          /**
+           * Only what the organisation actually wrote. The three-line fallback that
+           * used to sit here was shown to every candidate as if it were their own
+           * checklist; the panel no longer renders these, and inventing them for a
+           * future one would put the same words back.
+           */
+          nextSteps: offer?.nextSteps || [],
           unread: offer?.unread || 0,
           messages: (offer?.messages || []).map(message => ({
             id: message.id,
@@ -928,8 +952,47 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
 
   // ── Products / catalog ────────────────────────────────────────────────────
 
-  const openCatalogModal = (item?: Product | LoanProduct) =>
-    setCatalogDraft(item ? { ...item, url: item.url || '', category: item.category || '' } : { id: '', name: '', category: '', url: '' });
+  /**
+   * The category is what kind of organisation is issuing, not a choice: a
+   * university offers places, a bank offers money, and neither can offer the
+   * other's. It is set here so a new product is already correct, and shown
+   * rather than asked in the form.
+   */
+  const openCatalogModal = (item?: Product | LoanProduct) => {
+    const category = role === 'BANK' ? 'Financial Product' : 'Academic Product';
+    setCatalogDraft(
+      item
+        ? { ...item, url: item.url || '', category: item.category || category }
+        : { id: '', name: '', category, url: '' }
+    );
+  };
+
+  /** Uploaded straight to the programme, so the image is stored against the row. */
+  const uploadProgramImage = async (productId: string, file: File) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      const { imageUrl } = await authApi.uploadProductImage(token, productId, file);
+      setCatalogDraft((current: any) => (current ? { ...current, imageUrl } : current));
+      await loadProducts(token);
+      notify('Programme image updated');
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'That image could not be uploaded');
+    }
+  };
+
+  /** The organisation's own logo and cover — theirs to maintain, not ours. */
+  const uploadOrganizationImage = async (kind: 'logo' | 'cover', file: File) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      await authApi.uploadOrganizationImage(token, kind, file);
+      await loadProfile(token);
+      notify(kind === 'logo' ? 'Logo updated' : 'Cover image updated');
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'That image could not be uploaded');
+    }
+  };
 
   const saveCatalogItem = async (extras: Record<string, unknown> = {}) => {
     if (!catalogDraft?.name) return;
@@ -941,7 +1004,24 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
       name: catalogDraft.name,
       category: catalogDraft.category || (role === 'BANK' ? 'Financial Product' : 'Academic Product'),
       url: catalogDraft.url || '',
-      terms: { ...(existing?.terms || {}), ...productTerms(catalogDraft), ...extras }
+      /**
+       * The academic fields go as themselves; `terms` keeps only what an admin
+       * added. A student comparing universities needs tuition and duration to
+       * mean the same thing in every offer, which a free-form blob cannot promise.
+       */
+      degreeLevel: catalogDraft.degreeLevel || undefined,
+      fieldOfStudy: catalogDraft.fieldOfStudy || undefined,
+      durationMonths: catalogDraft.durationMonths ? Number(catalogDraft.durationMonths) : undefined,
+      studyMode: catalogDraft.studyMode || undefined,
+      campusLocation: catalogDraft.campusLocation || undefined,
+      intakes: (catalogDraft.intakesText ?? (catalogDraft.intakes || []).join(', '))
+        .split(',').map((part: string) => part.trim()).filter(Boolean),
+      tuitionFee: catalogDraft.tuitionFee === '' || catalogDraft.tuitionFee === undefined
+        ? undefined
+        : Number(catalogDraft.tuitionFee),
+      currency: catalogDraft.currency || undefined,
+      scholarshipInfo: catalogDraft.scholarshipInfo || undefined,
+      terms: { ...(existing?.terms || {}), ...extras }
     };
 
     try {
@@ -1138,9 +1218,23 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
       : { studentUserId: student?.id || '', student: student?.name || '', course: student?.course ? `MSc ${student.course}` : '', scholarship: '', tuition: '', accommodation: '', deadline: '' });
   };
 
+  /**
+   * Choosing a programme fills in everything it already knows.
+   *
+   * It used to copy across the tuition figure alone, which is why offers arrived
+   * thin — an officer had to retype the intake, the campus and the scholarship
+   * for every student, so mostly nobody did.
+   */
   const onOfferCourseChange = (course: string) => {
-    const product = products.find(p => p.name === course);
-    setOfferDraft((current: any) => ({ ...current, course, tuition: product ? product.tuitionFee : current.tuition }));
+    const product: any = products.find(item => item.name === course);
+    setOfferDraft((current: any) => ({
+      ...current,
+      course,
+      tuition: product?.tuitionFee ?? current.tuition,
+      intake: current.intake || (product?.intakes || [])[0] || '',
+      location: current.location || product?.campusLocation || '',
+      scholarship: current.scholarship || product?.scholarshipInfo || ''
+    }));
   };
 
   const onOfferProductChange = (productName: string) => {
@@ -1173,6 +1267,13 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     try {
       await authApi.createOrganizationOffer(token, {
         studentUserId: target,
+        /**
+         * Naming the programme is what makes the offer carry it. The server takes
+         * a copy of the programme and the university at this moment and freezes it
+         * on the offer, so the officer never retypes a prospectus and a later edit
+         * to tuition cannot rewrite an offer already sent.
+         */
+        productId: (products.find(item => item.name === course) || {}).id,
         program: course || 'Programme',
         headline: role === 'BANK' ? 'Education loan offer' : 'Admission and scholarship offer',
         valueLabel: role === 'BANK' ? 'Loan amount' : 'Scholarship',
@@ -1286,7 +1387,11 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     }
   };
 
-  const choosePlan = (name: string) => void patchProfile({ plan: name }, `${name} selected as your subscription plan`);
+  /**
+   * Plans are sold offline, so there is nothing to choose here. The comparison
+   * grid stays because knowing what the next tier gives you is still useful —
+   * it just ends in a conversation rather than a button.
+   */
 
   const setBankEvaluationMode = (mode: BankEvaluationMode) =>
     void patchProfile({ bankEvaluationMode: mode }, `Loan evaluation mode set to ${mode}`);
@@ -1367,12 +1472,13 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     teamMembers, notificationPrefs, persistNotificationPrefs,
     students, savedStudents, notifications, overallScore, matchFactors,
     acceptanceRate, avgResponseTime, funnelStages, performanceBars, rankedInsights,
-    currentPlan, choosePlan, planOptions, advancedFeatures, planQuotaLabel, remainingCredits, quotaPercent,
+    currentPlan, planOptions, advancedFeatures, planQuotaLabel, remainingCredits, quotaPercent, billing, fmtDate,
     profilesViewed, activeOffersCount,
     orgName, setOrgName, orgDomain, setOrgDomain, orgCity, setOrgCity, orgDescription, setOrgDescription, saveOrgProfile,
     passwordForm, setPasswordForm, changePassword, logout,
     offerDraft, setOfferDraft, openOfferComposer, onOfferCourseChange, onOfferProductChange, saveOffer,
     catalogDraft, setCatalogDraft, openCatalogModal, saveCatalogItem, downloadCsvTemplate, importProducts,
+    uploadProgramImage, uploadOrganizationImage,
     productInviteDraft, setProductInviteDraft, openProductInviteModal, addProductToInvite, removeProductFromInvite,
     availableProductsForInvite, activePresetCategories, getPresetsByCategory, selectPreset, sendProductInvite,
     negotiationOffer, setNegotiationOffer, negotiationReply, setNegotiationReply, sendNegotiationReply,

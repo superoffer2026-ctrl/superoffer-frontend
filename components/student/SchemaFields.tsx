@@ -49,7 +49,6 @@ function loadReferenceOptions(): Promise<Record<string, string[]>> {
         fundingSourceOptions: financial.fundingSourceOptions,
         earningMemberOptions: financial.earningMemberOptions,
         currencyOptions: financial.currencyOptions,
-        employmentCategoryOptions: financial.employmentCategoryOptions
       }))
       .catch(error => {
         referenceCache = null;

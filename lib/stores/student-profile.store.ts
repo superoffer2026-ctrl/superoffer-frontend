@@ -18,6 +18,8 @@ export interface CompletionSection {
   key: string;
   label: string;
   done: boolean;
+  /** What finishing this step adds to the percentage. 0 for anything outside the eight steps. */
+  weight: number;
 }
 
 export interface StudentProfile {
@@ -44,7 +46,6 @@ export interface LoanDocumentField {
 /** Which verification documents a lender needs, resolved server-side. */
 export interface LoanDocuments {
   needsLoan: string;
-  employmentCategory: string;
   required: LoanDocumentField[];
   complete: boolean;
 }
@@ -86,7 +87,7 @@ const EMPTY_COMPLETION: Completion = {
   status: 'DRAFT',
   sections: [],
   missing: [],
-  loanDocuments: { needsLoan: '', employmentCategory: '', required: [], complete: false }
+  loanDocuments: { needsLoan: '', required: [], complete: false }
 };
 
 /**

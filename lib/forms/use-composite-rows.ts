@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useReferenceOptions } from '@/components/student/SchemaFields';
-import { isFieldVisible, useFormSection, type FormFieldDef } from './use-form-schema';
+import { fieldAsAsked, isFieldVisible, useFormSection, type FormFieldDef } from './use-form-schema';
 
 export interface CompositeRows {
   /** Every enabled row field, in the admin's order. */
@@ -54,7 +54,8 @@ export function useCompositeRows(
       return field.options || [];
     };
 
-    const forRow = (values: Record<string, unknown>) => all.filter(field => isFieldVisible(field, values));
+    const forRow = (values: Record<string, unknown>) =>
+      all.filter(field => isFieldVisible(field, values)).map(field => fieldAsAsked(field, values));
 
     return {
       all,

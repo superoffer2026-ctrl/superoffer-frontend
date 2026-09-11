@@ -26,8 +26,12 @@ export function PersonalInformation() {
   const nextStep = useNextStepPath('personal-information');
 
   const [countries, setCountries] = useState<CountryInfo[]>([]);
-  const [countryCityOptions, setCountryCityOptions] = useState<Record<string, string[]>>({});
+  /** Cities keyed by state, so the city list narrows to where the student lives. */
+  const [citiesByState, setCitiesByState] = useState<Record<string, string[]>>({});
+  const [states, setStates] = useState<string[]>([]);
   const [countryOpen, setCountryOpen] = useState(false);
+  const [stateOpen, setStateOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,7 +46,7 @@ export function PersonalInformation() {
    */
   const CODED_KEYS = [
     'fullName', 'email', 'mobileCountry', 'mobileNumber',
-    'altMobileCountry', 'altMobileNumber', 'country', 'city', 'phone', 'location'
+    'altMobileCountry', 'altMobileNumber', 'country', 'state', 'city', 'phone', 'location'
   ];
 
   /** What the published form says about the fields drawn by hand above. */
@@ -83,7 +87,8 @@ export function PersonalInformation() {
         const geo = await authApi.getGeoReferenceData();
         if (cancelled) return;
         setCountries(geo.countries);
-        setCountryCityOptions({ India: geo.indiaCities });
+        setStates(geo.indiaStates);
+        setCitiesByState(geo.citiesByState);
       } catch {
         // Reference data endpoint unreachable — dropdowns stay empty; the student can still type a country/city.
       }
@@ -131,9 +136,38 @@ export function PersonalInformation() {
   const countryValid = countries.some(c => c.name === value('country'));
   const countryError = countryValid ? '' : 'Select a valid country from the list';
 
-  const cityOptions = countryCityOptions[value('country')] || [];
+  /** States are offered for India only; anywhere else the field is free text. */
+  const isIndia = value('country') === 'India';
+  const stateError = !isIndia || states.includes(value('state')) ? '' : 'Select a valid state from the list';
+
+  const filteredStates = (() => {
+    const query = value('state').trim().toLowerCase();
+    return !query ? states : states.filter(name => name.toLowerCase().includes(query));
+  })();
+
+  /** Cities come from the chosen state, so the list is short enough to scan. */
+  const cityOptions = (isIndia && citiesByState[value('state')]) || [];
   const hasCityOptions = cityOptions.length > 0;
+
+  /**
+   * Suggestions that match what has been typed so far — every city before they
+   * start. Typing past the last match simply empties the list; it never blocks
+   * the entry, because a city missing from the list is the case this field
+   * exists to allow.
+   */
+  const filteredCities = (() => {
+    const query = value('city').trim().toLowerCase();
+    return !query ? cityOptions : cityOptions.filter(city => city.toLowerCase().includes(query));
+  })();
   const cityError = value('city').trim() ? '' : 'Select or enter your current city';
+  /** A city belongs to a state, so changing the state cannot keep the old one. */
+  const selectState = (name: string) => {
+    const changed = value('state') !== name;
+    setValue('state', name);
+    setStateOpen(false);
+    markTouched('state');
+    if (changed) setValue('city', '');
+  };
 
   /** The published field each hand-drawn control saves into. */
   const SCHEMA_KEY: Record<string, string> = {
@@ -142,6 +176,7 @@ export function PersonalInformation() {
     mobile: 'mobileNumber',
     altMobile: 'altMobileNumber',
     country: 'country',
+    state: 'state',
     city: 'city'
   };
 
@@ -155,6 +190,7 @@ export function PersonalInformation() {
       case 'mobile': return mobileError;
       case 'altMobile': return altMobileError;
       case 'country': return countryError;
+      case 'state': return stateError;
       case 'city': return cityError;
       default: return '';
     }
@@ -171,7 +207,11 @@ export function PersonalInformation() {
     const changed = value('country') !== country.name;
     setValue('country', country.name);
     setCountryOpen(false);
-    if (changed) setValue('city', '');
+    /** State and city both hang off the country, so neither survives a change of it. */
+    if (changed) {
+      setValue('state', '');
+      setValue('city', '');
+    }
   };
 
   const isValid = !Object.keys(SCHEMA_KEY).some(key => errorFor(key));
@@ -208,9 +248,10 @@ export function PersonalInformation() {
       altMobileCountry: value('altMobileCountry') || undefined,
       altMobileNumber: value('altMobileNumber') || undefined,
       country: value('country'),
+      state: value('state'),
       city: value('city'),
       phone: mobile,
-      location: [value('city'), value('country')].filter(Boolean).join(', ')
+      location: [value('city'), value('state'), value('country')].filter(Boolean).join(', ')
     };
 
     setSaving(true);
@@ -363,31 +404,74 @@ export function PersonalInformation() {
                 </label>
               )}
 
-              {fields.shows('city') && (
-                <label className={cx(showError('city') && 'field-invalid')}>
-                  <span className={cx('field-label')}>{fields.labelOf('city', 'Current City')}{fields.isRequired('city', true) && <span className={cx('required-mark')}> *</span>}</span>
-                  {hasCityOptions ? (
-                    <select
-                      name="city"
-                      value={value('city')}
-                      onChange={e => { setValue('city', e.target.value); markTouched('city'); }}
-                      onBlur={() => markTouched('city')}
-                    >
-                      <option value="" disabled>Select city</option>
-                      {cityOptions.map(city => <option key={city} value={city}>{city}</option>)}
-                    </select>
-                  ) : (
-                    <input
-                      type="text" name="city" placeholder="Enter your current city"
-                      value={value('city')}
-                      disabled={!countryValid}
-                      onChange={e => setValue('city', e.target.value)}
-                      onBlur={() => markTouched('city')}
-                    />
+              {fields.shows('state') && (
+                <label className={cx('combo-field', showError('state') && 'field-invalid')}>
+                  <span className={cx('field-label')}>{fields.labelOf('state', 'State')}{fields.isRequired('state', true) && <span className={cx('required-mark')}> *</span>}</span>
+                  <input
+                    type="text" name="state" autoComplete="address-level1"
+                    placeholder={isIndia ? 'Search or type your state' : 'Enter your state or region'}
+                    value={value('state')}
+                    disabled={!countryValid}
+                    onFocus={() => setStateOpen(true)}
+                    onChange={e => { setValue('state', e.target.value); setValue('city', ''); setStateOpen(true); }}
+                    /** Delayed so a click on a suggestion lands before the list closes. */
+                    onBlur={() => { markTouched('state'); setTimeout(() => setStateOpen(false), 150); }}
+                  />
+                  {stateOpen && isIndia && filteredStates.length > 0 && (
+                    <ul className={cx('combo-list')}>
+                      {filteredStates.map(name => (
+                        <li key={name} onMouseDown={() => selectState(name)}>{name}</li>
+                      ))}
+                    </ul>
                   )}
                   {!countryValid && <small className={cx('field-hint')}>Select a valid country first</small>}
-                  {countryValid && !hasCityOptions && (
-                    <small className={cx('field-hint')}>City list not available for this country — type your city</small>
+                  {showError('state') && <small className={cx('field-error')}>{stateError}</small>}
+                </label>
+              )}
+
+              {fields.shows('city') && (
+                <label className={cx('combo-field', showError('city') && 'field-invalid')}>
+                  <span className={cx('field-label')}>{fields.labelOf('city', 'Current City')}{fields.isRequired('city', true) && <span className={cx('required-mark')}> *</span>}</span>
+                  {/*
+                    * Type it or pick it. The list narrows as they type and the
+                    * typed text is kept either way, because these suggestions
+                    * are the cities most students live in rather than the set
+                    * of allowed answers — a smaller town has to be nameable.
+                    */}
+                  <input
+                    type="text" name="city" autoComplete="address-level2"
+                    placeholder={hasCityOptions ? 'Search or type your city' : 'Enter your current city'}
+                    value={value('city')}
+                    /** A city is a city *in* somewhere: the state has to come first. */
+                    disabled={!countryValid || (isIndia && !value('state').trim())}
+                    onFocus={() => setCityOpen(true)}
+                    onChange={e => { setValue('city', e.target.value); setCityOpen(true); }}
+                    /** Delayed so a click on a suggestion lands before the list closes. */
+                    onBlur={() => { markTouched('city'); setTimeout(() => setCityOpen(false), 150); }}
+                  />
+                  {cityOpen && hasCityOptions && filteredCities.length > 0 && (
+                    <ul className={cx('combo-list')}>
+                      {filteredCities.map(city => (
+                        <li
+                          key={city}
+                          onMouseDown={() => { setValue('city', city); setCityOpen(false); markTouched('city'); }}
+                        >
+                          {city}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {/*
+                    * Hints only where no dropdown can open. The list is
+                    * positioned against the label, so anything below the input
+                    * pushes it down and leaves a gap under the field.
+                    */}
+                  {!countryValid && <small className={cx('field-hint')}>Select a valid country first</small>}
+                  {countryValid && isIndia && !value('state').trim() && (
+                    <small className={cx('field-hint')}>Select your state first</small>
+                  )}
+                  {countryValid && !hasCityOptions && (!isIndia || !!value('state').trim()) && (
+                    <small className={cx('field-hint')}>Type your current city</small>
                   )}
                   {showError('city') && <small className={cx('field-error')}>{cityError}</small>}
                 </label>

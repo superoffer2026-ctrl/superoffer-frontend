@@ -57,7 +57,7 @@ export function StudyPreferences() {
   const [mbbsOnlyCountries, setMbbsOnlyCountries] = useState<string[]>([]);
   /** "What do you want to study?" — MBBS-only for MBBS-only countries, the full degree-level list otherwise. */
   const [fieldOptions, setFieldOptions] = useState<string[]>([]);
-  /** "Program of Interest" — always the full subject list. */
+  /** "Program of Interest" — the full subject list, narrowed to MBBS for MBBS-only countries. */
   const [programOptions, setProgramOptions] = useState<string[]>([]);
   const [intakeOptions, setIntakeOptions] = useState<string[]>([]);
   const [startYearOptions, setStartYearOptions] = useState<number[]>([]);
@@ -136,9 +136,18 @@ export function StudyPreferences() {
   const isMbbsOnlyCountrySelected = (countries = selections.countries) =>
     countries.some(country => mbbsOnlyCountries.includes(country));
 
-  /** "What do you want to study?" narrows to MBBS only once an MBBS-only country is picked. */
+  /**
+   * Both study questions narrow to MBBS once an MBBS-only country is picked.
+   *
+   * These destinations admit Indian students to nothing else, so offering the
+   * other degree levels — or the other 278 subjects — invites a combination that
+   * cannot be applied for, and that no university on the platform could answer.
+   */
   const availableFieldOptions = (countries = selections.countries) =>
     isMbbsOnlyCountrySelected(countries) ? ['MBBS'] : fieldOptions;
+
+  const availableProgramOptions = (countries = selections.countries) =>
+    isMbbsOnlyCountrySelected(countries) ? ['MBBS'] : programOptions;
 
   /** Every combo field allows multiple selections; dropdown stays open so more picks can follow. */
   const toggleMulti = (key: MultiKey, value: string) => {
@@ -147,12 +156,15 @@ export function StudyPreferences() {
       const nextList = list.includes(value) ? list.filter(item => item !== value) : [...list, value];
       const next: Selections = { ...current, [key]: nextList };
 
-      /** Drops study levels no longer offered, and auto-fills MBBS once an MBBS-only country is picked. */
+      /** Drops answers no longer offered, and auto-fills MBBS once an MBBS-only country is picked. */
       if (key === 'countries') {
-        const allowed = availableFieldOptions(nextList);
-        let fields = next.fieldsOfStudy.filter(item => allowed.includes(item));
-        if (isMbbsOnlyCountrySelected(nextList) && !fields.includes('MBBS')) fields = [...fields, 'MBBS'];
-        next.fieldsOfStudy = fields;
+        const mbbsOnly = isMbbsOnlyCountrySelected(nextList);
+        const keepAllowed = (chosen: string[], allowed: string[]) => {
+          const kept = chosen.filter(item => allowed.includes(item));
+          return mbbsOnly && !kept.includes('MBBS') ? [...kept, 'MBBS'] : kept;
+        };
+        next.fieldsOfStudy = keepAllowed(next.fieldsOfStudy, availableFieldOptions(nextList));
+        next.programs = keepAllowed(next.programs, availableProgramOptions(nextList));
       }
       return next;
     });
@@ -311,12 +323,17 @@ export function StudyPreferences() {
               placeholder="Search programs"
               toggleLabel="Toggle program list"
               emptyText="No matching program"
-              options={filterOptions(programOptions, queries.program)}
+              options={filterOptions(availableProgramOptions(), queries.program)}
               selected={selections.programs}
               open={openField === 'program'}
               query={queries.program}
               invalid={showError('programs')}
               error="Select at least one program"
+              hint={
+                isMbbsOnlyCountrySelected() ? (
+                  <small className={cx('field-hint')}>One of your selected countries only offers MBBS.</small>
+                ) : undefined
+              }
               onOpen={openFor('program')}
               onClose={closeFor('program')}
               onQueryChange={queryFor('program')}

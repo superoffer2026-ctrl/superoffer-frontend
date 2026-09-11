@@ -167,21 +167,40 @@ export const authApi = {
   /** What a lender would make of this household, before anyone has been invited. */
   loanEligibility: (token: string) => request('/students/me/loan-eligibility', { headers: bearer(token) }),
 
-  creditConsents: (token: string) => request('/students/me/credit-consents', { headers: bearer(token) }),
-
-  /** The co-applicant agreeing to a check of their own record. A soft enquiry. */
-  grantSelfCreditConsent: (token: string) =>
-    request('/students/me/credit-consents/self', { method: 'POST', headers: bearer(token) }),
-
-  revokeCreditConsent: (token: string, id: string) =>
-    request('/students/me/credit-consents/' + encodeURIComponent(id), { method: 'DELETE', headers: bearer(token) }),
-
-  runSelfCreditCheck: (token: string) =>
-    request('/students/me/credit-check', { method: 'POST', headers: bearer(token) }),
+  /**
+   * The CIBIL check. One call: the identity the bureau matches on, plus the
+   * consent that permits the look-up, which the backend records before it asks.
+   *
+   * SurePass is reached only by our backend — there is no token in this bundle
+   * and no path from here to the bureau.
+   */
+  runCreditCheck: (
+    token: string,
+    payload: { fullName: string; panNumber: string; mobileNumber: string; gender: string; consent: true }
+  ): Promise<{
+    outcome: string;
+    score: number | null;
+    band: string | null;
+    pulledAt: string;
+    staleAfter: string;
+    reused: boolean;
+    detail?: string;
+  }> =>
+    request('/students/me/credit-check', {
+      method: 'POST',
+      headers: bearer(token),
+      body: JSON.stringify(payload)
+    }),
 
   /** Public — no auth required. Single source of truth for country/city dropdown data,
    *  matching the same lists the backend's own DTO validators check against. */
-  getGeoReferenceData: (): Promise<{ countries: { name: string; iso2: string; dial: string }[]; indiaCities: string[] }> =>
+  getGeoReferenceData: (): Promise<{
+    countries: { name: string; iso2: string; dial: string }[];
+    indiaStates: string[];
+    indiaCities: string[];
+    /** Cities keyed by state, so the city dropdown narrows to where they live. */
+    citiesByState: Record<string, string[]>;
+  }> =>
     request('/reference/geo'),
 
   /** Public — no auth required. Single source of truth for study-preferences dropdown data,
@@ -220,7 +239,6 @@ export const authApi = {
   /** Public — no auth required. Single source of truth for financial-information dropdown data. */
   getFinancialInformationReferenceData: (): Promise<{
     fundingSourceOptions: string[];
-    employmentCategoryOptions: string[];
     earningMemberOptions: string[];
     currencyOptions: string[];
     financialDocumentFields: Array<{ key: string; label: string; categories?: string[] }>;
@@ -303,6 +321,42 @@ export const authApi = {
 
   updateOrganizationProfile: (token: string, payload: ApiPayload) =>
     request('/organizations/me/profile', { method: 'PATCH', headers: bearer(token), body: JSON.stringify(payload) }),
+
+  /**
+   * What this organisation was sold and what they have paid. Read-only: plans
+   * are agreed with our team and settled offline, so there is nothing here to
+   * change from a browser.
+   */
+  /** Multipart, so no JSON content-type — the browser sets the boundary itself. */
+  uploadOrganizationImage: (token: string, kind: 'logo' | 'cover', file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return request(`/organizations/me/${kind}`, { method: 'POST', headers: bearer(token), body }, false);
+  },
+
+  uploadProductImage: (token: string, productId: string, file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    return request(`/organizations/me/products/${encodeURIComponent(productId)}/image`, {
+      method: 'POST', headers: bearer(token), body
+    }, false);
+  },
+
+  organizationBilling: (
+    token: string
+  ): Promise<{
+    subscription: {
+      plan: string; profilesViewed: number; capacity: number | null; remaining: number | null;
+      quotaPercent: number; unlimited: boolean; periodStart: string | null; periodEnd: string | null;
+      invoiceNumber: string | null; paymentStatus: string; unpaid: boolean; overdue: boolean;
+      suspended: boolean; suspensionReason: string | null;
+    };
+    invoices: {
+      invoiceNumber: string; plan: string; amount: string; currency: string; status: string;
+      periodStart: string; periodEnd: string; paidAt: string | null; paymentRef: string | null;
+      profilesViewed: number; note: string | null;
+    }[];
+  }> => request('/organizations/me/billing', { headers: bearer(token) }),
 
   organizationStudents: (token: string, filters: Record<string, string> = {}) => {
     const query = new URLSearchParams(Object.entries(filters).filter(([, value]) => value)).toString();
@@ -626,6 +680,31 @@ export const authApi = {
         rejection_reason: rejectionReason,
         approval_note: approvalNote
       })
+    }),
+
+  // ── Subscriptions, sold and settled offline ───────────────────────────────
+
+  adminBilling: (adminKey: string) => request('/admin/billing', { headers: { 'x-admin-key': adminKey } }),
+
+  adminCreateSubscription: (
+    adminKey: string,
+    payload: { organizationId: string; plan: string; periodStart: string; periodEnd: string; amount: number; currency?: string; note?: string }
+  ) => request('/admin/billing/subscriptions', { method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify(payload) }),
+
+  /** The money arrived by transfer or cheque; this writes down that it did. */
+  adminMarkSubscriptionPaid: (adminKey: string, id: string, payload: { paymentRef?: string; recordedBy?: string }) =>
+    request(`/admin/billing/subscriptions/${encodeURIComponent(id)}/paid`, {
+      method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify(payload)
+    }),
+
+  adminSetSubscriptionStatus: (adminKey: string, id: string, status: string) =>
+    request(`/admin/billing/subscriptions/${encodeURIComponent(id)}`, {
+      method: 'PATCH', headers: { 'x-admin-key': adminKey }, body: JSON.stringify({ status })
+    }),
+
+  adminSetOrganizationSuspension: (adminKey: string, organizationId: string, suspended: boolean, reason?: string) =>
+    request(`/admin/billing/organizations/${encodeURIComponent(organizationId)}/suspension`, {
+      method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify({ suspended, reason })
     }),
 
   adminAuditLog: (adminKey: string) => request('/admin/audit-log?limit=100', { headers: { 'x-admin-key': adminKey } })

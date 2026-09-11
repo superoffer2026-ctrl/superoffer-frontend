@@ -281,6 +281,66 @@ export function StudentOfferInbox() {
                   </div>
                 </section>
 
+                {/*
+                  * The university and the programme, as they were when this offer
+                  * was sent. Comparing three offers means comparing tuition,
+                  * duration and intake side by side — a headline and a value alone
+                  * left a student guessing at everything that actually differs.
+                  */}
+                {(() => {
+                  const uni = selected.snapshot?.university;
+                  const prog = selected.snapshot?.program;
+                  if (!uni?.name && !prog?.name) return null;
+
+                  const facts = [
+                    prog?.degreeLevel && { label: 'DEGREE LEVEL', value: prog.degreeLevel },
+                    prog?.fieldOfStudy && { label: 'FIELD OF STUDY', value: prog.fieldOfStudy },
+                    prog?.durationMonths && {
+                      label: 'DURATION',
+                      value: prog.durationMonths % 12 === 0
+                        ? `${prog.durationMonths / 12} year${prog.durationMonths === 12 ? '' : 's'}`
+                        : `${prog.durationMonths} months`
+                    },
+                    prog?.studyMode && { label: 'STUDY MODE', value: prog.studyMode },
+                    prog?.intakes?.length && { label: 'INTAKES', value: prog.intakes.join(', ') },
+                    prog?.tuitionFee && { label: 'TUITION FEE', value: `${prog.currency || ''} ${prog.tuitionFee}`.trim() },
+                    prog?.scholarshipInfo && { label: 'SCHOLARSHIP', value: prog.scholarshipInfo }
+                  ].filter(Boolean) as { label: string; value: string }[];
+
+                  return (
+                    <section className={cx('offer-university')}>
+                      <header className={cx('offer-university-head')}>
+                        {uni?.logoUrl ? (
+                          <img src={uni.logoUrl} alt={`${uni.name || 'University'} logo`} className={cx('offer-university-logo')} />
+                        ) : (
+                          <span className={cx('offer-university-logo', 'offer-university-initial')}>
+                            {(uni?.name || '?').slice(0, 1)}
+                          </span>
+                        )}
+                        <div>
+                          <h3>{uni?.name}</h3>
+                          <p>{[prog?.campusLocation || uni?.city, uni?.country].filter(Boolean).join(', ')}</p>
+                          {uni?.website && (
+                            <a href={uni.website} target="_blank" rel="noreferrer noopener">{uni.website}</a>
+                          )}
+                        </div>
+                      </header>
+
+                      {prog?.imageUrl && (
+                        <img src={prog.imageUrl} alt={prog.name || 'Programme'} className={cx('offer-programme-image')} />
+                      )}
+
+                      {!!facts.length && (
+                        <div className={cx('offer-university-grid')}>
+                          {facts.map(fact => (
+                            <div key={fact.label}><small>{fact.label}</small><strong>{fact.value}</strong></div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })()}
+
                 {!!offerDetails(selected).length && (
                   <section className={cx('offer-more-details')}>
                     <h3>More details</h3>
