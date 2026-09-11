@@ -93,7 +93,7 @@ export function StudentWorkspaceShell({
               className={cx('navItem', pathname.startsWith(item.href) && 'active')}
               aria-current={pathname.startsWith(item.href) ? 'page' : undefined}
             >
-              <Icon name={item.icon} size={20} />
+              <Icon name={item.icon} size={18} />
               {item.label}
               {item.href === '/student/offers' && unread > 0 && <span className={cx('navBadge')}>{unread > 99 ? '99+' : unread}</span>}
             </Link>

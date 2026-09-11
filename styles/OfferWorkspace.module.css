@@ -142,10 +142,11 @@
 
 .mailbox-kinds .active b { color: var(--ow-green) }
 
-/* A segmented control, wide enough to hit and scrollable rather than wrapped. */
+/* A segmented control that wraps onto a second row when the pane is narrow,
+   so the last option is never pushed out of view. */
 .compact-offer-filters {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-top: 13px;
   padding: 3px;
@@ -159,7 +160,9 @@
   align-items: center;
   gap: 5px;
   justify-content: center;
-  padding: 7px 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 8px;
   border: 0;
   border-radius: 7px;
   background: none;
@@ -886,7 +889,6 @@
 
 @media (max-width: 1180px) {
   .offer-workspace { grid-template-columns: minmax(250px, .85fr) minmax(420px, 1.7fr) }
-  .compact-offer-filters { grid-template-columns: repeat(2, 1fr) }
 
   /* One scrolling column: the offer, then the conversation about it. */
   .offer-reading-pane {
