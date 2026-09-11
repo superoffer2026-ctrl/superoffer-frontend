@@ -115,7 +115,7 @@ export function StudentDashboard() {
 
 
   return (
-    <StudentWorkspaceShell>
+    <StudentWorkspaceShell backdrop="scene" sky={['#ffe3ec', '#e6e3ff', '#d3f1ff']}>
       <div className={cx('content')}>
 
           {/* hero */}
@@ -185,7 +185,7 @@ export function StudentDashboard() {
 
           {/* roadmap */}
           {roadmap.length > 0 && (
-            <Reveal>
+            <Reveal className={cx('panel')}>
               <div className={cx('blockHead')}>
                 <div>
                   <span className={cx('eyebrow')}>Immediate roadmap</span>
@@ -248,7 +248,7 @@ export function StudentDashboard() {
           </Reveal>
 
           {/* deadlines */}
-          <Reveal>
+          <Reveal className={cx('panel')}>
             <div className={cx('blockHead')}>
               <div>
                 <span className={cx('eyebrow')}>Upcoming</span>

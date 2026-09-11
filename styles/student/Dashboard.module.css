@@ -20,9 +20,19 @@
   align-items: start;
   padding: clamp(28px, 3vw, 44px);
   border-radius: var(--r-3xl);
-  background: var(--paper);
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--line);
-  box-shadow: var(--sh-1);
+  box-shadow: 0 30px 70px -34px rgba(20, 30, 60, 0.35), var(--sh-1);
+}
+
+/* Sections that used to sit straight on the canvas get a card of their own,
+   so their headings stay legible over the scenery. */
+.panel {
+  padding: clamp(22px, 3vw, 32px);
+  border-radius: var(--r-3xl);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 70px -34px rgba(20, 30, 60, 0.3), var(--sh-1);
 }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--em); font-size: 11px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; }
 .eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--em); }
@@ -36,8 +46,8 @@
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 24px; border: 1px solid transparent; border-radius: var(--r-md); font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s var(--ease), transform 0.25s var(--ease), color 0.2s ease; }
 .btn svg { transition: transform 0.25s var(--ease); }
 .btn:active { transform: scale(0.985); }
-.btn.dark { color: #fff; background: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.14); }
-.btn.dark:hover { background: #27272a; box-shadow: var(--sh-3); transform: translateY(-1px); }
+.btn.dark { color: #fff; background: linear-gradient(95deg, #4f8cff 0%, #7b6cff 55%, #b48cff 100%); box-shadow: 0 14px 30px -12px rgba(88, 96, 255, 0.55); }
+.btn.dark:hover { box-shadow: 0 18px 34px -12px rgba(88, 96, 255, 0.65); transform: translateY(-2px); filter: saturate(1.08); }
 .btn.dark:hover svg { transform: translateY(3px); }
 .btn.emerald { color: #fff; background: var(--em); box-shadow: 0 1px 2px rgba(4,120,87,0.25); }
 .btn.emerald:hover { background: var(--em-deep); box-shadow: 0 12px 26px -10px rgba(4,120,87,0.6); transform: translateY(-1px); }
@@ -57,10 +67,10 @@
 .progressTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .progressTop span { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
 .progressTop span svg { color: var(--em); }
-.progressTop strong { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: var(--em); }
+.progressTop strong { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; color: #5b5cf0; }
 .progressTop strong small { color: var(--ink-3); font-size: 0.52em; font-weight: 600; }
 .bar { height: 8px; margin-top: 16px; border-radius: var(--r-full); background: #e4e4e3; overflow: hidden; position: relative; }
-.bar i { position: absolute; inset: 0; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, var(--em), #10b981); transform-origin: left; animation: grow 1.2s var(--ease) 0.2s both; }
+.bar i { position: absolute; inset: 0; width: var(--p, 0%); border-radius: inherit; background: linear-gradient(90deg, #4f8cff, #7b6cff 60%, #b48cff); transform-origin: left; animation: grow 1.2s var(--ease) 0.2s both; }
 @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .barMark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink-4); border-radius: 2px; }
 .progressMeta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; font-size: 12px; }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { BrandMark } from '@/components/landing/BrandMark';
 import { Icon, type IconName } from '@/components/landing/Icon';
 import { authApi } from '@/lib/api/auth-api';
@@ -10,6 +10,7 @@ import { classNames } from '@/lib/cx';
 import { readAccessToken } from '@/lib/storage';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/student/Shell.module.css';
+import { WizardScene } from './wizard/WizardScene';
 
 const cx = classNames(styles);
 
@@ -36,13 +37,21 @@ const UNREAD_POLL_MS = 15000;
  * `layout="page"` gives the content the padded, centred column the dashboard
  * uses. `layout="workspace"` hands over the whole column with no padding, for
  * the viewport-filling pane layouts (offers, messages) that scroll internally.
+ *
+ * `backdrop="scene"` puts the profile wizard's sky and landmarks behind the
+ * page instead of the flat canvas, tinted by `sky`, so the dashboard and the
+ * journey it points at read as one world.
  */
 export function StudentWorkspaceShell({
   children,
-  layout = 'page'
+  layout = 'page',
+  backdrop = 'canvas',
+  sky = ['#e8e6ff', '#e0f2ff', '#ffe9dc']
 }: {
   children: ReactNode;
   layout?: 'page' | 'workspace';
+  backdrop?: 'canvas' | 'scene';
+  sky?: [string, string, string];
 }) {
   const profile = useStudentProfile();
   const router = useRouter();
@@ -74,8 +83,13 @@ export function StudentWorkspaceShell({
 
   const onSearch = (e: FormEvent) => { e.preventDefault(); setMenuOpen(false); router.push('/student/offers'); };
 
+  const skyStyle = backdrop === 'scene'
+    ? ({ '--sky-a': sky[0], '--sky-b': sky[1], '--sky-c': sky[2] } as CSSProperties)
+    : undefined;
+
   return (
-    <div className={cx('host')}>
+    <div className={cx('host', backdrop === 'scene' && 'scene')} style={skyStyle}>
+      {backdrop === 'scene' && <div className={cx('sky')} aria-hidden="true"><WizardScene /></div>}
       {/* ---------------------------------------------------------- sidebar */}
       <div className={cx('scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} aria-hidden={!menuOpen} />
       <aside className={cx('sidebar', menuOpen && 'open')}>

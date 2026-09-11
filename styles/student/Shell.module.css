@@ -219,6 +219,22 @@
 .main { margin-left: var(--side); padding-top: var(--head); }
 .wrap { max-width: 1200px; margin: 0 auto; padding: clamp(24px, 3vw, 40px) clamp(18px, 3vw, 40px) 80px; display: flex; flex-direction: column; gap: clamp(28px, 4vw, 52px); }
 
+/* The wizard's sky behind the page. The sidebar and header stay white; the
+   content column rises above the scenery. */
+.host.scene {
+  background: linear-gradient(180deg, var(--sky-a, #e8e6ff) 0%, var(--sky-b, #e0f2ff) 48%, var(--sky-c, #ffe9dc) 100%);
+}
+.host.scene .sky { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.host.scene .sky :global(.wizard-scene-svg) { width: 100%; height: 100%; display: block; opacity: 0.95; }
+.host.scene .sky :global(.wz-cloud) { animation: drift 38s linear infinite; }
+.host.scene .sky :global(.wz-cloud-b) { animation-duration: 52s; animation-delay: -18s; }
+.host.scene .sky :global(.wz-cloud-c) { animation-duration: 44s; animation-delay: -30s; }
+.host.scene .sky :global(.wz-plane) { animation: fly 34s linear infinite; }
+.host.scene .header { background: rgba(255, 255, 255, 0.7); }
+.host.scene .main { position: relative; z-index: 1; }
+@keyframes drift { from { transform: translateX(-140px); } to { transform: translateX(1740px); } }
+@keyframes fly { from { transform: translateX(-200px) translateY(20px); } to { transform: translateX(1700px) translateY(-30px); } }
+
 /* A viewport-filling workspace (offers, messages): no page padding, panes
    fill the column beside the sidebar and scroll on their own. */
 .main.workspace { height: 100vh; overflow: hidden; }
@@ -256,4 +272,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .host *, .host *::before, .host *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  .host.scene .sky :global(.wz-cloud), .host.scene .sky :global(.wz-plane) { animation: none !important; }
 }
