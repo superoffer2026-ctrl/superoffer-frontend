@@ -2,6 +2,9 @@ import { isBrowser } from '../storage';
 
 export type PortalKey = 'student' | 'organization' | 'consultancy';
 
+/** Why a WhatsApp code was sent — it decides what verifying it hands back. */
+export type OtpPurpose = 'REGISTER' | 'PASSWORD_RESET';
+
 export interface ApiError extends Error {
   body?: any;
   status?: number;
@@ -78,17 +81,28 @@ const put = (path: string, token: string, payload: ApiPayload) =>
 export const authApi = {
   register: (payload: ApiPayload) => request('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
 
-  /** `identifier` accepts an email (or a phone number, for institution accounts). */
+  /** `identifier` is a student's WhatsApp number, or an institution's email. */
   login: (identifier: string, password: string) =>
     request('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password }) }),
 
-  /** Unused today: every role signs in with email + password. Kept because the
-   *  backend still exposes these, and WhatsApp OTP is planned for students later. */
-  requestOtp: (phone: string, fullName?: string) =>
-    request('/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone, fullName }) }),
+  /**
+   * Sends a WhatsApp code to a number that already has a student account:
+   * `REGISTER` to resume an unconfirmed signup, `PASSWORD_RESET` to start a
+   * forgotten-password reset.
+   */
+  requestOtp: (phone: string, purpose: OtpPurpose = 'PASSWORD_RESET') =>
+    request('/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone, purpose }) }),
 
+  /**
+   * A `REGISTER` code returns a session and signs the student in. A
+   * `PASSWORD_RESET` code returns `{ reset_token }` instead — feed it to
+   * `resetPassword`, then sign in normally.
+   */
   verifyOtp: (phone: string, code: string) =>
     request('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code }) }),
+
+  resetPassword: (resetToken: string, password: string) =>
+    request('/auth/password/reset', { method: 'POST', body: JSON.stringify({ resetToken, password }) }),
 
   status: (userId: string) => request(`/auth/status/${userId}`),
 
@@ -109,6 +123,7 @@ export const authApi = {
 
   deleteStudentAccount: (token: string) => request('/students/me', { method: 'DELETE', headers: bearer(token) }),
 
+  /** `email` is institution-only; a student account has none and the API refuses it. */
   updateAccount: (token: string, payload: { fullName?: string; email?: string }) =>
     request('/auth/me', { method: 'PATCH', headers: bearer(token), body: JSON.stringify(payload) }),
 

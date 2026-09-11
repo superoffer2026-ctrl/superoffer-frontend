@@ -42,7 +42,7 @@ export function StudentSupportChat() {
 
   const handoff = (text: string) => {
     const subject = encodeURIComponent(`SuperOffer support — ${profile.fullName}`);
-    const body = encodeURIComponent(`${text}\n\n—\nSent from the SuperOffer student workspace\nAccount: ${profile.user?.email || ''}`);
+    const body = encodeURIComponent(`${text}\n\n—\nSent from the SuperOffer student workspace\nAccount: ${profile.user?.phone || ''}`);
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
 

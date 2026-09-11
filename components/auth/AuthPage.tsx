@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { authApi, type ApiError, type PortalKey } from '@/lib/api/auth-api';
+import { authApi, type ApiError, type OtpPurpose, type PortalKey } from '@/lib/api/auth-api';
+import { ORG_TYPE_OPTIONS, organizationRole, type OrganizationType } from '@/lib/models/organization';
 import {
-  ORG_TYPE_OPTIONS,
-  organizationRole,
-  organizationTypeFromRole,
-  type OrganizationType
-} from '@/lib/models/organization';
+  INDIA_DIAL_CODE, isMobileComplete, isPasswordValid, MOBILE_DIGITS,
+  passwordProblems, toE164, toMobileDigits
+} from '@/lib/auth/password-rules';
 import { clearAccessToken, writeLocal, writeSession } from '@/lib/storage';
+import { PasswordInput } from '@/components/shared/PasswordInput';
 
 interface AuthFormState {
   fullName: string;
@@ -30,33 +30,17 @@ const EMPTY_FORM: AuthFormState = {
   remember: true
 };
 
-/** Toggles a password input between hidden and plain text. */
-function PasswordVisibilityToggle({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className="password-toggle"
-      onClick={onToggle}
-      tabIndex={-1}
-      aria-label={visible ? 'Hide password' : 'Show password'}
-      aria-pressed={visible}
-    >
-      {visible ? (
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.8 21.8 0 0 1 5.06-6.06" />
-          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.22 4.44" />
-          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-          <line x1="1" y1="1" x2="23" y2="23" />
-        </svg>
-      ) : (
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      )}
-    </button>
-  );
-}
+/**
+ * Which panel the student is looking at.
+ *
+ * `credentials` is the plain form. `otp` and `newPassword` are the two extra
+ * stops a WhatsApp identity adds: confirming a number at signup, and choosing a
+ * replacement password after a forgotten one. Institutions never leave
+ * `credentials` — they still sign in with an email address.
+ */
+type Step = 'credentials' | 'otp' | 'newPassword';
+
+const RESEND_COOLDOWN_SECONDS = 30;
 
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
   const router = useRouter();
@@ -66,21 +50,42 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [step, setStep] = useState<Step>('credentials');
+  /** Set when the student has asked to reset a forgotten password, on the login screen. */
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [otp, setOtp] = useState({ code: '', phone: '', purpose: 'REGISTER' as OtpPurpose });
+  const [resendIn, setResendIn] = useState(0);
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState({ password: '', confirm: '' });
 
   const set = <K extends keyof AuthFormState>(key: K, value: AuthFormState[K]) =>
     setForm(current => ({ ...current, [key]: value }));
 
   useEffect(() => {
     if (searchParams.get('sessionExpired') === '1') setError('Your session has expired. Please log in again.');
+    if (searchParams.get('passwordReset') === '1') {
+      setMessage('Your password has been changed. Log in with your new password.');
+    }
   }, [searchParams]);
+
+  /** Counts the resend link back in after a code goes out. */
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn(seconds => seconds - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
 
   const portalLabel = portal.charAt(0).toUpperCase() + portal.slice(1);
   const isStudent = portal === 'student';
   const isOrganization = portal === 'organization';
 
-  const buttonLabel = mode === 'login' ? 'Log in securely' : 'Create account';
+  const buttonLabel = (() => {
+    if (step === 'otp') return 'Verify code';
+    if (step === 'newPassword') return 'Save new password';
+    if (forgotPassword) return 'Send WhatsApp code';
+    return mode === 'login' ? 'Log in securely' : 'Create account';
+  })();
 
   const authTitle = isStudent ? 'Build your opportunity profile.' : `Register your ${portal} securely.`;
 
@@ -103,7 +108,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         ? ['Creditworthy student discovery', 'Clear indicative loan offers', 'Conversion and funnel reporting']
         : ['AI-ranked student discovery', 'Shortlists and admission offers', 'Programme-level funnel reporting'];
     }
-    return ['Private verified profile', 'Comparable invitations and offers', 'Visibility controls'];
+    return ['Sign in with your WhatsApp number', 'Comparable invitations and offers', 'Visibility controls'];
   })();
 
   const role = () => {
@@ -139,8 +144,27 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
     router.push(isStudent ? '/student/dashboard' : `/portal/${portal}`);
   };
 
+  /** Moves to the code panel and starts the resend cooldown. */
+  const openOtpStep = (phone: string, purpose: OtpPurpose) => {
+    setOtp({ code: '', phone, purpose });
+    setStep('otp');
+    setResendIn(RESEND_COOLDOWN_SECONDS);
+    setMessage(`We sent a 6-digit code to ${phone} on WhatsApp.`);
+  };
+
+  const backToCredentials = () => {
+    setStep('credentials');
+    setForgotPassword(false);
+    setError('');
+    setMessage('');
+    setOtp({ code: '', phone: '', purpose: 'REGISTER' });
+    setResetToken('');
+    setNewPassword({ password: '', confirm: '' });
+  };
+
   const submitOrganization = async () => {
     if (mode === 'register') {
+      if (!isPasswordValid(form.password)) return;
       if (form.password !== form.confirmPassword) {
         setError('Passwords do not match.');
         return;
@@ -184,31 +208,110 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
     }
   };
 
-  /** Students: plain email + password, with no approval step. */
-  const submitAccount = async () => {
+  /**
+   * Students: WhatsApp number and password, with no approval step. Registering
+   * hands off to the code panel, because the number is not theirs until a code
+   * sent to it comes back.
+   */
+  const submitStudentCredentials = async () => {
+    if (!isMobileComplete(form.phone)) {
+      setError(`Enter all ${MOBILE_DIGITS} digits of your WhatsApp number.`);
+      return;
+    }
+    const phone = toE164(form.phone);
+
+    /** No banner: the field already carries the reason, right where the fix is. */
+    if (mode === 'register' && !isPasswordValid(form.password)) return;
+
+    if (forgotPassword) {
+      try {
+        const sent = await authApi.requestOtp(phone, 'PASSWORD_RESET');
+        openOtpStep(sent.phone || phone, 'PASSWORD_RESET');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not send a code to that number.');
+      }
+      return;
+    }
+
     if (mode === 'register') {
       try {
-        await authApi.register({
-          email: form.email,
+        const registration = await authApi.register({
+          fullName: form.fullName,
+          phone,
           password: form.password,
-          fullName: form.fullName || undefined,
-          phone: form.phone || undefined,
           role: role()
         });
-        setMessage('Account created. Please log in to continue.');
         setForm(current => ({ ...current, password: '' }));
-        router.push(`/auth/login/${portal}`);
+        openOtpStep(registration.phone || phone, 'REGISTER');
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not complete the request.');
+        setError(e instanceof Error ? e.message : 'Could not create your account.');
       }
       return;
     }
 
     try {
-      const session = await authApi.login(form.email, form.password);
+      const session = await authApi.login(phone, form.password);
       await openPortal(session);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not complete the request.');
+      const apiError = e as ApiError;
+      /** A signup that never confirmed its code: pick it up where it stopped. */
+      if (apiError.code === 'PHONE_NOT_VERIFIED') {
+        try {
+          const sent = await authApi.requestOtp(phone, 'REGISTER');
+          openOtpStep(sent.phone || phone, 'REGISTER');
+        } catch (resend) {
+          setError(resend instanceof Error ? resend.message : 'Could not send a code to that number.');
+        }
+        return;
+      }
+      setError(e instanceof Error ? e.message : 'Could not log in.');
+    }
+  };
+
+  const submitOtp = async () => {
+    try {
+      const verified = await authApi.verifyOtp(otp.phone, otp.code.trim());
+      /** A reset code buys the password form; a registration code signs them in. */
+      if (verified.reset_token) {
+        setResetToken(verified.reset_token);
+        setNewPassword({ password: '', confirm: '' });
+        setStep('newPassword');
+        setMessage('Number confirmed. Choose a new password.');
+        return;
+      }
+      await openPortal(verified);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That code could not be verified.');
+    }
+  };
+
+  const resendOtp = async () => {
+    setError('');
+    try {
+      await authApi.requestOtp(otp.phone, otp.purpose);
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      setMessage(`We sent a new code to ${otp.phone} on WhatsApp.`);
+    } catch (e) {
+      const apiError = e as ApiError;
+      if (apiError.code === 'OTP_ALREADY_SENT' && apiError.body?.retry_after_seconds) {
+        setResendIn(Number(apiError.body.retry_after_seconds));
+      }
+      setError(e instanceof Error ? e.message : 'Could not send another code.');
+    }
+  };
+
+  const submitNewPassword = async () => {
+    if (!isPasswordValid(newPassword.password)) return;
+    if (newPassword.password !== newPassword.confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    try {
+      await authApi.resetPassword(resetToken, newPassword.password);
+      backToCredentials();
+      router.push(`/auth/login/${portal}?passwordReset=1`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Your password could not be changed.');
     }
   };
 
@@ -217,9 +320,66 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
     setLoading(true);
     setError('');
     setMessage('');
-    await (isOrganization ? submitOrganization() : submitAccount());
+
+    if (step === 'otp') await submitOtp();
+    else if (step === 'newPassword') await submitNewPassword();
+    else if (isOrganization) await submitOrganization();
+    else await submitStudentCredentials();
+
     setLoading(false);
   };
+
+  const heading = (() => {
+    if (step === 'otp') return 'Confirm your WhatsApp number';
+    if (step === 'newPassword') return 'Choose a new password';
+    if (forgotPassword) return 'Reset your password';
+    return mode === 'login' ? 'Log in to SuperOffer' : 'Create your account';
+  })();
+
+  const subheading = (() => {
+    if (step === 'otp') return `Enter the 6-digit code we sent to ${otp.phone} on WhatsApp.`;
+    if (step === 'newPassword') return 'Then log in with your WhatsApp number and this password.';
+    if (forgotPassword) return 'We will send a code to your WhatsApp number so you can set a new password.';
+    return mode === 'login'
+      ? 'Enter the details associated with your account.'
+      : 'Use accurate information to create your role-specific access.';
+  })();
+
+  /**
+   * Names only what is still missing, and only once there is something to judge.
+   * Each clause clears itself as the password grows, so an empty box says
+   * nothing and a good password says nothing.
+   */
+  const passwordProblem = (value: string) => {
+    const problem = passwordProblems(value);
+    return problem ? <p className="field-error">{problem}</p> : null;
+  };
+
+  /**
+   * The dial code is fixed, so the student types only the ten national digits.
+   * `username` autocomplete lets the browser offer to save the number with the
+   * password, exactly as it would for an email sign-in.
+   */
+  const whatsAppField = (
+    <label className="full">
+      WhatsApp number
+      <span className="phone-field">
+        <span className="dial-code">{INDIA_DIAL_CODE}</span>
+        <input
+          name="phone" type="tel" inputMode="numeric" autoComplete="username"
+          value={form.phone} required maxLength={MOBILE_DIGITS} placeholder="9876543210"
+          onChange={event => set('phone', toMobileDigits(event.target.value))}
+        />
+      </span>
+    </label>
+  );
+
+  const rememberField = (
+    <label className="remember">
+      <input type="checkbox" name="remember" checked={form.remember}
+        onChange={event => set('remember', event.target.checked)} /> Keep me signed in
+    </label>
+  );
 
   return (
     <main className="auth-layout">
@@ -237,15 +397,13 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
       <section className="auth-panel">
         <form onSubmit={onSubmit}>
           <Link className="back-link" href={`/${portal === 'student' ? 'students' : portal}`}>← Back to {portalLabel}</Link>
-          <span className="eyebrow">{mode === 'login' ? 'Secure sign in' : 'Account registration'}</span>
-          <h2>{mode === 'login' ? 'Log in to SuperOffer' : 'Create your account'}</h2>
-          <p>
-            {mode === 'login'
-              ? 'Enter the details associated with your account.'
-              : 'Use accurate information to create your role-specific access.'}
-          </p>
+          <span className="eyebrow">
+            {step === 'credentials' && mode === 'register' ? 'Account registration' : 'Secure sign in'}
+          </span>
+          <h2>{heading}</h2>
+          <p>{subheading}</p>
 
-          {mode === 'register' && isOrganization && (
+          {step === 'credentials' && mode === 'register' && isOrganization && (
             <div className="form-grid">
               <label className="full">
                 Organization name
@@ -276,50 +434,69 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Password
-                <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password} minLength={8} required
-                    placeholder="8+ characters with a letter and number"
-                    onChange={event => set('password', event.target.value)} />
-                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
-                </div>
+                <PasswordInput name="password" value={form.password} required
+                  autoComplete="new-password" placeholder="Choose a password"
+                  onChange={event => set('password', event.target.value)} />
               </label>
               <label>
                 Confirm password
-                <div className="password-field">
-                  <input name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" value={form.confirmPassword} minLength={8} required
-                    placeholder="Re-enter your password"
-                    onChange={event => set('confirmPassword', event.target.value)} />
-                  <PasswordVisibilityToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(v => !v)} />
-                </div>
+                <PasswordInput name="confirmPassword" value={form.confirmPassword} required
+                  autoComplete="new-password" placeholder="Re-enter your password"
+                  onChange={event => set('confirmPassword', event.target.value)} />
               </label>
+              <div className="full">{passwordProblem(form.password)}</div>
             </div>
           )}
 
-          {mode === 'register' && isStudent && (
+          {step === 'credentials' && mode === 'register' && isStudent && (
             <div className="form-grid">
               <label className="full">
                 Full name
                 <input name="fullName" autoComplete="name" value={form.fullName} required placeholder="Your full name"
                   onChange={event => set('fullName', event.target.value)} />
               </label>
-              <label className="full">
-                Email address
-                <input name="email" type="email" autoComplete="username" value={form.email} required placeholder="you@example.com"
-                  onChange={event => set('email', event.target.value)} />
-              </label>
+              {whatsAppField}
+              <p className="field-note full">We send a confirmation code here, so use the number on your WhatsApp.</p>
               <label className="full">
                 Password
-                <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={form.password} minLength={8} required
-                    placeholder="8+ characters with a letter and number"
-                    onChange={event => set('password', event.target.value)} />
-                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
-                </div>
+                <PasswordInput name="password" value={form.password} required
+                  autoComplete="new-password" placeholder="Choose a password"
+                  onChange={event => set('password', event.target.value)} />
               </label>
+              <div className="full">{passwordProblem(form.password)}</div>
             </div>
           )}
 
-          {mode === 'login' && (
+          {step === 'credentials' && mode === 'login' && isStudent && (
+            <div>
+              {whatsAppField}
+              {!forgotPassword && (
+                <>
+                  <label>
+                    Password
+                    <PasswordInput name="password" value={form.password} required
+                      autoComplete="current-password" placeholder="Enter your password"
+                      onChange={event => set('password', event.target.value)} />
+                  </label>
+                  {rememberField}
+                </>
+              )}
+              <p className="switch">
+                {forgotPassword ? (
+                  <button type="button" className="link-button" onClick={backToCredentials}>
+                    ← Back to log in
+                  </button>
+                ) : (
+                  <button type="button" className="link-button"
+                    onClick={() => { setForgotPassword(true); setError(''); setMessage(''); }}>
+                    Forgot your password?
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
+
+          {step === 'credentials' && mode === 'login' && !isStudent && (
             <div>
               <label>
                 Email address
@@ -328,15 +505,49 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
               </label>
               <label>
                 Password
-                <div className="password-field">
-                  <input name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={form.password} required placeholder="Enter your password"
-                    onChange={event => set('password', event.target.value)} />
-                  <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword(v => !v)} />
-                </div>
+                <PasswordInput name="password" value={form.password} required
+                  autoComplete="current-password" placeholder="Enter your password"
+                  onChange={event => set('password', event.target.value)} />
               </label>
-              <label className="remember">
-                <input type="checkbox" name="remember" checked={form.remember}
-                  onChange={event => set('remember', event.target.checked)} /> Keep me signed in
+              {rememberField}
+            </div>
+          )}
+
+          {step === 'otp' && (
+            <div>
+              <label>
+                6-digit code
+                <input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required
+                  value={otp.code} placeholder="000000"
+                  onChange={event => setOtp(current => ({ ...current, code: event.target.value.replace(/\D/g, '') }))} />
+              </label>
+              <p className="switch">
+                {resendIn > 0
+                  ? <span>You can request another code in {resendIn}s.</span>
+                  : <button type="button" className="link-button" onClick={() => void resendOtp()}>Send another code</button>}
+              </p>
+              <p className="switch">
+                <button type="button" className="link-button" onClick={backToCredentials}>
+                  ← Use a different number
+                </button>
+              </p>
+            </div>
+          )}
+
+          {step === 'newPassword' && (
+            <div>
+              <label>
+                New password
+                <PasswordInput name="newPassword" required autoComplete="new-password"
+                  value={newPassword.password} placeholder="Choose a password"
+                  onChange={event => setNewPassword(current => ({ ...current, password: event.target.value }))} />
+              </label>
+              {passwordProblem(newPassword.password)}
+              <label>
+                Confirm new password
+                <PasswordInput name="confirmNewPassword" required autoComplete="new-password"
+                  value={newPassword.confirm} placeholder="Re-enter your new password"
+                  onChange={event => setNewPassword(current => ({ ...current, confirm: event.target.value }))} />
               </label>
             </div>
           )}
@@ -348,12 +559,14 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
             {loading ? 'Please wait…' : buttonLabel}
           </button>
 
-          <p className="switch">
-            {mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}{' '}
-            <Link href={`/auth/${mode === 'login' ? 'register' : 'login'}/${portal}`}>
-              {mode === 'login' ? 'Create an account' : 'Log in'}
-            </Link>
-          </p>
+          {step === 'credentials' && !forgotPassword && (
+            <p className="switch">
+              {mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}{' '}
+              <Link href={`/auth/${mode === 'login' ? 'register' : 'login'}/${portal}`}>
+                {mode === 'login' ? 'Create an account' : 'Log in'}
+              </Link>
+            </p>
+          )}
         </form>
       </section>
     </main>
