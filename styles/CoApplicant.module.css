@@ -3,7 +3,7 @@
 .co-applicant {
   --line: #e2e7e3;
   --muted: #6b7871;
-  --accent: #087a50;
+  --accent: #047857;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -27,7 +27,7 @@
 
 .quiz-progress-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .quiz-progress { height: 6px; border-radius: 99px; background: #eaf0ec; overflow: hidden; }
-.quiz-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #087a50, #16b579); transition: width .35s ease; }
+.quiz-progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #047857, #16b579); transition: width .35s ease; }
 .quiz-progress-label { font-size: 11px; font-weight: 800; letter-spacing: .02em; color: var(--muted); }
 
 /* ── Finance questions as a short guided quiz, one card per question ────────── */

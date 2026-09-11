@@ -9,7 +9,7 @@ import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
 import { studentProfileStore, useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/StudentFullProfile.module.css';
-import { StudentWorkspaceRail } from './StudentWorkspaceRail';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 
 const cx = classNames(styles);
 
@@ -120,8 +120,7 @@ export function StudentFullProfile() {
   };
 
   return (
-    <div className={cx('host')}>
-      <StudentWorkspaceRail />
+    <StudentWorkspaceShell>
       <main className={cx('full-profile-page')}>
         <header className={cx('profile-top')}>
           <Link href="/student/offers">← Back to offers</Link>
@@ -196,6 +195,6 @@ export function StudentFullProfile() {
           </aside>
         </div>
       </main>
-    </div>
+    </StudentWorkspaceShell>
   );
 }

@@ -6,7 +6,7 @@ import { offerWalletStore, type OfferCategory, type OfferDecisionStatus, type St
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/OfferWorkspace.module.css';
-import { StudentWorkspaceRail } from './StudentWorkspaceRail';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 
 const cx = classNames(styles);
 
@@ -129,8 +129,7 @@ export function StudentOfferInbox() {
           : 'ADMISSION OPPORTUNITY';
 
   return (
-    <div className={cx('host')}>
-      <StudentWorkspaceRail />
+    <StudentWorkspaceShell layout="workspace">
       {error && <p className={cx('mailbox-error')}>{error}</p>}
 
       <main className={cx('offer-workspace-page')}>
@@ -432,6 +431,6 @@ export function StudentOfferInbox() {
           )}
         </section>
       </main>
-    </div>
+    </StudentWorkspaceShell>
   );
 }

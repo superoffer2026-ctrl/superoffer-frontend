@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, type FormEvent } from 'react';
-import { BrandMark } from '@/components/landing/BrandMark';
-import { Icon, type IconName } from '@/components/landing/Icon';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Icon } from '@/components/landing/Icon';
 import { Reveal } from '@/components/landing/Reveal';
 import { AnimatedMetric } from '@/components/landing/sections/AnimatedMetric';
 import { authApi } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
 import { STUDENT_PROFILE_STEPS } from '@/lib/models/student-portal';
 import { readAccessToken, readSession, writeSession } from '@/lib/storage';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
@@ -20,15 +20,6 @@ const cx = classNames(styles);
 
 const PROFILE_NUDGE_SEEN_KEY = 'superoffer_profile_nudge_seen';
 
-/** Sidebar navigation — every destination is a real student route. */
-const NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: '/student/dashboard', label: 'Dashboard', icon: 'grid' },
-  { href: '/student/offers', label: 'Applications & Offers', icon: 'award' },
-  { href: '/student/loan-eligibility', label: 'Loan & Funding', icon: 'payments' },
-  { href: '/student/profile', label: 'Profile & Documents', icon: 'badge' },
-  { href: '/student/saved-universities', label: 'Discover', icon: 'compass' },
-  { href: '/student/settings', label: 'Settings', icon: 'sliders' }
-];
 
 /** The wizard sections that count toward completion. */
 const WIZARD_STEPS = STUDENT_PROFILE_STEPS.filter(step => step.completionKey);
@@ -46,10 +37,7 @@ export function StudentDashboard() {
   const profile = useStudentProfile();
   const walletStore = useStore(offerWalletStore);
   const router = useRouter();
-  const pathname = usePathname() || '';
   const [showNudge, setShowNudge] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
 
   const isSubmitted = profile.isSubmitted;
   const { completionPercent, sections } = profile.completion;
@@ -60,23 +48,6 @@ export function StudentDashboard() {
     void walletStore.load();
   }, [walletStore]);
 
-  /** Unread badge on the header bell, polled like the old rail did. */
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = async () => {
-      const token = readAccessToken();
-      if (!token) return;
-      try {
-        const res = await authApi.studentUnreadMessages(token);
-        if (!cancelled) setUnread(res?.total || 0);
-      } catch {
-        /* a failed count must never break the page */
-      }
-    };
-    void refresh();
-    const timer = window.setInterval(refresh, 15000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, []);
 
   /** One-per-session nudge for an unfinished profile. */
   useEffect(() => {
@@ -142,75 +113,10 @@ export function StudentDashboard() {
       note: `${o.valueLabel || 'Offer'} response due`
     }));
 
-  const go = (href: string) => { setMenuOpen(false); router.push(href); };
-  const onSearch = (e: FormEvent) => { e.preventDefault(); go('/student/offers'); };
 
   return (
-    <div className={cx('host')}>
-      {/* ---------------------------------------------------------- sidebar */}
-      <div className={cx('scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} aria-hidden={!menuOpen} />
-      <aside className={cx('sidebar', menuOpen && 'open')}>
-        <Link className={cx('brand')} href="/student/dashboard">
-          <span className={cx('brandMark')}><BrandMark size={30} wordmark={false} /></span>
-          <span className={cx('brandText')}><b>SuperOffer</b><small>Candidate Portal</small></span>
-        </Link>
-
-        <nav className={cx('nav')} aria-label="Student navigation">
-          {NAV.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMenuOpen(false)}
-              className={cx('navItem', pathname.startsWith(item.href) && 'active')}
-              aria-current={pathname.startsWith(item.href) ? 'page' : undefined}
-            >
-              <Icon name={item.icon} size={20} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className={cx('sideSpacer')} />
-
-        <Link className={cx('userCard')} href="/student/profile">
-          <span className={cx('userAvatar')}>
-            {profile.initials}
-            {isSubmitted && <i><Icon name="check" size={9} /></i>}
-          </span>
-          <div>
-            <b>{profile.fullName}</b>
-            <span><i />{isSubmitted ? 'Verified candidate' : 'Draft profile'}</span>
-          </div>
-          <Icon name="unfold" size={16} />
-        </Link>
-      </aside>
-
-      {/* ----------------------------------------------------------- header */}
-      <header className={cx('header')}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className={cx('iconBtn', 'menuBtn')} onClick={() => setMenuOpen(v => !v)} aria-label="Toggle menu">
-            <Icon name={menuOpen ? 'close' : 'menu'} size={20} />
-          </button>
-          <form className={cx('search')} onSubmit={onSearch} role="search">
-            <Icon name="search" size={17} />
-            <input placeholder="Search offers, institutions…" aria-label="Search" />
-          </form>
-        </div>
-        <div className={cx('headRight')}>
-          <Link className={cx('iconBtn')} href="/student/notifications" aria-label="Notifications">
-            <Icon name="bell" size={20} />
-            {unread > 0 && <span className={cx('dot')} />}
-          </Link>
-          <span className={cx('statusPill', isSubmitted && 'live')}>
-            <i />{isSubmitted ? 'Profile live' : 'Draft'}
-          </span>
-          <Link className={cx('headAvatar')} href="/student/profile" aria-label="Your profile">{profile.initials}</Link>
-        </div>
-      </header>
-
-      {/* ------------------------------------------------------------- main */}
-      <main className={cx('main')}>
-        <div className={cx('wrap')}>
+    <StudentWorkspaceShell>
+      <div className={cx('content')}>
 
           {/* hero */}
           <Reveal className={cx('hero')}>
@@ -371,8 +277,6 @@ export function StudentDashboard() {
               </div>
             )}
           </Reveal>
-        </div>
-      </main>
 
       {/* ------------------------------------------------------ nudge modal */}
       {showNudge && (
@@ -402,6 +306,7 @@ export function StudentDashboard() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </StudentWorkspaceShell>
   );
 }

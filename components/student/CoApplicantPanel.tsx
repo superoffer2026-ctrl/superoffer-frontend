@@ -41,7 +41,7 @@ const money = (value: number) => `₹${new Intl.NumberFormat('en-IN', { maximumF
  * score and a strong verdict do not disagree visually.
  */
 const SCORE_READS: { from: number; label: string; tone: string; colour: string }[] = [
-  { from: 800, label: 'Excellent', tone: 'good', colour: '#087a50' },
+  { from: 800, label: 'Excellent', tone: 'good', colour: '#047857' },
   { from: 750, label: 'Strong', tone: 'good', colour: '#2e9b63' },
   { from: 700, label: 'Good', tone: 'good', colour: '#5d9f46' },
   { from: 650, label: 'Fair', tone: 'fair', colour: '#c2912f' },

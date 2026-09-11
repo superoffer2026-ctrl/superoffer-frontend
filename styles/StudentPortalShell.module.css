@@ -1,6 +1,6 @@
 /* Ported verbatim from the Angular component stylesheet. :host became .host; bare element selectors are scoped under it, matching Angular's emulated view encapsulation. */
 .host {
-  --primary: #087a50;
+  --primary: #047857;
   --primary-dark: #066640;
   --primary-soft: #e8f5ee;
   --slate-900: #173247;
@@ -11,7 +11,7 @@
   --slate-400: #9aa39d;
   --slate-200: #dce5e0;
   --slate-100: #f1f8f4;
-  --slate-50: #f7f3ec;
+  --slate-50: #fbfbfa;
   --border: #dce5e0;
 
   display: block;
@@ -79,7 +79,7 @@
 .wizard-exit:hover {
   border-color: #c2d3cb;
   background: #f7faf8;
-  color: #087a50;
+  color: #047857;
 }
 
 /* Horizontal step tracker */

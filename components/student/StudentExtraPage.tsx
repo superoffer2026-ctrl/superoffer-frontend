@@ -10,7 +10,7 @@ import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/StudentExtraPage.module.css';
 import { CoApplicantPanel } from './CoApplicantPanel';
-import { StudentWorkspaceRail } from './StudentWorkspaceRail';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 
 const cx = classNames(styles);
 
@@ -118,8 +118,7 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   };
 
   return (
-    <div className={cx('host')}>
-      <StudentWorkspaceRail />
+    <StudentWorkspaceShell>
       <main className={cx('student-extra')}>
         {page !== 'loan-eligibility' && (
           <header>
@@ -211,6 +210,6 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
         )}
 
       </main>
-    </div>
+    </StudentWorkspaceShell>
   );
 }

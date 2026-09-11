@@ -5,7 +5,7 @@ import { authApi } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
 import { readAccessToken } from '@/lib/storage';
 import styles from '@/styles/StudentMessages.module.css';
-import { StudentWorkspaceRail } from './StudentWorkspaceRail';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 
 const cx = classNames(styles);
 
@@ -163,8 +163,7 @@ export function StudentMessages() {
   };
 
   return (
-    <div className={cx('host')}>
-      <StudentWorkspaceRail />
+    <StudentWorkspaceShell layout="workspace">
       <main className={cx('messages-page')}>
         <section className={cx('messages-workspace')}>
           <aside className={cx('messages-list')}>
@@ -299,6 +298,6 @@ export function StudentMessages() {
           )}
         </section>
       </main>
-    </div>
+    </StudentWorkspaceShell>
   );
 }

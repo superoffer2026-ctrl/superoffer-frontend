@@ -12,7 +12,7 @@ import { studentProfileStore, useStudentProfile } from '@/lib/stores/student-pro
 import pageStyles from '@/styles/StudentWorkspacePages.module.css';
 import settingsStyles from '@/styles/StudentSettings.module.css';
 import { StudentSupportChat, OPEN_SUPPORT_CHAT_EVENT } from './StudentSupportChat';
-import { StudentWorkspaceRail } from './StudentWorkspaceRail';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
 
 /** The component draws on both its own stylesheet and the shared workspace one. */
 const cx = classNames({ ...pageStyles, ...settingsStyles });
@@ -161,8 +161,7 @@ export function StudentSettings() {
   const openChat = () => window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_CHAT_EVENT));
 
   return (
-    <div className={cx('host')}>
-      <StudentWorkspaceRail />
+    <StudentWorkspaceShell>
       <main className={cx('professional-settings')}>
         <header className={cx('settings-page-header')}>
           <div><span>SETTINGS</span><h1>Account settings</h1><p>Manage your account and preferences.</p></div>
@@ -341,6 +340,6 @@ export function StudentSettings() {
         </div>
       </main>
       <StudentSupportChat />
-    </div>
+    </StudentWorkspaceShell>
   );
 }
