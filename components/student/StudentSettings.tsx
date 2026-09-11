@@ -161,7 +161,7 @@ export function StudentSettings() {
   const openChat = () => window.dispatchEvent(new CustomEvent(OPEN_SUPPORT_CHAT_EVENT));
 
   return (
-    <StudentWorkspaceShell>
+    <StudentWorkspaceShell backdrop="scene" sky={['#e3ecff', '#eee6ff', '#dff7ef']}>
       <main className={cx('professional-settings')}>
         <header className={cx('settings-page-header')}>
           <div><span>SETTINGS</span><h1>Account settings</h1><p>Manage your account and preferences.</p></div>

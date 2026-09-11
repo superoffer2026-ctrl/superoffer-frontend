@@ -51,6 +51,14 @@ const relativeTime = (iso: string): string => {
   return days === 1 ? 'Yesterday' : `${days} days ago`;
 };
 
+/** Each destination gets its own sky, so the rail's pages feel like different places. */
+const SKY: Record<ExtraPageKey, [string, string, string]> = {
+  'loan-eligibility': ['#e2fbef', '#e4efff', '#f3e8ff'],
+  'saved-universities': ['#fde7c8', '#e6e3ff', '#cfeeff'],
+  scholarships: ['#fbe7ff', '#e3ecff', '#ffefd8'],
+  notifications: ['#e6ecff', '#f1e8ff', '#ffe9ec']
+};
+
 export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   const profile = useStudentProfile();
   const wallet = useStore(offerWalletStore);
@@ -118,7 +126,7 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   };
 
   return (
-    <StudentWorkspaceShell>
+    <StudentWorkspaceShell backdrop="scene" sky={SKY[page]}>
       <main className={cx('student-extra')}>
         {page !== 'loan-eligibility' && (
           <header>

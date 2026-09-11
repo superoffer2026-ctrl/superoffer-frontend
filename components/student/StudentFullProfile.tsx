@@ -120,7 +120,7 @@ export function StudentFullProfile() {
   };
 
   return (
-    <StudentWorkspaceShell>
+    <StudentWorkspaceShell backdrop="scene" sky={['#ffe9d6', '#ffe3ec', '#e6e3ff']}>
       <main className={cx('full-profile-page')}>
         <header className={cx('profile-top')}>
           <Link href="/student/offers">← Back to offers</Link>

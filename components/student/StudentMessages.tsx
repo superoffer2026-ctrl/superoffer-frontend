@@ -163,7 +163,7 @@ export function StudentMessages() {
   };
 
   return (
-    <StudentWorkspaceShell layout="workspace">
+    <StudentWorkspaceShell layout="workspace" backdrop="scene" sky={['#e6f7ff', '#e9e6ff', '#fff0d6']}>
       <main className={cx('messages-page')}>
         <section className={cx('messages-workspace')}>
           <aside className={cx('messages-list')}>
