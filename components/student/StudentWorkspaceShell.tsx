@@ -13,11 +13,12 @@ import styles from '@/styles/student/Shell.module.css';
 
 const cx = classNames(styles);
 
-/** Sidebar navigation — every destination is a real student route. */
+/** Sidebar navigation — every destination is a real student route. Messages
+ *  live inside Applications & Offers (each offer carries its own thread), so
+ *  the unread count sits on that item rather than on a page of its own. */
 const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: '/student/dashboard', label: 'Dashboard', icon: 'grid' },
   { href: '/student/offers', label: 'Applications & Offers', icon: 'award' },
-  { href: '/student/messages', label: 'Messages', icon: 'mail' },
   { href: '/student/loan-eligibility', label: 'Loan & Funding', icon: 'payments' },
   { href: '/student/profile', label: 'Profile & Documents', icon: 'badge' },
   { href: '/student/saved-universities', label: 'Discover', icon: 'compass' },
@@ -94,7 +95,7 @@ export function StudentWorkspaceShell({
             >
               <Icon name={item.icon} size={20} />
               {item.label}
-              {item.href === '/student/messages' && unread > 0 && <span className={cx('navBadge')}>{unread > 99 ? '99+' : unread}</span>}
+              {item.href === '/student/offers' && unread > 0 && <span className={cx('navBadge')}>{unread > 99 ? '99+' : unread}</span>}
             </Link>
           ))}
         </nav>
