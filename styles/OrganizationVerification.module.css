@@ -4,8 +4,8 @@
 
 .host {
   min-height: 100vh;
-  background: #f6f8f9;
-  color: #10212c;
+  background: #f7f7f6;
+  color: #18181b;
 }
 
 .bar {
@@ -13,8 +13,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px clamp(20px, 5vw, 56px);
-  border-bottom: 1px solid #dfe6ea;
-  background: #fff;
+  border-bottom: 1px solid #e4e4e2;
+  background: #ffffff;
 }
 
 .bar > div { display: flex; align-items: center; gap: 10px }
@@ -25,9 +25,9 @@
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: #0d2d42;
-  color: #79dbc1;
-  font-weight: 900;
+  background: #27272a;
+  color: #6ee7b7;
+  font-weight: 800;
 }
 
 .bar strong { font-size: 17px; letter-spacing: -.02em }
@@ -35,17 +35,17 @@
 .bar small {
   padding-left: 10px;
   margin-left: 4px;
-  border-left: 1px solid #dfe6ea;
-  color: #637482;
+  border-left: 1px solid #e4e4e2;
+  color: #71717a;
   font-size: 13px;
 }
 
 .bar > button {
   padding: 8px 14px;
-  border: 1px solid #cfd9df;
+  border: 1px solid #d8d8d5;
   border-radius: 9px;
-  background: #fff;
-  color: #46554c;
+  background: #ffffff;
+  color: #52525b;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -57,13 +57,13 @@
   padding: clamp(24px, 4vw, 44px) clamp(18px, 4vw, 24px) 60px;
 }
 
-.loading { padding: 60px; text-align: center; color: #637482 }
+.loading { padding: 60px; text-align: center; color: #71717a }
 
 .eyebrow {
   display: block;
-  color: #2467e8;
+  color: #71717a;
   font-size: 11.5px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: .14em;
 }
 
@@ -74,36 +74,36 @@
   letter-spacing: -.035em;
 }
 
-.intro p { margin: 0; max-width: 62ch; color: #637482; line-height: 1.65 }
+.intro p { margin: 0; max-width: 62ch; color: #71717a; line-height: 1.65 }
 
 /* Each panel says one thing about where the submission stands. */
 .panel {
   margin-top: 20px;
   padding: 16px 18px;
-  border: 1px solid #dfe6ea;
+  border: 1px solid #e4e4e2;
   border-radius: 12px;
-  background: #fff;
+  background: #ffffff;
 }
 
 .panel strong { display: block; font-size: 14px }
 
-.panel p { margin: 6px 0 0; color: #556673; font-size: 13.5px; line-height: 1.6 }
+.panel p { margin: 6px 0 0; color: #52525b; font-size: 13.5px; line-height: 1.6 }
 
-.panel ul { margin: 8px 0 0; padding-left: 18px; color: #556673; font-size: 13.5px; line-height: 1.75 }
+.panel ul { margin: 8px 0 0; padding-left: 18px; color: #52525b; font-size: 13.5px; line-height: 1.75 }
 
-.panel small { display: block; margin-top: 8px; color: #7c8a94; font-size: 12px }
+.panel small { display: block; margin-top: 8px; color: #71717a; font-size: 12px }
 
-.outstanding { border-color: #edd0b6; background: #fdf4ec }
-.outstanding strong { color: #a54d1d }
+.outstanding { border-color: #fde68a; background: #fffbeb }
+.outstanding strong { color: #b45309 }
 
-.waiting { border-color: #cfe4d9; background: #f1f8f4 }
-.waiting strong { color: #087a50 }
+.waiting { border-color: #d1fae5; background: #f7f7f6 }
+.waiting strong { color: #047857 }
 
-.rejected { border-color: #e6b8b2; background: #fdf1f0 }
-.rejected strong { color: #a3372c }
+.rejected { border-color: #fca5a5; background: #fef2f2 }
+.rejected strong { color: #b91c1c }
 
-.note { border-color: #cddcf5; background: #f2f6ff }
-.note strong { color: #2c4a7c }
+.note { border-color: #e4e4e2; background: #fbfbfa }
+.note strong { color: #52525b }
 
 .form {
   display: grid;
@@ -111,9 +111,9 @@
   gap: 16px;
   margin-top: 24px;
   padding: clamp(18px, 3vw, 26px);
-  border: 1px solid #dfe6ea;
+  border: 1px solid #e4e4e2;
   border-radius: 14px;
-  background: #fff;
+  background: #ffffff;
 }
 
 .field { display: flex; flex-direction: column; gap: 7px; min-width: 0 }
@@ -124,9 +124,9 @@
 .field input,
 .field textarea {
   padding: 11px 13px;
-  border: 1px solid #cad6dd;
+  border: 1px solid #d8d8d5;
   border-radius: 10px;
-  background: #fff;
+  background: #ffffff;
   font: inherit;
   font-size: 14px;
   outline: none;
@@ -134,11 +134,11 @@
 
 .field input:focus,
 .field textarea:focus {
-  border-color: #2467e8;
-  box-shadow: 0 0 0 3px rgba(36, 103, 232, .12);
+  border-color: #71717a;
+  box-shadow: 0 0 0 3px rgba(113, 113, 122, .12);
 }
 
-.field > small { color: #7c8a94; font-size: 11.5px }
+.field > small { color: #71717a; font-size: 11.5px }
 
 .error, .ok {
   grid-column: 1 / -1;
@@ -149,8 +149,8 @@
   font-weight: 600;
 }
 
-.error { background: #fdecea; color: #a3372c }
-.ok { background: #eaf7f0; color: #10714f }
+.error { background: #fee2e2; color: #b91c1c }
+.ok { background: #ecfdf5; color: #047857 }
 
 .actions {
   grid-column: 1 / -1;
@@ -168,11 +168,11 @@
   cursor: pointer;
 }
 
-.ghost { border: 1px solid #cfd9df; background: #fff; color: #46554c }
-.ghost:hover { background: #f6f9fb }
+.ghost { border: 1px solid #d8d8d5; background: #ffffff; color: #52525b }
+.ghost:hover { background: #fbfbfa }
 
-.primary { border: 1px solid #0d2d42; background: #0d2d42; color: #fff }
-.primary:hover { background: #123a55 }
+.primary { border: 1px solid #27272a; background: #27272a; color: #ffffff }
+.primary:hover { background: #27272a }
 .primary:disabled, .ghost:disabled { opacity: .55; cursor: not-allowed }
 
 @media (max-width: 720px) {
@@ -180,3 +180,64 @@
   .actions { flex-direction: column-reverse }
   .actions button { width: 100% }
 }
+
+
+/* The same tokens the workspace and the student portal are built from, so the
+   page a pending organisation waits on still looks like the product it is
+   waiting to get into. Plain, but plain in the same language. */
+
+.host {
+  --ink: #111113;
+  --ink-2: #52525b;
+  --ink-3: #71717a;
+  --line: rgba(17, 17, 19, 0.07);
+  --line-2: rgba(17, 17, 19, 0.12);
+  --em: #047857;
+  --em-deep: #065f46;
+  --em-soft: #ecfdf5;
+  --em-line: #a7f3d0;
+  --soft: #f7f7f6;
+  --soft-2: #f2f2f1;
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.012);
+  --r-md: 10px;
+  --r-2xl: 22px;
+
+  background: #fbfbfa;
+  color: var(--ink);
+  font-family: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.host input, .host select, .host textarea, .host button { font-family: inherit; }
+
+.bar { border-bottom: 1px solid var(--line); }
+.mark { background: linear-gradient(140deg, #065f46, #10b981); color: #fff; border-radius: 10px; }
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  background: #fff;
+  box-shadow: 0 30px 70px -34px rgba(20, 30, 60, 0.25), var(--sh-1);
+}
+.eyebrow { color: var(--em); font-size: 11px; font-weight: 700; letter-spacing: 0.13em; }
+.intro { color: var(--ink-2); }
+
+.field input, .field select, .field textarea {
+  border-radius: var(--r-md);
+  border-color: var(--line-2);
+}
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+  outline: none;
+  border-color: var(--em-line);
+  box-shadow: 0 0 0 3px var(--em-soft);
+}
+
+.primary, .ghost {
+  border-radius: var(--r-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+}
+.primary { background: var(--em); border-color: var(--em); color: #fff; box-shadow: 0 1px 2px rgba(4, 120, 87, 0.25); }
+.primary:hover { background: var(--em-deep); border-color: var(--em-deep); box-shadow: 0 12px 26px -10px rgba(4, 120, 87, 0.6); }
+.ghost { background: var(--soft); border-color: transparent; color: var(--ink); }
+.ghost:hover { background: var(--soft-2); }

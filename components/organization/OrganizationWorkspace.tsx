@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { BrandMark } from '@/components/landing/BrandMark';
+import { Icon } from '@/components/landing/Icon';
 import { classNames } from '@/lib/cx';
 import { NAVIGATION, useOrganizationWorkspace, type WorkspaceOptions } from '@/lib/organization/use-organization-workspace';
 import type { OrganizationView } from '@/lib/organization/workspace-data';
 import styles from '@/styles/OrganizationWorkspace.module.css';
 import { CandidateFilters } from './CandidateFilters';
+import { OrganizationScene } from './OrganizationScene';
 import { OrganizationDashboard } from './OrganizationDashboard';
 import { OrganizationNotifications } from './OrganizationNotifications';
 import { OrganizationProducts } from './OrganizationProducts';
@@ -89,8 +92,24 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
     role, cfg, view, workspaceFilter, setWorkspaceFilter, toast, go, navLabel,
     selectedOfferItem, setSelectedOfferId, filteredWorkspaceOffers, countWorkspaceOffers,
     setOfferStatus, openQuickInvite, chatDraft, setChatDraft, sendChatMessage,
-    openProductInviteModal, notify, user, chatFile, setChatFile, openAttachment, selectThread
+    openProductInviteModal, notify, user, chatFile, setChatFile, openAttachment, selectThread,
+    filters, setFilter, activeOffersCount
   } = workspace;
+
+  /** The rail collapses to a drawer below 860px, as it does for students. */
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { setMenuOpen(false); }, [view]);
+
+  /** The bell lights when a candidate is waiting on a reply, not on a schedule. */
+  const unreadMessages = workspace.candidates.reduce((total, item) => total + (item.unread || 0), 0);
+
+  /** Header search is the discovery search — it sets the same filter the
+   *  candidate feed reads, then takes the officer to the feed showing it. */
+  const onHeaderSearch = (event: FormEvent) => {
+    event.preventDefault();
+    setMenuOpen(false);
+    if (view !== 'students') go('students');
+  };
 
   const fileSize = (bytes: number) =>
     bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -108,10 +127,15 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
   const candidate = selectedOfferItem;
 
   return (
-    <div className={cx('host')}>
+    <div className={cx('host', 'scene')}>
+      <div className={cx('sky')} aria-hidden="true"><OrganizationScene /></div>
+
       <div className={cx('uni-shell')}>
-        <aside className={cx('uni-sidebar')}>
-          <button className={cx('uni-brand', 'workspace-logo')} type="button" onClick={() => go('dashboard')} aria-label="SuperOffer">S</button>
+        <div className={cx('uni-scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} aria-hidden={!menuOpen} />
+        <aside className={cx('uni-sidebar', menuOpen && 'open')}>
+          <button className={cx('uni-brand')} type="button" onClick={() => go('dashboard')} aria-label="SuperOffer">
+            <BrandMark size={34} wordmark={false} gradientId="so-org-rail" />
+          </button>
           <nav>
             {NAVIGATION.map(item => (
               <button
@@ -121,6 +145,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                 onClick={() => go(item.id as OrganizationView)}
                 title={navLabel(item.id)}
                 aria-label={navLabel(item.id)}
+                data-label={navLabel(item.id)}
               >
                 <span className={cx('nav-icon')}>{NAV_ICONS[item.id]}</span>
                 <strong>{navLabel(item.id)}</strong>
@@ -128,7 +153,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
             ))}
           </nav>
           <button
-            className={cx('uni-user', 'workspace-avatar')}
+            className={cx('uni-user', view === 'profile' && 'active')}
             type="button"
             onClick={() => go('profile')}
             title="Organisation profile"
@@ -137,6 +162,38 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
             <span>{userInitials}</span>
           </button>
         </aside>
+
+        {/* The chrome the portal never had: one place for the officer's search,
+            their alerts and their organisation, above every view. */}
+        <header className={cx('uni-topbar')}>
+          <div className={cx('topLeft')}>
+            <button className={cx('topIcon', 'topMenu')} type="button" onClick={() => setMenuOpen(open => !open)} aria-label="Toggle menu">
+              <Icon name={menuOpen ? 'close' : 'menu'} size={20} />
+            </button>
+            <form className={cx('topSearch')} onSubmit={onHeaderSearch} role="search">
+              <Icon name="search" size={17} />
+              <input
+                name="workspaceSearch"
+                value={filters.search}
+                onChange={event => setFilter('search', event.target.value)}
+                placeholder={role === 'BANK' ? 'Search applicants…' : 'Search candidates…'}
+                aria-label="Search candidates"
+              />
+            </form>
+          </div>
+          <div className={cx('topRight')}>
+            <button className={cx('topIcon')} type="button" onClick={() => go('notifications')} aria-label="Notifications">
+              <Icon name="bell" size={20} />
+              {!!unreadMessages && <span className={cx('dot')} />}
+            </button>
+            <span className={cx('topPill')}>
+              <i />{cfg.orgLabel} · {activeOffersCount} live
+            </span>
+            <button className={cx('topAvatar')} type="button" onClick={() => go('profile')} aria-label="Organisation profile" title={user?.full_name || cfg.brandLabel}>
+              {userInitials}
+            </button>
+          </div>
+        </header>
 
         {/* Unified three-column workspace, matching the student offers layout. */}
         {isCandidateView && (
@@ -211,7 +268,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <h2 style={{ margin: '0 0 4px 0', lineHeight: 1 }}>{candidate.name}</h2>
-                          <p className={cx('reading-course')} style={{ fontSize: 14, margin: 0, color: '#3f4d46', lineHeight: 1 }}>{candidate.course}</p>
+                          <p className={cx('reading-course')} style={{ fontSize: 14, margin: 0, color: '#52525b', lineHeight: 1 }}>{candidate.course}</p>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
@@ -230,7 +287,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                           type="button"
                           className={cx('secondary-btn', 'reject-action', candidate.status === 'Rejected' && 'chosen')}
                           title="Reject"
-                          style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: '#a13d3d' }}
+                          style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: '#b91c1c' }}
                           onClick={() => setOfferStatus(candidate, 'Rejected')}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -240,7 +297,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                         <button
                           type="button"
                           className={cx('secondary-btn')}
-                          style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#087a50', borderColor: '#087a50' }}
+                          style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#047857', borderColor: '#047857' }}
                           onClick={openProductInviteModal}
                         >
                           Product Invite
@@ -558,7 +615,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                           <h3 style={{ marginTop: 16, marginBottom: 8 }}>Skills &amp; Communication</h3>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                             {candidate.skills.map(skill => (
-                              <span key={skill} style={{ background: '#eef5f1', color: '#087a50', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, border: '1px solid #d5e5dc' }}>
+                              <span key={skill} style={{ background: '#ecfdf5', color: '#047857', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, border: '1px solid #a7f3d0' }}>
                                 {skill}
                               </span>
                             ))}
