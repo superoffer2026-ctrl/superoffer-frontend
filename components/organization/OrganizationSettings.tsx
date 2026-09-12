@@ -4,6 +4,7 @@ import { classNames } from '@/lib/cx';
 import { SETTINGS_TABS, type useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
 import styles from '@/styles/OrganizationWorkspace.module.css';
 import { PasswordInput } from '@/components/shared/PasswordInput';
+import { MediaUploadField } from './MediaUploadField';
 
 const cx = classNames(styles);
 
@@ -42,7 +43,30 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
           <header><h2>{cfg.profileTabLabel}</h2><p>Manage your organisation profile details.</p></header>
           <div className={cx('settings-form')}>
             <label>{cfg.orgFieldLabel}<input value={orgName} onChange={event => setOrgName(event.target.value)} /></label>
-            <label>Official domain<input value={orgDomain} onChange={event => setOrgDomain(event.target.value)} /></label>
+            {/*
+              * Asked once, here, and never again. Every offer this organisation
+              * sends resolves the link from this field as it stands on the day a
+              * student opens it, so changing it here reaches offers already sent
+              * without anything being resent.
+              *
+              * Validated against the same pattern the verification page uses, which
+              * accepts a bare domain as well as a full URL — existing records were
+              * entered as `www.example.edu`, and `type="url"` would reject them and
+              * block the form on data the organisation never got to fix.
+              */}
+            <label>
+              Official Website
+              <input
+                name="orgWebsite"
+                inputMode="url"
+                value={orgDomain}
+                placeholder="https://www.university.edu"
+                pattern="(https?:\/\/)?([\w-]+\.)+[A-Za-z]{2,}(\/\S*)?"
+                title="Enter a valid website, for example https://www.university.edu"
+                onChange={event => setOrgDomain(event.target.value)}
+              />
+              <small className={cx('field-note')}>Students see this on every offer you send.</small>
+            </label>
             <label>
               Organisation type
               <select>{cfg.orgTypeOptions.map((type: string) => <option key={type}>{type}</option>)}</select>
@@ -62,41 +86,25 @@ export function OrganizationSettings({ workspace }: { workspace: Workspace }) {
               * Uploads save immediately; there is nothing to lose by not pressing
               * Save afterwards.
               */}
-            <label className={cx('wide', 'image-field')}>
-              Logo
-              <div className={cx('image-row')}>
-                {profile?.logoUrl
-                  ? <img src={profile.logoUrl} alt="Organisation logo" className={cx('image-preview', 'image-preview-logo')} />
-                  : <span className={cx('image-preview', 'image-preview-logo', 'image-empty')}>No logo</span>}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  onChange={event => {
-                    const file = event.target.files?.[0];
-                    if (file) void uploadOrganizationImage('logo', file);
-                  }}
-                />
-              </div>
-              <small>Shown beside your name on every offer a student receives.</small>
-            </label>
+            <MediaUploadField
+              label="Logo"
+              hint="Shown beside your name on every offer a student receives."
+              url={profile?.logoUrl}
+              alt="Organisation logo"
+              shape="logo"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              onSelect={file => uploadOrganizationImage('logo', file)}
+            />
 
-            <label className={cx('wide', 'image-field')}>
-              Cover image
-              <div className={cx('image-row')}>
-                {profile?.coverUrl
-                  ? <img src={profile.coverUrl} alt="Campus cover" className={cx('image-preview')} />
-                  : <span className={cx('image-preview', 'image-empty')}>No cover image</span>}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={event => {
-                    const file = event.target.files?.[0];
-                    if (file) void uploadOrganizationImage('cover', file);
-                  }}
-                />
-              </div>
-              <small>A campus photo, used where the offer has room for one.</small>
-            </label>
+            <MediaUploadField
+              label="Cover image"
+              hint={role === 'BANK' ? 'A branch or office photo, used where the offer has room for one.' : 'A campus photo, used where the offer has room for one.'}
+              url={profile?.coverUrl}
+              alt="Campus cover"
+              shape="cover"
+              accept="image/png,image/jpeg,image/webp"
+              onSelect={file => uploadOrganizationImage('cover', file)}
+            />
           </div>
           <footer><button className={cx('uni-primary')} onClick={() => void saveOrgProfile()}>Save changes</button></footer>
         </section>

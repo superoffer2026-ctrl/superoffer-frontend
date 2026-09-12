@@ -11,12 +11,43 @@ type Workspace = ReturnType<typeof useOrganizationWorkspace>;
 export function OrganizationDashboard({ workspace }: { workspace: Workspace }) {
   const {
     role, cfg, currentPlan, planQuotaLabel, profilesViewed, acceptanceRate, avgResponseTime, activeOffersCount,
-    remainingCredits, funnelStages, performanceBars, rankedInsights, offers, displayStatus, offerIcon, offerTone,
-    go, openOfferComposer
+    remainingCredits, quotaPercent, funnelStages, performanceBars, rankedInsights, offers, displayStatus, offerIcon, offerTone,
+    go, user
   } = workspace;
+
+  /** First name only — the header already carries the full name and initials. */
+  const firstName = (user?.full_name || '').trim().split(/\s+/)[0] || '';
 
   return (
     <section className={cx('uni-view')}>
+      <section className={cx('uni-hero')}>
+        <div>
+          <span className={cx('eyebrow')}><i />{cfg.orgLabel} workspace</span>
+          <h1>{firstName ? `Welcome back, ${firstName}.` : cfg.searchTitle}</h1>
+          <p>{cfg.searchIntro}</p>
+          <div className={cx('hero-actions')}>
+            <button type="button" className={cx('uni-primary')} onClick={() => go('students')}>
+              {role === 'BANK' ? 'Review applicants' : 'Browse students'}
+            </button>
+            <button type="button" className={cx('uni-secondary')} onClick={() => go('subscription')}>Manage plan</button>
+          </div>
+        </div>
+
+        <div className={cx('uni-quota')}>
+          <div className={cx('quota-top')}>
+            <span>{currentPlan} plan</span>
+            <strong>{profilesViewed}<small>/{planQuotaLabel}</small></strong>
+          </div>
+          {/* Unlimited plans have no bar to fill, so the meter sits at zero
+              rather than pretending a fraction of infinity has been used. */}
+          <div className={cx('quota-bar')} style={{ ['--p' as string]: `${Math.min(100, quotaPercent)}%` }}><i /></div>
+          <div className={cx('quota-foot')}>
+            <span>Profiles viewed this {cfg.cycleLabel}</span>
+            <b>{remainingCredits} left</b>
+          </div>
+        </div>
+      </section>
+
       <div className={cx('uni-metrics')}>
         <article><span>CURRENT SUBSCRIPTION</span><strong>{currentPlan}</strong><small>{planQuotaLabel} profiles / cycle</small></article>
         <article><span>PROFILES VIEWED</span><strong>{profilesViewed}</strong><small>this {cfg.cycleLabel}</small></article>
@@ -24,28 +55,10 @@ export function OrganizationDashboard({ workspace }: { workspace: Workspace }) {
         <article><span>ACTIVE OFFERS</span><strong>{activeOffersCount}</strong><small>awaiting student response</small></article>
       </div>
 
-      <section className={cx('uni-card', 'quick-actions-card')}>
-        <header><div><span>QUICK ACTIONS</span><h2>Move your pipeline forward</h2></div></header>
-        <div className={cx('quick-actions')}>
-          <button type="button" className={cx('quick-action')} onClick={() => go('students')}>
-            <span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
-            <div><strong>Browse Students</strong><small>Discover best-fit candidates</small></div>
-          </button>
-
-          <button type="button" className={cx('quick-action')} onClick={() => go('subscription')}>
-            <span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            </span>
-            <div><strong>Manage Plan</strong><small>{remainingCredits} credits remaining</small></div>
-          </button>
-        </div>
-      </section>
+      {/* The quick-actions card stood here with exactly two buttons: Browse
+          Students and Manage Plan. Both are now the hero's own calls to
+          action, a screen-height above — a second copy of them read as a bug
+          rather than a shortcut. */}
 
       <section className={cx('uni-card', 'uni-funnel-chart')}>
         <header>
@@ -70,7 +83,7 @@ export function OrganizationDashboard({ workspace }: { workspace: Workspace }) {
             <div>
               <span>{role === 'BANK' ? 'RATE SENSITIVITY' : 'PERFORMANCE'}</span>
               <h2 style={{ fontSize: 18 }}>{role === 'BANK' ? 'Rate sensitivity' : 'Product performance'}</h2>
-              <p style={{ fontSize: 13, color: '#7a8680', margin: '3px 0 0' }}>
+              <p style={{ fontSize: 13, color: '#71717a', margin: '3px 0 0' }}>
                 Acceptance rate by {role === 'BANK' ? 'interest rate band' : 'product'}
               </p>
             </div>
@@ -87,18 +100,18 @@ export function OrganizationDashboard({ workspace }: { workspace: Workspace }) {
             <div>
               <span>INSIGHTS</span>
               <h2 style={{ fontSize: 18 }}>{role === 'BANK' ? 'Terms vs. acceptance' : 'Best converting match bands'}</h2>
-              <p style={{ fontSize: 13, color: '#7a8680', margin: '3px 0 0' }}>Key drivers of student offer acceptance</p>
+              <p style={{ fontSize: 13, color: '#71717a', margin: '3px 0 0' }}>Key drivers of student offer acceptance</p>
             </div>
           </header>
           <ol style={{ listStyle: 'none', padding: '0 24px 20px', margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {rankedInsights.map(row => (
-              <li key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, background: '#f7faf8', border: '1px solid #e7efe9' }}>
+              <li key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, background: '#fbfbfa', border: '1px solid #ececea' }}>
                 <b style={{ fontSize: 18 }}>{row.icon}</b>
                 <p style={{ flex: 1, margin: 0 }}>
-                  <strong style={{ display: 'block', fontSize: 13.5, color: '#172019' }}>{row.label}</strong>
-                  <small style={{ color: '#78847e', fontSize: 12 }}>{row.detail}</small>
+                  <strong style={{ display: 'block', fontSize: 13.5, color: '#18181b' }}>{row.label}</strong>
+                  <small style={{ color: '#71717a', fontSize: 12 }}>{row.detail}</small>
                 </p>
-                <span style={{ fontSize: 14, fontWeight: 800, color: '#087a50' }}>{row.value}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: '#047857' }}>{row.value}</span>
               </li>
             ))}
           </ol>
