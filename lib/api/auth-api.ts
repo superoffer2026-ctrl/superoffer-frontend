@@ -398,10 +398,21 @@ export const authApi = {
       body: JSON.stringify(payload)
     }),
 
+  /** The ones put away, for the archive drawer under each product. */
+  archivedOfferTemplates: (token: string) =>
+    request('/organizations/me/offer-templates?archived=1', { headers: bearer(token) }),
+
   /** Archived, not deleted: offers already sent on it still point at it. */
   archiveOfferTemplate: (token: string, id: string) =>
     request('/organizations/me/offer-templates/' + encodeURIComponent(id), {
       method: 'DELETE',
+      headers: bearer(token)
+    }),
+
+  /** The way back out of the archive. */
+  restoreOfferTemplate: (token: string, id: string) =>
+    request('/organizations/me/offer-templates/' + encodeURIComponent(id) + '/restore', {
+      method: 'POST',
       headers: bearer(token)
     }),
 

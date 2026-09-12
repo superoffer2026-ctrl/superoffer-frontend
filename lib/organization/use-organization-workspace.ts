@@ -153,6 +153,8 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
 
   /** The offers each product is prepared to make, and the one being edited. */
   const [offerTemplates, setOfferTemplates] = useState<OfferTemplate[]>([]);
+  /** The ones put away. Kept apart from the live list, which every other screen reads. */
+  const [archivedTemplates, setArchivedTemplates] = useState<OfferTemplate[]>([]);
   const [templateDraft, setTemplateDraft] = useState<TemplateDraft | null>(null);
   /** The candidate a one-click invitation is being sent to, once a product is picked. */
   const [quickInvite, setQuickInvite] = useState<{ candidate: WorkspaceCandidate; productId: string } | null>(null);
@@ -796,6 +798,12 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     } catch {
       /** A products page that cannot list templates still lists products. */
     }
+    try {
+      const payload = await authApi.archivedOfferTemplates(token);
+      setArchivedTemplates(payload.templates || []);
+    } catch {
+      /** The drawer stays empty rather than taking the live list down with it. */
+    }
   }, []);
 
   const saveTemplate = async (productId: string, input: Record<string, unknown>, id?: string) => {
@@ -822,6 +830,23 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
       notify('Template archived');
     } catch (e) {
       reportFailure(e, 'That template could not be archived.');
+    }
+  };
+
+  /**
+   * Brings one back out of the archive. It returns as an ordinary template
+   * rather than as the one-click default, so restoring something a colleague
+   * put away does not silently change what a single click now sends.
+   */
+  const restoreTemplate = async (id: string) => {
+    const token = requireToken();
+    if (!token) return;
+    try {
+      await authApi.restoreOfferTemplate(token, id);
+      await loadTemplates(token);
+      notify('Template restored');
+    } catch (e) {
+      reportFailure(e, 'That template could not be restored.');
     }
   };
 
@@ -1000,19 +1025,29 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     if (!token) return;
 
     const existing = apiProducts.find(row => row.id === catalogDraft.id);
+    const isAcademic = role !== 'BANK';
     const payload = {
       name: catalogDraft.name,
       category: catalogDraft.category || (role === 'BANK' ? 'Financial Product' : 'Academic Product'),
-      url: catalogDraft.url || '',
+      /**
+       * A lender's product still carries a link; the academic form no longer
+       * asks for one, so the key is left out rather than sent empty — the
+       * server writes `url` straight through, and `''` would wipe a link a
+       * university set before the field was retired.
+       */
+      ...(isAcademic ? {} : { url: catalogDraft.url || '' }),
       /**
        * The academic fields go as themselves; `terms` keeps only what an admin
        * added. A student comparing universities needs tuition and duration to
        * mean the same thing in every offer, which a free-form blob cannot promise.
+       *
+       * `fieldOfStudy`, `studyMode` and `scholarshipInfo` are deliberately
+       * absent: the MVP form stopped asking for them, nothing matches or filters
+       * on any of them, and the server only writes a column whose key it was
+       * sent — so a course that already has one keeps it through an edit.
        */
       degreeLevel: catalogDraft.degreeLevel || undefined,
-      fieldOfStudy: catalogDraft.fieldOfStudy || undefined,
       durationMonths: catalogDraft.durationMonths ? Number(catalogDraft.durationMonths) : undefined,
-      studyMode: catalogDraft.studyMode || undefined,
       campusLocation: catalogDraft.campusLocation || undefined,
       intakes: (catalogDraft.intakesText ?? (catalogDraft.intakes || []).join(', '))
         .split(',').map((part: string) => part.trim()).filter(Boolean),
@@ -1020,7 +1055,6 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
         ? undefined
         : Number(catalogDraft.tuitionFee),
       currency: catalogDraft.currency || undefined,
-      scholarshipInfo: catalogDraft.scholarshipInfo || undefined,
       terms: { ...(existing?.terms || {}), ...extras }
     };
 
@@ -1357,11 +1391,31 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
   const persistNotificationPrefs = (next: typeof notificationPrefs) =>
     void patchProfile({ notificationPrefs: next }, 'Notification preferences saved');
 
+  /**
+   * A hostname, with or without a scheme. The same shape the verification page
+   * and the server both accept — records were entered as `www.example.edu`, so
+   * demanding a full URL here would lock an organisation out of its own profile
+   * over a value it was previously told to give.
+   */
+  const WEBSITE_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/\S*)?$/i;
+
   const saveOrgProfile = () => {
     const [city, ...rest] = orgCity.split(',');
     void rest;
+
+    /**
+     * Checked here rather than left to the input's `pattern`: the settings form
+     * saves from a button outside any <form>, so native validation never runs.
+     * An empty value is allowed — clearing the website is a legitimate edit.
+     */
+    const website = orgDomain.trim();
+    if (website && !WEBSITE_PATTERN.test(website)) {
+      notify('Enter a valid website, for example https://www.university.edu');
+      return Promise.resolve();
+    }
+
     return patchProfile(
-      { name: orgName, website: orgDomain, city: city.trim(), description: orgDescription },
+      { name: orgName, website, city: city.trim(), description: orgDescription },
       'Organisation profile saved'
     );
   };
@@ -1465,7 +1519,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     candidates, selectedOfferItem, setSelectedOfferId, filteredWorkspaceOffers, countWorkspaceOffers,
     setOfferStatus, chatDraft, setChatDraft, sendChatMessage,
     openQuickInvite, sendQuickInvite, quickInvite, setQuickInvite,
-    offerTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, makeTemplateDefault,
+    offerTemplates, archivedTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, restoreTemplate, makeTemplateDefault,
     chatFile, setChatFile, openAttachment, selectThread, selectedThreadId,
     offers, displayStatus, offerTone, offerIcon, offerPrimary, offerSecondary,
     products, loanProducts, templates, saveTemplates, uniCriteria, bankCriteria, saveCriteria,

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SchemaFields } from '@/components/student/SchemaFields';
+import { prettyDomain, websiteHref } from '@/lib/stores/offer-wallet.store';
 import { classNames } from '@/lib/cx';
 import {
   CODED_INVITE_FIELDS,
@@ -11,12 +12,14 @@ import {
 } from '@/lib/forms/use-org-form';
 import type { useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
 import styles from '@/styles/OrganizationWorkspace.module.css';
+import { MediaUploadField } from './MediaUploadField';
 
 const cx = classNames(styles);
 
+type Cx = typeof cx;
 type Workspace = ReturnType<typeof useOrganizationWorkspace>;
 
-const fieldLabel = { display: 'flex', flexDirection: 'column' as const, gap: 6, fontSize: 13.5, fontWeight: 800, color: '#3f4d46' };
+const fieldLabel = { display: 'flex', flexDirection: 'column' as const, gap: 6, fontSize: 13.5, fontWeight: 800, color: '#3f3f46' };
 
 /** The chevron the Angular template inlined as a data URI on both category selects. */
 const SELECT_CHEVRON = {
@@ -34,12 +37,18 @@ const SELECT_CHEVRON = {
  *
  * The keys are the vocabulary the comparison table and the cross-side valuation
  * read, so a template written here is a template those can actually price.
+ *
+ * A university's list is down to one. Tuition fee and duration were asked for
+ * here as well as on the course itself, which meant a registrar typed them
+ * twice and the two copies could disagree — and it is the course that is the
+ * truth. They now travel with the offer from the product it is sent on.
+ * Scholarship, meanwhile, was split across two fields that said the same thing
+ * in two ways; it is now the one benefit line below. What is left is the only
+ * figure a template can state that its course cannot: the deposit.
  */
 const TEMPLATE_FIGURES: Record<string, Array<{ key: string; label: string; placeholder: string }>> = {
   UNIVERSITY: [
-    { key: 'scholarshipPct', label: 'Scholarship (% of tuition)', placeholder: '40' },
-    { key: 'tuitionFee', label: 'Tuition fee', placeholder: 'CAD 42,000 / year' },
-    { key: 'durationYears', label: 'Duration in years', placeholder: '2' }
+    { key: 'depositAmount', label: 'Deposit amount (optional)', placeholder: 'e.g. CAD 2,000' }
   ],
   BANK: [
     { key: 'loanAmount', label: 'Loan amount', placeholder: '₹38,00,000' },
@@ -48,13 +57,70 @@ const TEMPLATE_FIGURES: Record<string, Array<{ key: string; label: string; place
   ]
 };
 
+/**
+ * The shapes a scholarship actually takes, offered as suggestions rather than
+ * as a closed list — a benefit is stated in whatever terms the university
+ * agreed to, and a percentage, a flat sum and none at all are all common.
+ */
+const BENEFIT_SUGGESTIONS = [
+  '40% tuition scholarship',
+  '25% tuition scholarship',
+  'CAD 10,000 scholarship',
+  'Full tuition waiver',
+  'No scholarship'
+];
+
+/**
+ * The percentage a benefit line states, if it states one.
+ *
+ * `scholarshipPct` is a number the student's comparison table and the lender's
+ * valuation both read. The form no longer asks for it separately — asking twice
+ * was the duplication being removed — so it is read back out of the sentence
+ * the officer wrote. "40% tuition scholarship" gives 40; "CAD 10,000
+ * scholarship" gives nothing, which is the truth about it.
+ */
+const percentIn = (benefit: string): number | undefined => {
+  const match = /(\d+(?:\.\d+)?)\s*%/.exec(benefit || '');
+  if (!match) return undefined;
+  const value = Number(match[1]);
+  return Number.isFinite(value) && value > 0 && value <= 100 ? value : undefined;
+};
+
+/**
+ * What a student will see under the institution's name, shown read-only while
+ * an invite is being sent.
+ *
+ * Read-only on purpose. The website is asked for once, in the organisation
+ * profile, and resolved live wherever an offer is displayed — so an officer
+ * sending their fortieth invite of the week is not asked for it a fortieth
+ * time. This row exists only so they can confirm what it currently says, and
+ * notice if it is wrong before forty students see it.
+ */
+function OfficialWebsiteRow({ website, cx }: { website?: string | null; cx: Cx }) {
+  const value = (website || '').trim();
+  return (
+    <div className={cx('invite-website')}>
+      <small>OFFICIAL WEBSITE</small>
+      {value ? (
+        <a href={websiteHref(value)} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()}>
+          {prettyDomain(value)} ↗
+        </a>
+      ) : (
+        /* Named rather than left blank: a student sees no link at all, and the
+           officer is the only person who can fix that. */
+        <em>Not set — add it in your organisation profile so students can find you.</em>
+      )}
+    </div>
+  );
+}
+
 export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
   const {
     role, cfg, orgName, orgDomain, students, products, loanProducts, bankEvaluationMode,
     productInviteDraft, setProductInviteDraft, addProductToInvite, removeProductFromInvite, availableProductsForInvite,
     activePresetCategories, getPresetsByCategory, selectPreset, sendProductInvite,
     offerDraft, setOfferDraft, onOfferCourseChange, onOfferProductChange, saveOffer,
-    catalogDraft, setCatalogDraft, saveCatalogItem, uploadProgramImage,
+    catalogDraft, setCatalogDraft, saveCatalogItem, uploadProgramImage, profile,
     quickInvite, setQuickInvite, sendQuickInvite, offerTemplates,
     templateDraft, setTemplateDraft, saveTemplate,
     negotiationOffer, setNegotiationOffer, negotiationReply, setNegotiationReply, sendNegotiationReply,
@@ -115,12 +181,12 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
               <div>
                 <h2 style={{ margin: '4px 0', fontSize: 24 }}>Invite to Product</h2>
-                <p style={{ margin: 0, color: '#526059', fontSize: 13 }}>Select a product to invite this candidate.</p>
+                <p style={{ margin: 0, color: '#52525b', fontSize: 13 }}>Select a product to invite this candidate.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setProductInviteDraft(null)}
-                style={{ background: 'transparent', border: 'none', padding: 0, fontSize: 28, lineHeight: 1, color: '#697a70', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', padding: 0, fontSize: 28, lineHeight: 1, color: '#71717a', cursor: 'pointer' }}
               >
                 ×
               </button>
@@ -129,14 +195,14 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 24 }}>
               <label style={fieldLabel}>
                 Product
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 12px', border: '1px solid #d7d4cc', borderRadius: 9, background: '#fbfcfb', minHeight: 42, alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', minHeight: 42, alignItems: 'center' }}>
                   {productInviteDraft.productNames.map((name: string) => (
-                    <span key={name} style={{ background: '#edf6f1', color: '#087a50', padding: '4px 10px', borderRadius: 16, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span key={name} style={{ background: '#f2f2f1', color: '#047857', padding: '4px 10px', borderRadius: 16, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {name}
                       <button
                         type="button"
                         onClick={() => removeProductFromInvite(name)}
-                        style={{ background: 'transparent', border: 'none', color: '#087a50', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}
+                        style={{ background: 'transparent', border: 'none', color: '#047857', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}
                       >
                         ×
                       </button>
@@ -145,7 +211,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   <select
                     value=""
                     onChange={event => addProductToInvite(event.target.value)}
-                    style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 14, color: '#172019', minWidth: 140 }}
+                    style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: 14, color: '#18181b', minWidth: 140 }}
                   >
                     <option value="" disabled>Select a product...</option>
                     {availableProductsForInvite().map(product => <option key={product.id} value={product.name}>{product.name}</option>)}
@@ -161,7 +227,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   value={productInviteDraft.conditions}
                   onChange={event => setProductInviteDraft({ ...productInviteDraft, conditions: event.target.value })}
                   placeholder={inviteForm.placeholderOf('conditions', 'e.g. Additional requirements...')}
-                  style={{ width: '100%', minHeight: 120, padding: '10px 12px', border: '1px solid #d7d4cc', borderRadius: 9, background: '#fbfcfb', fontSize: 14, color: '#172019', resize: 'none', overflow: 'hidden', lineHeight: 1.5 }}
+                  style={{ width: '100%', minHeight: 120, padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14, color: '#18181b', resize: 'none', overflow: 'hidden', lineHeight: 1.5 }}
                 />
               </label>
 
@@ -169,9 +235,9 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                 Quick Conditions
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
                   {activePresetCategories.map(category => (
-                    <div key={category} style={{ background: '#fff', border: '1px solid #e1e3e1', borderRadius: 8, overflow: 'hidden' }}>
+                    <div key={category} style={{ background: '#ffffff', border: '1px solid #e4e4e2', borderRadius: 8, overflow: 'hidden' }}>
                       <div
-                        style={{ padding: '10px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fbfcfb' }}
+                        style={{ padding: '10px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fbfbfa' }}
                         onClick={() =>
                           setProductInviteDraft({
                             ...productInviteDraft,
@@ -179,21 +245,21 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                           })
                         }
                       >
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#172019' }}>{category}</div>
-                        <div style={{ fontSize: 16, color: '#697a70', fontWeight: 400, lineHeight: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#18181b' }}>{category}</div>
+                        <div style={{ fontSize: 16, color: '#71717a', fontWeight: 400, lineHeight: 1 }}>
                           {productInviteDraft.expandedCategory === category ? '−' : '+'}
                         </div>
                       </div>
                       {productInviteDraft.expandedCategory === category && (
-                        <div style={{ padding: 8, borderTop: '1px solid #e1e3e1', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ padding: 8, borderTop: '1px solid #e4e4e2', display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {getPresetsByCategory(category).map(preset => {
                             const selected = productInviteDraft.selectedPresetByCategory[category] === preset.id;
                             return (
                               <div
                                 key={preset.id}
                                 style={{
-                                  background: selected ? '#edf6f1' : 'transparent',
-                                  border: selected ? '1px solid #087a50' : '1px solid transparent',
+                                  background: selected ? '#f2f2f1' : 'transparent',
+                                  border: selected ? '1px solid #047857' : '1px solid transparent',
                                   borderRadius: 6, padding: 10, cursor: 'pointer', transition: 'all 0.2s'
                                 }}
                                 onClick={() => selectPreset(category, preset.id, preset.text)}
@@ -201,12 +267,12 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                                   <div
                                     style={{
-                                      border: selected ? '5px solid #087a50' : '2px solid #c2c9c5',
-                                      width: 18, height: 18, borderRadius: '50%', background: '#fff', marginTop: 1,
+                                      border: selected ? '5px solid #047857' : '2px solid #d8d8d5',
+                                      width: 18, height: 18, borderRadius: '50%', background: '#ffffff', marginTop: 1,
                                       flexShrink: 0, transition: 'all 0.15s ease-in-out', boxSizing: 'border-box'
                                     }}
                                   ></div>
-                                  <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#172019', lineHeight: 1.4 }}>{preset.text}</div>
+                                  <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#18181b', lineHeight: 1.4 }}>{preset.text}</div>
                                 </div>
                               </div>
                             );
@@ -218,6 +284,8 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                 </div>
               </label>
             </div>
+
+            <OfficialWebsiteRow website={profile?.website} cx={cx} />
 
             <footer style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button className={cx('uni-secondary')} type="button" onClick={() => setProductInviteDraft(null)}>Cancel</button>
@@ -427,14 +495,19 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
             className={cx('university-offer-composer')}
             onSubmit={event => {
               event.preventDefault();
+              const statedPct = role === 'UNIVERSITY' ? percentIn(templateDraft.value) : undefined;
               saveTemplate(
                 templateDraft.productId,
                 {
                   name: templateDraft.name,
                   description: templateDraft.description || undefined,
-                  terms: Object.fromEntries(
-                    Object.entries(templateDraft.terms).filter(([, value]) => String(value).trim())
-                  ),
+                  terms: {
+                    ...Object.fromEntries(
+                      Object.entries(templateDraft.terms).filter(([, value]) => String(value).trim())
+                    ),
+                    /** Kept in step with the benefit line, never asked for twice. */
+                    ...(statedPct === undefined ? {} : { scholarshipPct: String(statedPct) })
+                  },
                   value: templateDraft.value || undefined,
                   conditions: templateDraft.conditions || undefined,
                   nextSteps: templateDraft.nextSteps.split('\n').map(step => step.trim()).filter(Boolean),
@@ -450,7 +523,10 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
               <div>
                 <small>{templateDraft.id ? 'EDIT TEMPLATE' : 'NEW TEMPLATE'}</small>
                 <h2>{templateDraft.productName}</h2>
-                <p>An offer this product is prepared to make. Written once, sent with a single click.</p>
+                <p>
+                  The terms this {role === 'BANK' ? 'product' : 'course'} is prepared to offer. Written once, sent to as many
+                  students as you like — {role === 'BANK' ? 'the product' : 'the course'}&apos;s own details travel with every offer.
+                </p>
               </div>
               <button type="button" onClick={() => setTemplateDraft(null)}>×</button>
             </header>
@@ -467,13 +543,28 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                 />
               </label>
               <label>
-                Headline figure
+                {role === 'BANK' ? 'Headline figure' : 'Scholarship / financial benefit'}
+                {/*
+                  * One field where there were two. "Headline figure" and
+                  * "Scholarship (% of tuition)" were the same promise written
+                  * twice, and an officer who filled in only one left the other
+                  * blank on the student's offer. The suggestions are a starting
+                  * point, not a closed list: a benefit can be a percentage, a
+                  * flat sum, a waiver, or nothing at all.
+                  */}
                 <input
                   name="templateValue"
+                  required
+                  list={role === 'BANK' ? undefined : 'templateBenefitOptions'}
                   value={templateDraft.value}
-                  placeholder="e.g. 40% tuition"
+                  placeholder={role === 'BANK' ? 'e.g. ₹38,00,000 at 9.4%' : 'e.g. 40% tuition scholarship'}
                   onChange={event => setTemplateDraft({ ...templateDraft, value: event.target.value })}
                 />
+                {role !== 'BANK' && (
+                  <datalist id="templateBenefitOptions">
+                    {BENEFIT_SUGGESTIONS.map(option => <option key={option} value={option} />)}
+                  </datalist>
+                )}
               </label>
 
               {(TEMPLATE_FIGURES[role] || TEMPLATE_FIGURES.UNIVERSITY).map(figure => (
@@ -497,15 +588,17 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   name="responseWindowDays"
                   type="number"
                   min="1"
+                  required
                   value={templateDraft.responseWindowDays}
                   onChange={event => setTemplateDraft({ ...templateDraft, responseWindowDays: event.target.value })}
                 />
               </label>
 
               <label className={cx('wide')}>
-                Conditions
+                Offer conditions
                 <input
                   name="templateConditions"
+                  required
                   value={templateDraft.conditions}
                   placeholder="e.g. Subject to final transcript verification"
                   onChange={event => setTemplateDraft({ ...templateDraft, conditions: event.target.value })}
@@ -517,6 +610,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                 <textarea
                   name="templateNextSteps"
                   rows={3}
+                  required
                   value={templateDraft.nextSteps}
                   placeholder={'Review the terms\nUpload your transcript'}
                   onChange={event => setTemplateDraft({ ...templateDraft, nextSteps: event.target.value })}
@@ -605,6 +699,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                     {!!template.nextSteps?.length && (
                       <ul>{template.nextSteps.map((step: string) => <li key={step}>{step}</li>)}</ul>
                     )}
+                    <OfficialWebsiteRow website={profile?.website} cx={cx} />
                   </div>
                 );
               })()}
@@ -637,39 +732,35 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
             onClick={event => event.stopPropagation()}
             style={{ maxWidth: 500, padding: 32 }}
           >
-            <header style={{ marginBottom: 8, paddingBottom: 12, borderBottom: '1px solid #e7efe9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <header style={{ marginBottom: 8, paddingBottom: 12, borderBottom: '1px solid #ececea', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ flex: 1, marginRight: 16 }}>
-                <small style={{ color: '#087a50', fontWeight: 800, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.08em' }}>
+                <small style={{ color: '#047857', fontWeight: 800, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.08em' }}>
                   {catalogDraft.id ? 'EDIT' : 'NEW'} {role === 'BANK' ? 'LOAN PRODUCT' : 'PRODUCT'}
                 </small>
-                <h2 style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 900, letterSpacing: '-0.04em' }}>
+                <h2 style={{ margin: '4px 0 0', fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em' }}>
                   {catalogDraft.id ? 'Edit Details' : 'Add Details'}
                 </h2>
               </div>
-              <button type="button" onClick={() => setCatalogDraft(null)} style={{ fontSize: 22, cursor: 'pointer', border: 'none', background: 'transparent', color: '#88968f' }}>×</button>
+              <button type="button" onClick={() => setCatalogDraft(null)} style={{ fontSize: 22, cursor: 'pointer', border: 'none', background: 'transparent', color: '#a1a1aa' }}>×</button>
             </header>
 
             <div className={cx('composer-grid')} style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {productForm.shows('category') && (
-                <label>
-                  {productForm.labelOf('category', 'Product Category')}
-                  {/*
-                    * Shown, not asked. A university issues places and a bank issues
-                    * money; offering both as a choice let a university create a
-                    * financial product it could never actually put in front of a
-                    * student. The value follows the organisation type.
-                    */}
-                  <input
-                    name="pCategory"
-                    readOnly
-                    value={catalogDraft.category || (role === 'BANK' ? 'Financial Product' : 'Academic Product')}
-                    aria-readonly="true"
-                  />
-                </label>
-              )}
+              {/*
+                * Category is no longer asked, or even shown. A university issues
+                * places and a bank issues money, so the value was never a choice —
+                * it followed the organisation type, and a read-only input
+                * restating that was one more row to read past. `saveCatalogItem`
+                * and the CSV importer both still default it from the role, so the
+                * server receives exactly what it did before.
+                *
+                * It stays in CODED_PRODUCT_FIELDS on purpose: that list is what
+                * marks a key as drawn by hand, and dropping it from there would
+                * make a published `category` field reappear further down as a
+                * generic admin addition.
+                */}
               {productForm.shows('name') && (
                 <label>
-                  {productForm.labelOf('name', 'Product name')}
+                  {productForm.labelOf('name', role === 'BANK' ? 'Product name' : 'Course name')}
                   <input
                     name="pName" required value={catalogDraft.name}
                     placeholder={productForm.placeholderOf('name', role === 'BANK' ? 'e.g. Unsecured Study Loan' : 'e.g. MSc Data Science')}
@@ -677,7 +768,9 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   />
                 </label>
               )}
-              {productForm.shows('url') && (
+              {/* A university's course link sits with the rest of the optional
+                  fields, at the foot of the block below. */}
+              {role !== 'UNIVERSITY' && productForm.shows('url') && (
                 <label>
                   {productForm.labelOf('url', 'Product web link (URL)')}
                   <input
@@ -692,56 +785,52 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
               )}
 
               {/*
-                * The academic shape of a programme: what a student compares one
+                * The academic shape of a course: what a student compares one
                 * university against another on. Universities only — a lender's
                 * product has no degree level and no intake.
+                *
+                * Six fields, all required, and with the course name above them
+                * that is the whole form. A course missing any of them cannot be
+                * compared against another course, and anything a course can be
+                * listed without is not worth asking a registrar for.
+                *
+                * Study mode, scholarship information, field of study and the
+                * course link were all dropped for the MVP. None of them is
+                * matched or filtered on, and each was one more row between a
+                * university and a published course. The columns survive in the
+                * database and the payload simply omits those keys, so a course
+                * that already carries one keeps it through an edit rather than
+                * being blanked by a draft that no longer collects it.
                 */}
               {role === 'UNIVERSITY' && (
                 <>
                   <label>
                     Degree level
                     <select
+                      required
                       value={catalogDraft.degreeLevel || ''}
                       onChange={event => setCatalogDraft({ ...catalogDraft, degreeLevel: event.target.value })}
                       style={SELECT_CHEVRON}
                     >
-                      <option value="">Not stated</option>
+                      <option value="" disabled>Select a level</option>
                       {["Bachelor's", "Master's", 'PhD', 'Diploma', 'Certificate'].map(level => (
                         <option key={level} value={level}>{level}</option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    Field of study
-                    <input
-                      value={catalogDraft.fieldOfStudy || ''}
-                      placeholder="e.g. Data Science"
-                      onChange={event => setCatalogDraft({ ...catalogDraft, fieldOfStudy: event.target.value })}
-                    />
-                  </label>
-                  <label>
                     Duration (months)
                     <input
-                      type="number" min={1} max={120}
+                      type="number" min={1} max={120} required
                       value={catalogDraft.durationMonths ?? ''}
                       placeholder="e.g. 18"
                       onChange={event => setCatalogDraft({ ...catalogDraft, durationMonths: event.target.value })}
                     />
                   </label>
                   <label>
-                    Study mode
-                    <select
-                      value={catalogDraft.studyMode || ''}
-                      onChange={event => setCatalogDraft({ ...catalogDraft, studyMode: event.target.value })}
-                      style={SELECT_CHEVRON}
-                    >
-                      <option value="">Not stated</option>
-                      {['On campus', 'Online', 'Hybrid'].map(mode => <option key={mode} value={mode}>{mode}</option>)}
-                    </select>
-                  </label>
-                  <label>
                     Campus / location
                     <input
+                      required
                       value={catalogDraft.campusLocation || ''}
                       placeholder="e.g. Toronto, Canada"
                       onChange={event => setCatalogDraft({ ...catalogDraft, campusLocation: event.target.value })}
@@ -750,6 +839,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   <label>
                     Available intakes
                     <input
+                      required
                       value={catalogDraft.intakesText ?? (catalogDraft.intakes || []).join(', ')}
                       placeholder="Fall, Winter"
                       onChange={event => setCatalogDraft({ ...catalogDraft, intakesText: event.target.value })}
@@ -758,7 +848,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   <label>
                     Tuition fee
                     <input
-                      type="number" min={0} step="0.01"
+                      type="number" min={0} step="0.01" required
                       value={catalogDraft.tuitionFee ?? ''}
                       placeholder="e.g. 24500"
                       onChange={event => setCatalogDraft({ ...catalogDraft, tuitionFee: event.target.value })}
@@ -767,35 +857,25 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                   <label>
                     Currency
                     <input
+                      required
                       value={catalogDraft.currency || ''}
                       placeholder="e.g. CAD"
                       maxLength={3}
                       onChange={event => setCatalogDraft({ ...catalogDraft, currency: event.target.value.toUpperCase() })}
                     />
                   </label>
-                  <label className={cx('product-wide')}>
-                    Scholarship information (optional)
-                    <input
-                      value={catalogDraft.scholarshipInfo || ''}
-                      placeholder="e.g. Up to 30% merit scholarship"
-                      onChange={event => setCatalogDraft({ ...catalogDraft, scholarshipInfo: event.target.value })}
-                    />
-                  </label>
                   {catalogDraft.id && (
-                    <label className={cx('product-wide')}>
-                      Programme image (optional)
-                      {catalogDraft.imageUrl && (
-                        <img src={catalogDraft.imageUrl} alt="Programme" className={cx('product-image-preview')} />
-                      )}
-                      <input
-                        type="file"
+                    <div className={cx('product-wide')}>
+                      <MediaUploadField
+                        label="Programme image"
+                        hint="Optional. Shown on the programme wherever a student compares it against another."
+                        url={catalogDraft.imageUrl}
+                        alt="Programme"
+                        shape="wide"
                         accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                        onChange={event => {
-                          const file = event.target.files?.[0];
-                          if (file) void uploadProgramImage(catalogDraft.id, file);
-                        }}
+                        onSelect={file => uploadProgramImage(catalogDraft.id, file)}
                       />
-                    </label>
+                    </div>
                   )}
                 </>
               )}
@@ -814,7 +894,7 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
               )}
             </div>
 
-            <footer style={{ marginTop: 8, paddingTop: 12, borderTop: '1px solid #e7efe9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <footer style={{ marginTop: 8, paddingTop: 12, borderTop: '1px solid #ececea', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button className={cx('uni-secondary')} type="button" onClick={() => setCatalogDraft(null)}>Cancel</button>
               <button className={cx('uni-primary')} type="submit">Save</button>
             </footer>
@@ -845,9 +925,9 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
               </p>
             </div>
             {(negotiationOffer.negotiationMessages || []).map((message, index) => (
-              <div key={index} style={{ margin: '10px 0', padding: '10px 12px', borderRadius: 9, background: '#f6f8f7' }}>
+              <div key={index} style={{ margin: '10px 0', padding: '10px 12px', borderRadius: 9, background: '#f7f7f6' }}>
                 <strong style={{ fontSize: 12 }}>{message.author}</strong>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#4a564f' }}>{message.body}</p>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#52525b' }}>{message.body}</p>
               </div>
             ))}
             <label className={cx('wide')}>

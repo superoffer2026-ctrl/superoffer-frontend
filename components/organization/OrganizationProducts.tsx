@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { classNames } from '@/lib/cx';
 import type { useOrganizationWorkspace } from '@/lib/organization/use-organization-workspace';
 import type { LoanProduct, Product, TemplateDraft } from '@/lib/organization/workspace-data';
@@ -16,9 +16,16 @@ const formatDate = (value?: string) =>
 export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
   const {
     role, cfg, user, products, loanProducts, openCatalogModal, downloadCsvTemplate, importProducts,
-    offerTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, makeTemplateDefault
+    offerTemplates, archivedTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate,
+    restoreTemplate, makeTemplateDefault
   } = workspace;
   const fileInput = useRef<HTMLInputElement>(null);
+
+  /** Which products have their archive drawer open. Closed is the resting state:
+   *  an archive is for the rare day something needs fetching back. */
+  const [openArchives, setOpenArchives] = useState<Record<string, boolean>>({});
+  const toggleArchive = (productId: string) =>
+    setOpenArchives(current => ({ ...current, [productId]: !current[productId] }));
 
   /** A blank template for a product, in the vocabulary the valuation reads. */
   const blankTemplate = (productId: string, productName: string): TemplateDraft => ({
@@ -30,14 +37,23 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
     conditions: '',
     nextSteps: '',
     responseWindowDays: '14',
+    /**
+     * A university template no longer restates its course's tuition or
+     * duration — those travel with the offer from the product itself — and its
+     * scholarship is the one benefit line, not a second percentage field. The
+     * deposit is all that is left for the template to state on its own.
+     */
     terms: role === 'BANK'
       ? { loanAmount: '', interestRate: '', tenure: '' }
-      : { scholarshipPct: '', tuitionFee: '', durationYears: '' },
+      : { depositAmount: '' },
     isDefault: false
   });
 
   const templatesFor = (productId: string) =>
     offerTemplates.filter((template: { productId: string }) => template.productId === productId);
+
+  const archivedFor = (productId: string) =>
+    archivedTemplates.filter((template: { productId: string }) => template.productId === productId);
 
   const catalog: Array<Product | LoanProduct> = role === 'BANK' ? loanProducts : products;
 
@@ -57,7 +73,7 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
           <button
             type="button"
             onClick={downloadCsvTemplate}
-            style={{ background: 'transparent', border: 'none', color: '#087a50', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+            style={{ background: 'transparent', border: 'none', color: '#047857', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
           >
             Download CSV Template
           </button>
@@ -92,7 +108,7 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
                       href={item.url}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ textDecoration: 'underline', textDecorationColor: '#c9d5cf', textUnderlineOffset: 4 }}
+                      style={{ textDecoration: 'underline', textDecorationColor: '#d8d8d5', textUnderlineOffset: 4 }}
                       onClick={event => event.stopPropagation()}
                     >
                       {item.name} ↗
@@ -103,11 +119,11 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
                 </h2>
                 <p>Created by {user?.full_name || cfg.userTitle}{item.createdAt ? ` on ${formatDate(item.createdAt)}` : ''}</p>
               </div>
-              <div style={{ fontSize: 13, color: '#4f6057', textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: 13, color: '#52525b', textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 {item.lastModifiedAt && (
                   <>
                     Last modified<br />
-                    <span style={{ color: '#172019', fontWeight: 500 }}>{formatDate(item.lastModifiedAt)}</span>
+                    <span style={{ color: '#18181b', fontWeight: 500 }}>{formatDate(item.lastModifiedAt)}</span>
                   </>
                 )}
               </div>
@@ -141,7 +157,7 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
                       <strong>{template.name}</strong>
                       {template.isDefault && <span className={cx('template-default')}>One-click</span>}
                       <small>
-                        {template.value || 'No headline figure'}
+                        {template.value || (role === 'BANK' ? 'No headline figure' : 'No benefit stated')}
                         {template.usedCount ? ` · sent ${template.usedCount}×` : ' · never sent'}
                       </small>
                     </div>
@@ -174,6 +190,42 @@ export function OrganizationProducts({ workspace }: { workspace: Workspace }) {
                     </div>
                   </div>
                 ))}
+
+                {/*
+                  * The way back out. Archiving is a soft delete — offers already
+                  * sent point at the row, so it cannot be removed — but until
+                  * now nothing listed the put-away ones, which made a button
+                  * marked "Archive" a delete in all but name. Closed by default:
+                  * this is a drawer, not part of the working list.
+                  */}
+                {!!archivedFor(item.id).length && (
+                  <div className={cx('template-archive-drawer')}>
+                    <button
+                      type="button"
+                      className={cx('template-archive-toggle')}
+                      aria-expanded={!!openArchives[item.id]}
+                      onClick={() => toggleArchive(item.id)}
+                    >
+                      <span className={cx('template-archive-caret', openArchives[item.id] && 'open')} aria-hidden="true">▸</span>
+                      Archived ({archivedFor(item.id).length})
+                    </button>
+
+                    {openArchives[item.id] && archivedFor(item.id).map((template: any) => (
+                      <div key={template.id} className={cx('product-template-row', 'template-archived-row')}>
+                        <div>
+                          <strong>{template.name}</strong>
+                          <small>
+                            {template.value || (role === 'BANK' ? 'No headline figure' : 'No benefit stated')}
+                            {template.usedCount ? ` · sent ${template.usedCount}×` : ' · never sent'}
+                          </small>
+                        </div>
+                        <div className={cx('product-template-actions')}>
+                          <button type="button" onClick={() => restoreTemplate(template.id)}>Restore</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
           ))}
