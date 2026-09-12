@@ -2,6 +2,8 @@ node_modules/
 dist/
 .angular/
 root-artifacts/
+# A previous `next dev` run left 357MB of build cache here, inside the repo.
+private/
 .vercel/
 .cache/
 .DS_Store
