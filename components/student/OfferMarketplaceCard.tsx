@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { classNames } from '@/lib/cx';
-import { offerWalletStore, type StudentOffer } from '@/lib/stores/offer-wallet.store';
+import { courseDuration, courseTuition, offerWalletStore, type StudentOffer } from '@/lib/stores/offer-wallet.store';
 import styles from '@/styles/OfferMarketplaceCard.module.css';
 import { OfferJourneyTracker } from './OfferJourneyTracker';
 
@@ -30,9 +30,9 @@ function highlightsFor(offer: StudentOffer): Array<{ label: string; value: strin
   switch (offer.category) {
     case 'University':
       return [
-        { label: 'Tuition', value: offer.tuitionFee || '—' },
+        { label: 'Tuition', value: courseTuition(offer) || '—' },
         { label: 'Scholarship', value: offer.scholarshipPct ? `${offer.scholarshipPct}%` : '—' },
-        { label: 'Duration', value: offer.durationYears ? `${offer.durationYears} yr` : '—' }
+        { label: 'Duration', value: courseDuration(offer) || '—' }
       ];
     case 'Bank':
       return [

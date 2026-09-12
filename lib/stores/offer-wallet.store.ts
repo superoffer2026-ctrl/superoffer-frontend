@@ -93,6 +93,66 @@ export interface StudentOffer {
   supportServices?: string;
 }
 
+/**
+ * A website as a student should read it: no scheme, no `www.`, no trailing
+ * slash — `northbridge.edu`, not `https://www.northbridge.edu/`. The href keeps
+ * whatever was stored; only the label is tidied.
+ */
+export function prettyDomain(url: string): string {
+  return (url || '')
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/\/+$/, '');
+}
+
+/** A bare domain needs a scheme before a browser will treat it as a link. */
+export function websiteHref(url: string): string {
+  const value = (url || '').trim();
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+/**
+ * The institution's official website, resolved from its profile as it stands
+ * today — not from the copy frozen onto the offer.
+ *
+ * The rest of the snapshot is deliberately frozen: an offer is a promise made
+ * on a date, and next year's tuition must not rewrite what a student was
+ * already told. A website is not a promise, it is where the institution lives.
+ * If a university moves domains, every student holding one of its offers should
+ * follow the move without the university resending anything — so this reads the
+ * live `institutionWebsite` and falls back to the snapshot only for an offer
+ * whose organisation record no longer carries one.
+ */
+export function institutionWebsiteOf(offer: StudentOffer): string {
+  return (offer.institutionWebsite || '').trim() || (offer.snapshot?.university?.website || '').trim();
+}
+
+/**
+ * Tuition and duration as the course itself states them.
+ *
+ * An offer template no longer restates its course's figures — a university
+ * wrote them twice and the two copies could disagree — so the screens that
+ * compare offers side by side read the course record frozen onto the offer.
+ * Offers sent on an older template still carry their own copies in `terms`,
+ * which is what the fallbacks are for.
+ *
+ * Duration is stored in months, so a course shorter than a year says months
+ * rather than a fraction of one. This is the same phrasing the offer detail
+ * already uses, so a student reads one duration in one form everywhere.
+ */
+export function courseTuition(offer: StudentOffer): string {
+  const program = offer.snapshot?.program;
+  if (program?.tuitionFee) return `${program.currency || ''} ${program.tuitionFee}`.trim();
+  return offer.tuitionFee || '';
+}
+
+export function courseDuration(offer: StudentOffer): string {
+  const months = offer.snapshot?.program?.durationMonths;
+  if (months) return months % 12 === 0 ? `${months / 12} year${months === 12 ? '' : 's'}` : `${months} months`;
+  return offer.durationYears ? `${offer.durationYears} year${offer.durationYears === 1 ? '' : 's'}` : '';
+}
+
 export interface OfferCounts {
   total: number;
   new: number;

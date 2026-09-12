@@ -1,7 +1,7 @@
 'use client';
 
 import { classNames } from '@/lib/cx';
-import type { OfferCategory, StudentOffer } from '@/lib/stores/offer-wallet.store';
+import { courseDuration, courseTuition, type OfferCategory, type StudentOffer } from '@/lib/stores/offer-wallet.store';
 import styles from '@/styles/OfferWorkspace.module.css';
 
 const cx = classNames(styles);
@@ -21,11 +21,11 @@ function fieldsFor(category: OfferCategory): Array<{ label: string; value: (offe
   switch (category) {
     case 'University':
       return [
-        { label: 'Tuition Fee', value: o => o.tuitionFee || '' },
+        { label: 'Tuition Fee', value: courseTuition },
         { label: 'Scholarship', value: o => (o.scholarshipPct ? `${o.scholarshipPct}%` : '') },
         { label: 'Country', value: o => o.location },
         { label: 'Course', value: o => o.program },
-        { label: 'Duration', value: o => (o.durationYears ? `${o.durationYears} year${o.durationYears === 1 ? '' : 's'}` : '') },
+        { label: 'Duration', value: courseDuration },
         { label: 'QS Ranking (Placeholder)', value: o => o.qsRanking || '' },
         { label: 'Placement Highlights', value: o => o.placementHighlights || '' }
       ];

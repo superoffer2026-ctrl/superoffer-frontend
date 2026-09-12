@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { classNames } from '@/lib/cx';
-import { offerWalletStore, type OfferCategory, type OfferDecisionStatus, type StudentOffer } from '@/lib/stores/offer-wallet.store';
+import {
+  institutionWebsiteOf, prettyDomain, websiteHref, offerWalletStore,
+  type OfferCategory, type OfferDecisionStatus, type StudentOffer
+} from '@/lib/stores/offer-wallet.store';
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/OfferWorkspace.module.css';
@@ -63,6 +66,23 @@ export function StudentOfferInbox() {
     walletStore.setStatus(selected.id, status);
   };
 
+  /**
+   * Accepting and rejecting are both one-way — the server treats either as
+   * final — so each is asked about before it is done. Shortlisting is not:
+   * it changes nothing that cannot be changed back, and a dialog in front of
+   * it would only be in the way.
+   */
+  const [confirming, setConfirming] = useState<'Accepted' | 'Rejected' | null>(null);
+
+  /** Clear the question if the student moves to another offer mid-thought. */
+  useEffect(() => { setConfirming(null); }, [selectedId]);
+
+  const confirmDecision = () => {
+    if (!confirming) return;
+    setStatus(confirming);
+    setConfirming(null);
+  };
+
   const sendMessage = () => {
     const body = draft.trim();
     if (!body || !selected) return;
@@ -94,7 +114,14 @@ export function StudentOfferInbox() {
   const DETAIL_FIELDS: Array<{ key: keyof StudentOffer; label: string; format?: (raw: string) => string }> = [
     { key: 'location', label: 'LOCATION' },
     { key: 'tuitionFee', label: 'TUITION FEE' },
-    { key: 'scholarshipPct', label: 'SCHOLARSHIP', format: raw => `${raw}%` },
+    /*
+     * No SCHOLARSHIP row here. The headline already states the benefit in the
+     * university's own words — "40% tuition scholarship" — and this row restated
+     * the same thing as a bare "40%", which read like a second, smaller award.
+     * `scholarshipPct` is still carried on the offer: the comparison table sorts
+     * on it and a lender prices against it. It is the duplicate *display* that
+     * is gone, not the figure.
+     */
     { key: 'durationYears', label: 'DURATION', format: raw => `${raw} ${raw === '1' ? 'year' : 'years'}` },
     { key: 'qsRanking', label: 'QS RANKING' },
     { key: 'placementHighlights', label: 'PLACEMENT HIGHLIGHTS' },
@@ -230,9 +257,17 @@ export function StudentOfferInbox() {
                     <small>{selected.category.toUpperCase()} OFFER</small>
                     <h2>{selected.institution}</h2>
                     <p className={cx('reading-course')}>{selected.program}</p>
-                    {isStated(selected.institutionWebsite) && (
-                      <a className={cx('reading-institution-link')} href={selected.institutionWebsite} target="_blank" rel="noreferrer">
-                        {selected.institutionWebsite.replace(/^https?:\/\//, '')} ↗
+                    {/* Resolved from the institution's profile as it stands now, so a
+                        university that changes domain is followed by every offer it has
+                        already sent — without resending any of them. */}
+                    {isStated(institutionWebsiteOf(selected)) && (
+                      <a
+                        className={cx('reading-institution-link')}
+                        href={websiteHref(institutionWebsiteOf(selected))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        🔗 {prettyDomain(institutionWebsiteOf(selected))} ↗
                       </a>
                     )}
                   </div>
@@ -319,8 +354,17 @@ export function StudentOfferInbox() {
                         <div>
                           <h3>{uni?.name}</h3>
                           <p>{[prog?.campusLocation || uni?.city, uni?.country].filter(Boolean).join(', ')}</p>
-                          {uni?.website && (
-                            <a href={uni.website} target="_blank" rel="noreferrer noopener">{uni.website}</a>
+                          {/* The live profile website, not `uni.website` — that is the
+                              copy frozen the day this offer was sent, and would leave a
+                              student pointing at a domain the university has left. */}
+                          {!!institutionWebsiteOf(selected) && (
+                            <a
+                              href={websiteHref(institutionWebsiteOf(selected))}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {prettyDomain(institutionWebsiteOf(selected))} ↗
+                            </a>
                           )}
                         </div>
                       </header>
@@ -365,23 +409,72 @@ export function StudentOfferInbox() {
                 )}
               </div>
 
-              <footer className={cx('offer-decision-bar')}>
-                <button
-                  className={cx('secondary-btn', 'shortlist-action', selected.status === 'Shortlisted' && 'chosen')}
-                  onClick={() => setStatus('Shortlisted')}
-                >
-                  ☆ Shortlist
-                </button>
-                <button
-                  className={cx('secondary-btn', 'reject-action', selected.status === 'Rejected' && 'chosen')}
-                  onClick={() => setStatus('Rejected')}
-                >
-                  Decline
-                </button>
-                <button className={cx('primary-btn')} onClick={() => setStatus('Accepted')}>
-                  {selected.status === 'Accepted' ? '✓ Accepted' : 'Accept offer'}
-                </button>
-              </footer>
+              {/*
+                * What the student can still do with this offer.
+                *
+                * The three actions were always here, but always all three,
+                * always enabled — a student who had already declined could
+                * press Accept and get a raw API error back. The server treats
+                * accepted, rejected and expired as final, so the bar now says
+                * what happened instead of offering a button that cannot work.
+                */}
+              {(() => {
+                const decided = selected.status === 'Accepted' || selected.status === 'Rejected';
+                const expired = !decided && new Date(selected.deadlineAt).getTime() < Date.now();
+
+                if (decided || expired) {
+                  return (
+                    <footer className={cx('offer-decision-bar', 'decision-settled')}>
+                      <div
+                        className={cx(
+                          'decision-outcome',
+                          selected.status === 'Accepted' && 'outcome-accepted',
+                          selected.status === 'Rejected' && 'outcome-rejected',
+                          expired && 'outcome-expired'
+                        )}
+                      >
+                        <strong>
+                          {selected.status === 'Accepted' ? '✓ You accepted this offer'
+                            : selected.status === 'Rejected' ? 'You rejected this offer'
+                              : 'This offer has expired'}
+                        </strong>
+                        <p>
+                          {selected.status === 'Accepted'
+                            ? (selected.nextSteps.length
+                              ? `${selected.institution} will be in touch. Your next steps are listed above, and you can message them in this thread.`
+                              : `${selected.institution} will be in touch. You can message them in this thread.`)
+                            : selected.status === 'Rejected'
+                              ? `${selected.institution} has been told. Your other offers are unaffected.`
+                              : `The deadline passed on ${new Date(selected.deadlineAt).toLocaleDateString()}. Message ${selected.institution} if you still want to talk.`}
+                        </p>
+                      </div>
+                    </footer>
+                  );
+                }
+
+                const shortlisted = selected.status === 'Shortlisted';
+                return (
+                  <footer className={cx('offer-decision-bar')}>
+                    <button
+                      type="button"
+                      className={cx('secondary-btn', 'shortlist-action', shortlisted && 'chosen')}
+                      onClick={() => setStatus(shortlisted ? 'Pending' : 'Shortlisted')}
+                    >
+                      {shortlisted ? '★ Remove from shortlist' : '☆ Shortlist'}
+                    </button>
+                    <button
+                      type="button"
+                      className={cx('secondary-btn', 'reject-action')}
+                      onClick={() => setConfirming('Rejected')}
+                    >
+                      Reject offer
+                    </button>
+                    <button type="button" className={cx('primary-btn')} onClick={() => setConfirming('Accepted')}>
+                      Accept offer
+                    </button>
+                  </footer>
+                );
+              })()}
             </div>
 
             <section className={cx('offer-conversation')}>
@@ -431,6 +524,49 @@ export function StudentOfferInbox() {
           )}
         </section>
       </main>
+
+      {/*
+        * Asked before either one-way decision goes through, and worded so the
+        * student knows which one they are about to make and what it costs them.
+        * Same panel pattern as the compare drawer, so it is not a new kind of
+        * thing on this page.
+        */}
+      {confirming && selected && (
+        <div
+          className={cx('compare-panel-backdrop')}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="decision-confirm-title"
+          onClick={() => setConfirming(null)}
+        >
+          <section className={cx('decision-confirm')} onClick={event => event.stopPropagation()}>
+            <h2 id="decision-confirm-title">
+              {confirming === 'Accepted' ? 'Accept this offer?' : 'Reject this offer?'}
+            </h2>
+            <p className={cx('decision-confirm-what')}>
+              <strong>{selected.headline}</strong>
+              <span>{selected.institution} · {selected.program}</span>
+            </p>
+            <p className={cx('decision-confirm-body')}>
+              {confirming === 'Accepted'
+                ? `You are telling ${selected.institution} you want to go ahead with ${selected.program}. They will be told straight away. Your other offers are unaffected — you can accept more than one and decide later. This particular acceptance cannot be undone here; you would have to ask ${selected.institution} to withdraw it.`
+                : `You are turning down ${selected.institution}'s offer. They will be told, and this cannot be undone here. Your other offers are unaffected — if you are only unsure, shortlist it instead and come back to it.`}
+            </p>
+            <footer className={cx('decision-confirm-actions')}>
+              <button type="button" className={cx('secondary-btn')} onClick={() => setConfirming(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={cx(confirming === 'Accepted' ? 'primary-btn' : 'secondary-btn', confirming === 'Rejected' && 'reject-action')}
+                onClick={confirmDecision}
+              >
+                {confirming === 'Accepted' ? 'Yes, accept offer' : 'Yes, reject offer'}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </StudentWorkspaceShell>
   );
 }

@@ -39,7 +39,17 @@
 .offer-workspace {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.25fr) minmax(320px, 1fr);
-  height: 100vh;
+  /*
+   * Fills its container, not the viewport.
+   *
+   * This was `100vh`, from when the offers workspace was the whole screen. It
+   * now sits inside the student shell, under a 60px header and inset by the
+   * scene's padding — so a full viewport height overflowed its parent by about
+   * 96px, and the parent clips. What fell into that clipped strip was the very
+   * last thing in the details column: the Accept / Shortlist / Reject bar.
+   */
+  height: 100%;
+  min-height: 0;
 }
 
 .mailbox-error {
@@ -615,6 +625,20 @@
   padding: 14px 24px;
   border-top: 1px solid var(--ow-line);
   background: var(--ow-surface);
+  /*
+   * Stays on screen while the offer is.
+   *
+   * In the three-column layout this bar already sat at the foot of its own
+   * column, above the fold. Below 1180px the pane collapses into one long
+   * scrolling column — details, then the bar, then the conversation — and the
+   * only actions on the page ended up somewhere a student had to go looking
+   * for. Sticky keeps them in reach at any width; it changes nothing in the
+   * wide layout, where the bar is already pinned.
+   */
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  box-shadow: 0 -6px 16px -12px rgba(13, 36, 23, 0.35);
 }
 
 .offer-decision-bar button {
@@ -992,3 +1016,67 @@
   display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; color: #8a978f;
 }
 .offer-university-grid strong { display: block; margin-top: 3px; font-size: 14px; color: #1d2b24; line-height: 1.45; }
+
+
+/* ------------------------------------------------ deciding on an offer -- */
+
+/* Once an offer is accepted, rejected or expired there is nothing left to
+   press, so the bar says what happened instead of holding three buttons that
+   the server would refuse. */
+.offer-decision-bar.decision-settled { display: block; }
+.decision-outcome { display: flex; flex-direction: column; gap: 3px; }
+.decision-outcome strong { font-size: 13.5px; font-weight: 800; color: #46554c; }
+.decision-outcome p { margin: 0; font-size: 12.5px; line-height: 1.5; color: #6d7972; }
+.outcome-accepted strong { color: var(--ow-green); }
+.outcome-rejected strong { color: var(--ow-red); }
+.outcome-expired strong { color: var(--ow-amber); }
+
+/* The one-way decisions are asked about first. Same drawer chrome as the
+   compare panel, so this is not a new kind of thing on the page. */
+.decision-confirm {
+  /*
+   * The workspace palette, re-declared here.
+   *
+   * These tokens live on `.offer-workspace-page`, and this dialog is mounted
+   * outside it — it is fixed to the viewport, as a sibling of the workspace.
+   * So `.primary-btn`'s `background: var(--ow-green)` resolved to nothing while
+   * its `color: #fff` still applied, and Accept came out as white text on a
+   * white card. Re-rooting the palette here lets the existing button classes
+   * work exactly as they do everywhere else, rather than restating their
+   * colours in a second place.
+   */
+  --ow-surface: #fff;
+  --ow-line: rgba(17, 17, 19, 0.08);
+  --ow-green: #047857;
+  --ow-green-soft: #ecfdf5;
+  --ow-red: #a3372c;
+  --ow-muted: #71717a;
+
+  width: min(460px, 100%);
+  padding: 26px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 30px 90px rgba(13, 36, 23, 0.28);
+}
+.decision-confirm h2 { margin: 0 0 14px; font-size: 21px; letter-spacing: -0.02em; }
+.decision-confirm-what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f5f8f6;
+}
+.decision-confirm-what strong { font-size: 14px; color: #1f2a24; }
+.decision-confirm-what span { font-size: 12.5px; color: #6d7972; }
+.decision-confirm-body { margin: 0; font-size: 13.5px; line-height: 1.6; color: #46554c; }
+.decision-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.decision-confirm-actions button {
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s;
+}
