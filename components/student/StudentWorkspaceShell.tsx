@@ -46,11 +46,18 @@ export function StudentWorkspaceShell({
   children,
   layout = 'page',
   backdrop = 'canvas',
+  frame = 'card',
   sky = ['#e8e6ff', '#e0f2ff', '#ffe9dc']
 }: {
   children: ReactNode;
   layout?: 'page' | 'workspace';
   backdrop?: 'canvas' | 'scene';
+  /**
+   * Over the scene, a page is normally given one white card to sit in.
+   * `frame="bare"` skips that, for a page that draws its own — the loan journey
+   * brings the wizard's frame, and a card inside a card reads as a mistake.
+   */
+  frame?: 'card' | 'bare';
   sky?: [string, string, string];
 }) {
   const profile = useStudentProfile();
@@ -155,7 +162,7 @@ export function StudentWorkspaceShell({
       </header>
 
       {/* ------------------------------------------------------------- main */}
-      <main className={cx('main', layout === 'workspace' && 'workspace')}>
+      <main className={cx('main', layout === 'workspace' && 'workspace', frame === 'bare' && 'bare')}>
         <div className={cx('wrap')}>{children}</div>
       </main>
     </div>

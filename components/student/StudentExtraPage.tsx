@@ -126,7 +126,13 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   };
 
   return (
-    <StudentWorkspaceShell backdrop="scene" sky={SKY[page]}>
+    <StudentWorkspaceShell
+      backdrop="scene"
+      sky={SKY[page]}
+      /* The loan journey draws the wizard's own frame, so the shell must not
+         put it inside a second card. */
+      frame={page === 'loan-eligibility' ? 'bare' : 'card'}
+    >
       <main className={cx('student-extra')}>
         {page !== 'loan-eligibility' && (
           <header>

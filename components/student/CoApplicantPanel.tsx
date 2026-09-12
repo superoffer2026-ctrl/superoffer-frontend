@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, type ApiError } from '@/lib/api/auth-api';
 import { classNames } from '@/lib/cx';
@@ -8,16 +8,12 @@ import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
 import styles from '@/styles/CoApplicant.module.css';
+import wizardStyles from '@/styles/student/Wizard.module.css';
+import { LOAN_COPY } from '@/lib/models/loan-journey-copy';
+import { WizardGuide, WizardIllustration } from './wizard/WizardIllustration';
 
 const cx = classNames(styles);
-
-interface Eligibility {
-  verdict: 'LIKELY' | 'POSSIBLE' | 'UNLIKELY' | 'UNKNOWN';
-  affordableEmi: number;
-  indicativeAmount: number;
-  obligationRatio: number;
-  reasons: string[];
-}
+const wz = classNames(wizardStyles);
 
 interface CreditCheck {
   /** The CIBIL score itself, 300-900. Null when the bureau returned no reading. */
@@ -37,16 +33,21 @@ const money = (value: number) => `₹${new Intl.NumberFormat('en-IN', { maximumF
  *
  * 300-900 is a range almost nobody holds in their head, so the number alone
  * says little — "742" means something once it is placed on the scale and named.
- * The tones are the same three the eligibility verdict already uses, so a strong
- * score and a strong verdict do not disagree visually.
+ * Three tones rather than six, so neighbouring bands do not read as different
+ * kinds of answer.
  */
-const SCORE_READS: { from: number; label: string; tone: string; colour: string }[] = [
-  { from: 800, label: 'Excellent', tone: 'good', colour: '#047857' },
-  { from: 750, label: 'Strong', tone: 'good', colour: '#2e9b63' },
-  { from: 700, label: 'Good', tone: 'good', colour: '#5d9f46' },
-  { from: 650, label: 'Fair', tone: 'fair', colour: '#c2912f' },
-  { from: 550, label: 'Weak', tone: 'fair', colour: '#cb7a3a' },
-  { from: 300, label: 'Poor', tone: 'poor', colour: '#b4453c' }
+const SCORE_READS: { from: number; label: string; tone: string; colour: string; reads: string }[] = [
+  /*
+   * `reads` is the sentence under the gauge. It describes the credit profile and
+   * nothing beyond it: what a lender will do with the number is theirs to decide,
+   * so none of these promises or implies an outcome.
+   */
+  { from: 800, label: 'Excellent', tone: 'good', colour: '#047857', reads: 'Your credit profile is excellent.' },
+  { from: 750, label: 'Strong', tone: 'good', colour: '#2e9b63', reads: 'Your credit profile looks strong.' },
+  { from: 700, label: 'Good', tone: 'good', colour: '#5d9f46', reads: 'Your credit profile looks good.' },
+  { from: 650, label: 'Fair', tone: 'fair', colour: '#c2912f', reads: 'Your credit profile is fair.' },
+  { from: 550, label: 'Weak', tone: 'fair', colour: '#cb7a3a', reads: 'Your credit profile has some weak points.' },
+  { from: 300, label: 'Poor', tone: 'poor', colour: '#b4453c', reads: 'Your credit profile needs attention.' }
 ];
 
 const SCORE_FLOOR = 300;
@@ -56,13 +57,6 @@ const ARC_LENGTH = Math.PI * 84;
 
 const readingFor = (score: number) =>
   SCORE_READS.find(entry => score >= entry.from) ?? SCORE_READS[SCORE_READS.length - 1];
-
-const VERDICT_COPY: Record<Eligibility['verdict'], { label: string; tone: string }> = {
-  LIKELY: { label: 'A lender is likely to consider this', tone: 'good' },
-  POSSIBLE: { label: 'A lender may consider this', tone: 'fair' },
-  UNLIKELY: { label: 'A lender is unlikely to lend on this alone', tone: 'poor' },
-  UNKNOWN: { label: 'Not enough yet to say', tone: 'unknown' }
-};
 
 /** The finance questions. `existingEmi` only counts once `hasExistingLoan` is "Yes". */
 const FINANCE_KEYS = [
@@ -87,12 +81,6 @@ const CODED_KEYS = [...FINANCE_KEYS, ...DECLARATION_KEYS, ...IDENTITY_KEYS];
 
 const hasAnswer = (values: Record<string, unknown>, key: string) => String(values[key] ?? '').trim() !== '';
 
-/** Fixed question numbers — matches the order a lender actually cares about, not the filtered/active list. */
-const FIELD_NUMBER: Record<FinanceKey, number> = {
-  relationship: 1, employmentType: 2, monthlyIncome: 3, hasExistingLoan: 4, existingEmi: 5,
-  familyContribution: 6, loanAmountRequested: 7
-};
-
 const icon = (paths: string) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: paths }} />
 );
@@ -111,8 +99,14 @@ const SHIELD_ICON = icon('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/
 
 /**
  * Financial eligibility for an education loan, and an optional credit check on
- * whoever is supporting it — one page, not a multi-step quiz, so a student can
- * see the whole shape of what's being asked and fill it in any order.
+ * whoever is supporting it — asked one question at a time, in the same frame as
+ * the profile wizard.
+ *
+ * It used to be one long page, on the reasoning that seeing the whole shape of
+ * what is asked helps. In practice it read as a form about somebody else's
+ * money and was abandoned partway; a single question with a Continue button is
+ * the same seven answers, without the wall. The questions, their order and what
+ * is saved are unchanged — only how many are on screen at once.
  *
  * The student stays the user throughout. Reached from the dashboard's loan flow
  * rather than as an onboarding step, since filling this in is opt-in.
@@ -135,7 +129,6 @@ export function CoApplicantPanel() {
   const [creditConsent, setCreditConsent] = useState(false);
   const [creditError, setCreditError] = useState('');
   const [check, setCheck] = useState<CreditCheck | null>(null);
-  const [eligibility, setEligibility] = useState<Eligibility | null>(null);
   const [checking, setChecking] = useState(false);
 
   const handleUnauthorized = () => {
@@ -158,7 +151,6 @@ export function CoApplicantPanel() {
         ]);
         setValues((savedValues as Record<string, unknown>) || {});
         setCheck(summary.check || null);
-        setEligibility(summary.eligibility || null);
       } catch (e) {
         if ((e as ApiError).status === 401) return handleUnauthorized();
       } finally {
@@ -170,6 +162,31 @@ export function CoApplicantPanel() {
 
   const emiApplies = values.hasExistingLoan === 'Yes';
   const activeFinanceKeys = FINANCE_KEYS.filter(key => key !== 'existingEmi' || emiApplies);
+
+  /**
+   * The journey: every live finance question, then the declarations, then the
+   * result. Recomputed each render, because answering "No" to an existing loan
+   * retires its EMI question — so Continue moves to whatever is genuinely next.
+   */
+  const stepIds = [...activeFinanceKeys, 'declarations', 'result'] as const;
+  const [stepIndex, setStepIndex] = useState(0);
+  const stepAt = Math.min(stepIndex, stepIds.length - 1);
+  const stepId = stepIds[stepAt];
+
+  /**
+   * A student coming back lands on the first thing still unanswered rather than
+   * at the top — the whole point of saving as you go is not having to walk past
+   * your own answers again.
+   */
+  const resumed = useRef(false);
+  useEffect(() => {
+    if (!loaded || resumed.current) return;
+    resumed.current = true;
+    const firstGap = activeFinanceKeys.findIndex(key => !hasAnswer(values, key));
+    if (firstGap >= 0) setStepIndex(firstGap);
+    else setStepIndex(declarationsAccepted ? stepIds.length - 1 : activeFinanceKeys.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
 
   /** A ticked box, not merely a stored value — `false` is an answer, and not the one required. */
   const declarationsAccepted = DECLARATION_KEYS.every(key => values[key] === true);
@@ -237,9 +254,6 @@ export function CoApplicantPanel() {
         consent: true
       });
       setCheck(result);
-      /** A reading changes what a lender would make of this household. */
-      const summary = await authApi.loanEligibility(token);
-      setEligibility(summary.eligibility || null);
       await profile.refresh();
     } catch (e) {
       if ((e as ApiError).status === 401) return handleUnauthorized();
@@ -261,10 +275,6 @@ export function CoApplicantPanel() {
     return 'their';
   })();
 
-  const verdict = eligibility ? VERDICT_COPY[eligibility.verdict] : null;
-
-  const answeredCount = activeFinanceKeys.filter(key => hasAnswer(values, key)).length;
-  const progressPct = Math.round((answeredCount / activeFinanceKeys.length) * 100);
 
   /** Just the control — pills or input, no label/wrapper. Shared by the quiz cards and the plain identity fields. */
   const renderControl = (key: FinanceKey | IdentityKey | DeclarationKey, def: NonNullable<ReturnType<typeof fieldByKey.get>>) => {
@@ -314,27 +324,6 @@ export function CoApplicantPanel() {
     );
   };
 
-  /** A finance question as its own card — numbered and icon-led, so the page reads like a short guided quiz. */
-  const renderQuizCard = (key: FinanceKey) => {
-    const def = fieldByKey.get(key);
-    if (!def) return null;
-    const invalid = touched[key] && !hasAnswer(values, key);
-    const answered = hasAnswer(values, key);
-
-    return (
-      <div key={key} className={cx('quiz-card', answered && 'is-answered', invalid && 'field-invalid')}>
-        <div className={cx('quiz-card-icon')}>{FIELD_ICON[key]}</div>
-        <div className={cx('quiz-card-body')}>
-          <span className={cx('quiz-card-eyebrow')}>QUESTION {FIELD_NUMBER[key]} OF {FINANCE_KEYS.length}</span>
-          <span className={cx('quiz-card-label')}>{def.label}</span>
-          {renderControl(key, def)}
-          {def.helpText && <small className={cx('field-hint')}>{def.helpText}</small>}
-          {invalid && <small className={cx('field-error')}>This is needed</small>}
-        </div>
-      </div>
-    );
-  };
-
   /** Plain labelled field — used for the identity block, which stays a simple grid, not a quiz card. */
   const renderField = (key: FinanceKey | IdentityKey | DeclarationKey) => {
     const def = fieldByKey.get(key);
@@ -366,173 +355,394 @@ export function CoApplicantPanel() {
     );
   };
 
+  /**
+   * The funding details are complete and stored — every live question answered
+   * and both declarations accepted. Deliberately independent of the credit
+   * check: a lender screens on income and obligations, and a CIBIL reading only
+   * refines that, so the student has finished without it.
+   */
+  const financeSubmitted = !missingFinance.length && declarationsAccepted;
+
+  const copy = LOAN_COPY[stepId] || LOAN_COPY.result;
+
+  /** Whether this step has what it needs before Continue will move on. */
+  const stepReady = (() => {
+    if (stepId === 'result') return true;
+    if (stepId === 'declarations') return declarationsAccepted;
+    return hasAnswer(values, stepId);
+  })();
+
+  const goBack = () => setStepIndex(index => Math.max(0, index - 1));
+
+  /**
+   * Continue. Every step but the last simply advances; the declarations step
+   * saves first, because that is the point the student has confirmed the
+   * figures and there is a complete set of answers to send.
+   */
+  const goNext = async () => {
+    if (stepId === 'result') return;
+
+    if (!stepReady) {
+      setTouched(t => ({
+        ...t,
+        ...(stepId === 'declarations'
+          ? Object.fromEntries(DECLARATION_KEYS.map(key => [key, true]))
+          : { [stepId]: true })
+      }));
+      return;
+    }
+
+    if (stepId === 'declarations') {
+      await saveFinance();
+      /** A failed save keeps the student here rather than showing a result built on nothing. */
+      if (missingFinance.length) return;
+    }
+    setStepIndex(index => Math.min(index + 1, stepIds.length - 1));
+  };
+
   return (
-    <section className={cx('co-applicant')}>
-      <header className={cx('page-head')}>
-        <span className={cx('quiz-kicker')}>FINANCIAL ELIGIBILITY</span>
-        <h2>Tell us who's funding your education</h2>
-        <p className={cx('quiz-hint')}>
-          A lender reads this person's income and credit record, not yours — a few details here is what lets
-          them tell you whether they can help.
-        </p>
-        <div className={cx('quiz-progress-wrap')}>
-          <div className={cx('quiz-progress')}>
-            <div className={cx('quiz-progress-fill')} style={{ width: `${progressPct}%` }} />
+    <div className={`${wz('embedded')} ${cx('journey')}`}>
+      <section className={wz('frame')} aria-labelledby="loan-step-title">
+        <header className={wz('frameHead')}>
+          <h1 id="loan-step-title">Loan &amp; Funding</h1>
+          <div className={wz('headRight')}>
+            <span className={wz('counter')}>{stepAt + 1}/{stepIds.length}</span>
           </div>
-          <span className={cx('quiz-progress-label')}>{answeredCount} of {activeFinanceKeys.length} answered</span>
-        </div>
-      </header>
+        </header>
 
-      <div className={cx('quiz-list')}>
-        {activeFinanceKeys.map(renderQuizCard)}
-      </div>
+        {/* One segment per step: filled once passed, bright for the one open now. */}
+        <nav className={wz('segments')} aria-label="Loan questions">
+          {stepIds.map((id, index) => {
+            const reachable = index <= stepAt;
+            const className = wz('segment', index === stepAt && 'current', index < stepAt && 'complete');
+            /* A step already passed is a way back to that answer. One not yet
+               reached is not clickable — the questions build on each other. */
+            return reachable ? (
+              <button
+                key={id}
+                type="button"
+                className={className}
+                onClick={() => setStepIndex(index)}
+                aria-current={index === stepAt ? 'step' : undefined}
+                aria-label={`Go to question ${index + 1}`}
+              />
+            ) : (
+              <span key={id} className={className} />
+            );
+          })}
+        </nav>
 
-      <div className={cx('form-grid', 'declaration-group')}>
-        {DECLARATION_KEYS.map(renderField)}
-        {DECLARATION_KEYS.some(key => touched[key]) && !declarationsAccepted && (
-          <small className={cx('field-error')}>Please accept both declarations to continue</small>
-        )}
-      </div>
+        {/*
+          * The result step is not a question, so it drops the wizard's
+          * furniture — no guide, no illustration, no tip. Those left a 300px
+          * picture beside an empty column, and on the one screen where a
+          * lender's actual answer appears, nothing should compete with it.
+          */}
+        {stepId === 'result' ? (
+          <section className={cx('cibil')} aria-labelledby="cibil-title">
+            {(() => {
+              const scored = check?.outcome === 'SCORED' && typeof check.score === 'number';
+              const reading = scored ? readingFor(check!.score as number) : null;
+              const progress = scored ? ((check!.score as number) - SCORE_FLOOR) / (SCORE_CEILING - SCORE_FLOOR) : 0;
+              const filled = ARC_LENGTH * Math.min(1, Math.max(0, progress));
 
-      {error && <p className={cx('error')} role="alert">{error}</p>}
+              return (
+                <>
+                  {/* The gauge is the screen. Before a check it is drawn empty at
+                      the same size, so the student can see what they are about to
+                      get rather than a button that promises something unseen. */}
+                  <div
+                    className={cx('cibil-dial', scored && reading!.tone, !scored && 'is-empty')}
+                    style={scored ? ({ ['--cibil-colour' as string]: reading!.colour }) : undefined}
+                  >
+                    <svg viewBox="0 0 240 150" role="img" aria-label={scored ? `CIBIL score ${check!.score} out of ${SCORE_CEILING}` : 'CIBIL score not checked yet'}>
+                      <path d="M 24 124 A 96 96 0 0 1 216 124" fill="none" stroke="#eceff0" strokeWidth="18" strokeLinecap="round" />
+                      {scored && (
+                        <path
+                          className={cx('cibil-arc')}
+                          d="M 24 124 A 96 96 0 0 1 216 124"
+                          fill="none"
+                          stroke={reading!.colour}
+                          strokeWidth="18"
+                          strokeLinecap="round"
+                          strokeDasharray={`${filled} ${ARC_LENGTH}`}
+                        />
+                      )}
+                      <text x="24" y="146" textAnchor="middle" className={cx('cibil-end')}>{SCORE_FLOOR}</text>
+                      <text x="216" y="146" textAnchor="middle" className={cx('cibil-end')}>{SCORE_CEILING}</text>
+                    </svg>
 
-      <div className={cx('foot')}>
-        <small className={cx('muted')}>{saved ? 'Saved.' : ''}</small>
-        <button type="button" className={cx('primary')} disabled={saving} onClick={() => void saveFinance()}>
-          {saving ? 'Saving…' : 'Save details'}
-        </button>
-      </div>
+                    <div className={cx('cibil-centre')}>
+                      {scored ? (
+                        <>
+                          <strong className={cx('cibil-number')}>{check!.score}</strong>
+                          <span className={cx('cibil-band')}>{reading!.label}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className={cx('cibil-shield')} aria-hidden="true">{SHIELD_ICON}</span>
+                          <span className={cx('cibil-band')}>Not checked yet</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-      <hr className={cx('divider')} />
+                  {/*
+                    * The funding details stand on their own. They are saved and
+                    * a lender can screen on them without any credit reading —
+                    * `assessEligibility` takes the band as optional — so the
+                    * student is told they are finished *before* being offered
+                    * something extra. Otherwise the check reads as a wall.
+                    */}
+                  {!scored && financeSubmitted && (
+                    <p className={cx('cibil-saved')}>
+                      <strong>✓ Your funding details are saved.</strong> A lender can already screen you on them. A
+                      credit check is not needed for that — it only firms up the read.
+                    </p>
+                  )}
 
-      <section className={cx('credit')}>
-        <div className={cx('credit-head')}>
-          <div className={cx('credit-badge')}>{SHIELD_ICON}</div>
-          <div>
-            <h3>Check {supporterPhrase} CIBIL score</h3>
-            <p className={cx('credit-explainer')}>
-              Want to understand the credit profile better? This is a <strong>soft check — it does not affect
-              the score.</strong> A lender still runs its own formal check later, and only once invited to.
-            </p>
-          </div>
-        </div>
+                  <h2 id="cibil-title" className={cx('cibil-title')}>
+                    {scored ? reading!.reads : `Check ${supporterPhrase} CIBIL score`}
+                    {!scored && <span className={cx('cibil-optional')}>Optional</span>}
+                  </h2>
 
-        <div className={cx('form-grid')}>
-          {IDENTITY_KEYS.map(renderField)}
-        </div>
+                  {scored ? (
+                    <>
+                      {/* Date and freshness, kept deliberately quiet — it is
+                          provenance, not the news. */}
+                      <p className={cx('cibil-sub')}>
+                        Checked on{' '}
+                        {new Date(check!.pulledAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {' · '}current for about three months
+                      </p>
 
-        <label className={cx('form-field', 'wide', 'declaration-item')}>
-          <input
-            type="checkbox"
-            checked={creditConsent}
-            onChange={event => { setCreditConsent(event.target.checked); setCreditError(''); }}
-          />
-          {/*
-            * Written without `supporterPhrase`: that phrase is possessive — "your
-            * parent's", "their" — so it reads as a heading and not as the subject
-            * of a sentence, which produced "their agrees that…".
-            */}
-          <span>
-            I confirm the person named above agrees that SuperOffer may check their credit record, to show
-            which education loans this family is likely to qualify for. This is a soft enquiry and does not
-            affect their score.
-          </span>
-        </label>
-        {touched.creditConsent && !creditConsent && (
-          <small className={cx('field-error')}>Their consent is required before a credit check can run</small>
-        )}
+                      {/*
+                        * What the number is for, and who sees it. No affordability
+                        * figures and no suggestion of approval: this screen is the
+                        * credit profile, and what a lender does with it is a
+                        * separate question the page does not answer.
+                        */}
+                      <p className={cx('cibil-explain')}>
+                        Your CIBIL score helps lenders understand your credit history when they consider funding
+                        opportunities. Banks may read your credit profile when evaluating one — they are shown the
+                        band, never the exact score.
+                      </p>
+                    </>
+                  ) : (
+                    <p className={cx('cibil-sub')}>
+                      A soft enquiry — it does not affect the score. It needs the consent of the person being checked,
+                      so only run it with them. You can skip it and come back any time.
+                    </p>
+                  )}
 
-        {check?.outcome === 'SCORED' && typeof check.score === 'number' && (() => {
-          const reading = readingFor(check.score);
-          const progress = (check.score - SCORE_FLOOR) / (SCORE_CEILING - SCORE_FLOOR);
-          const filled = ARC_LENGTH * Math.min(1, Math.max(0, progress));
+                  {/* An outcome that is not a score is still an answer, and a
+                      short one — no history is normal, a mismatch is fixable. */}
+                  {check && !scored && (
+                    <p className={cx('cibil-note', check.outcome === 'NO_HISTORY' && 'is-neutral')}>
+                      <strong>
+                        {check.outcome === 'NO_HISTORY' ? 'Nothing on file yet.'
+                          : check.outcome === 'IDENTITY_MISMATCH' ? 'Could not be matched.'
+                            : 'The check did not complete.'}
+                      </strong>{' '}
+                      {check.outcome === 'NO_HISTORY'
+                        ? 'Normal for someone who has never borrowed — lenders will read income and documents instead.'
+                        : check.detail || 'Please try again in a moment.'}
+                    </p>
+                  )}
 
-          return (
-            <div className={cx('score-card', reading.tone)}>
-              <div className={cx('score-gauge')}>
-                <svg viewBox="0 0 200 122" role="img" aria-label={`CIBIL score ${check.score} out of ${SCORE_CEILING}`}>
-                  {/* The whole scale, then how far along it this score sits. */}
-                  <path d="M 16 100 A 84 84 0 0 1 184 100" fill="none" stroke="#e7ece9" strokeWidth="15" strokeLinecap="round" />
-                  <path
-                    d="M 16 100 A 84 84 0 0 1 184 100"
-                    fill="none"
-                    stroke={reading.colour}
-                    strokeWidth="15"
-                    strokeLinecap="round"
-                    strokeDasharray={`${filled} ${ARC_LENGTH}`}
-                  />
-                  <text x="100" y="86" textAnchor="middle" className={cx('gauge-score')} fill={reading.colour}>
-                    {check.score}
-                  </text>
-                  <text x="100" y="102" textAnchor="middle" className={cx('gauge-reads')}>{reading.label}</text>
-                  <text x="14" y="119" textAnchor="middle" className={cx('gauge-end')}>{SCORE_FLOOR}</text>
-                  <text x="186" y="119" textAnchor="middle" className={cx('gauge-end')}>{SCORE_CEILING}</text>
-                </svg>
-              </div>
+                  {/* What the bureau matches a person on. Hidden once a score is
+                      in, so the screen is the score and nothing else. */}
+                  {!scored && (
+                    <div className={cx('cibil-form')}>
+                      <div className={cx('form-grid')}>
+                        {IDENTITY_KEYS.map(renderField)}
+                      </div>
+                      <label className={cx('form-field', 'wide', 'declaration-item')}>
+                        <input
+                          type="checkbox"
+                          checked={creditConsent}
+                          onChange={event => { setCreditConsent(event.target.checked); setCreditError(''); }}
+                        />
+                        {/* Not written with `supporterPhrase`: it is possessive —
+                            "your parent's" — and reads as a heading, not a subject. */}
+                        <span>The person named above agrees to this check.</span>
+                      </label>
+                      {touched.creditConsent && !creditConsent && (
+                        <small className={cx('field-error')}>Their consent is required before a check can run</small>
+                      )}
+                    </div>
+                  )}
 
-              <div className={cx('score-meta')}>
-                <small>CIBIL SCORE</small>
-                <p className={cx('score-headline')}>
-                  {check.score} out of {SCORE_CEILING}
-                  {check.band ? <span className={cx('score-band')}>{check.band} band</span> : null}
-                </p>
-                <p className={cx('score-note')}>
-                  Checked{' '}
-                  {new Date(check.pulledAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
-                  Lenders treat a reading as current for about three months.
-                </p>
-              </div>
-            </div>
-          );
-        })()}
+                  {creditError && <p className={cx('error')} role="alert">{creditError}</p>}
 
-        {check?.outcome === 'NO_HISTORY' && (
-          <div className={cx('band', 'neutral')}>
-            <small>NO CREDIT HISTORY</small>
-            <strong>Nothing on file</strong>
-            <em>Normal for someone who has never borrowed. Lenders will look at income and documents instead.</em>
-          </div>
-        )}
+                  {/*
+                    * Once there is a score, the useful next move is forward — to
+                    * the funding a lender might offer on it. Re-running the check
+                    * is not: a reading under ninety days old is reused rather
+                    * than pulled again, so it would usually change nothing.
+                    */}
+                  <div className={cx('cibil-actions')}>
+                    {scored ? (
+                      <button
+                        type="button"
+                        className={cx('journey-btn', 'primary')}
+                        onClick={() => router.push('/student/offers')}
+                      >
+                        View funding opportunities
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={cx('journey-btn', 'primary')}
+                        onClick={() => void runCreditCheck()}
+                        disabled={checking}
+                      >
+                        {checking ? 'Checking…' : 'Check CIBIL score'}
+                      </button>
+                    )}
+                    {/* Skipping is a finished state, not an abandoned one. */}
+                    {!scored && (
+                      <button
+                        type="button"
+                        className={cx('journey-btn', 'quiet')}
+                        onClick={() => router.push('/student/dashboard')}
+                      >
+                        Skip for now
+                      </button>
+                    )}
+                  </div>
 
-        {/* A bureau that could not match the person is a different answer from one that broke. */}
-        {check && (check.outcome === 'IDENTITY_MISMATCH' || check.outcome === 'PROVIDER_ERROR') && (
-          <div className={cx('band', 'neutral')}>
-            <small>{check.outcome === 'IDENTITY_MISMATCH' ? 'COULD NOT BE MATCHED' : 'CHECK DID NOT COMPLETE'}</small>
-            <strong>No score yet</strong>
-            <em>{check.detail || 'Please try again in a moment.'}</em>
-          </div>
-        )}
-
-        {creditError && <p className={cx('error')} role="alert">{creditError}</p>}
-
-        <div className={cx('credit-actions')}>
-          <button type="button" className={cx('secondary')} onClick={() => void runCreditCheck()} disabled={checking}>
-            {checking ? 'Checking…' : check ? 'Run the check again' : 'Check CIBIL Score'}
-          </button>
-        </div>
-
-        {eligibility && verdict && (
-          <section className={cx('verdict', verdict.tone)}>
-            <h3>{verdict.label}</h3>
-            <div className={cx('verdict-figures')}>
-              <div>
-                <small>COULD REPAY EACH MONTH</small>
-                <strong>{money(eligibility.affordableEmi)}</strong>
-              </div>
-              <div>
-                <small>WHICH SUPPORTS ABOUT</small>
-                <strong>{money(eligibility.indicativeAmount)}</strong>
-              </div>
-            </div>
-            <ul>
-              {eligibility.reasons.map(reason => <li key={reason}>{reason}</li>)}
-            </ul>
-            <small className={cx('muted')}>
-              An estimate to help you plan, not an offer. Every lender applies its own rules before it decides.
-            </small>
+                  <div className={cx('cibil-minor')}>
+                    {scored && (
+                      <button
+                        type="button"
+                        className={cx('journey-btn', 'secondary')}
+                        onClick={() => void runCreditCheck()}
+                        disabled={checking}
+                      >
+                        {checking ? 'Checking…' : 'Check again'}
+                      </button>
+                    )}
+                    <button type="button" className={cx('journey-btn', 'secondary')} onClick={goBack}>
+                      Back to Loan &amp; Funding
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </section>
+        ) : (
+          <>
+            <div className={wz('ask')}>
+              <span className={wz('guide')}><WizardGuide /></span>
+              <div className={wz('bubble')}>
+                <p className={wz('question')}>{copy.question}</p>
+                <p className={wz('lede')}>{copy.lede}</p>
+              </div>
+            </div>
+
+            <div className={wz('body')}>
+              <aside className={wz('side')}>
+                <div className={wz('picture')}><WizardIllustration name="funding" /></div>
+                <div className={wz('tip')}>
+                  <span className={wz('tipIcon')} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z" />
+                    </svg>
+                  </span>
+                  <p>{copy.tip}</p>
+                </div>
+              </aside>
+
+              <main className={wz('form')}>
+                <div className={cx('journey-step')}>
+                  {stepId === 'declarations' ? (
+                    <>
+                      {/*
+                        * What is about to be confirmed, and a way to change any
+                        * of it. Confirming figures you cannot see is not
+                        * confirming anything — each row goes back to the
+                        * question that produced it, and Continue brings you
+                        * straight back here.
+                        */}
+                      <ul className={cx('review-list')}>
+                        {activeFinanceKeys.map((key, index) => {
+                          const def = fieldByKey.get(key);
+                          const raw = String(values[key] ?? '').trim();
+                          const isMoney = def?.type === 'number';
+                          return (
+                            <li key={key}>
+                              <span className={cx('review-label')}>{def?.label || key}</span>
+                              <span className={cx('review-value')}>
+                                {raw ? (isMoney ? money(Number(raw) || 0) : raw) : '—'}
+                              </span>
+                              <button type="button" className={cx('review-edit')} onClick={() => setStepIndex(index)}>
+                                Edit
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+
+                      <div className={cx('form-grid', 'declaration-group')}>
+                        {DECLARATION_KEYS.map(renderField)}
+                        {DECLARATION_KEYS.some(key => touched[key]) && !declarationsAccepted && (
+                          <small className={cx('field-error')}>Please accept both declarations to continue</small>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    (() => {
+                      const def = fieldByKey.get(stepId);
+                      if (!def) return null;
+                      const invalid = touched[stepId] && !hasAnswer(values, stepId);
+                      return (
+                        <div className={cx('journey-question', invalid && 'field-invalid')}>
+                          <span className={cx('journey-question-label')}>
+                            <i className={cx('journey-question-icon')}>{FIELD_ICON[stepId as FinanceKey]}</i>
+                            {def.label}
+                          </span>
+                          {renderControl(stepId, def)}
+                          {def.helpText && <small className={cx('field-hint')}>{def.helpText}</small>}
+                          {invalid && <small className={cx('field-error')}>This is needed</small>}
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  {error && <p className={cx('error')} role="alert">{error}</p>}
+                </div>
+
+              </main>
+            </div>
+
+            {/* Below both columns, not inside the form one.
+                It used to live in the form column and reach out with negative
+                margins to span the card — which works only while the form is
+                the taller side. On a one-field question the illustration and
+                tip are taller, so the bar rode up over them. */}
+            <div className={cx('step-actions')}>
+              <button
+                type="button"
+                className={cx('journey-btn', 'secondary')}
+                onClick={goBack}
+                disabled={stepAt === 0}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className={cx('journey-btn', 'primary')}
+                disabled={saving}
+                onClick={() => void goNext()}
+              >
+                {saving ? 'Saving…' : stepId === 'declarations' ? 'Save & see result' : 'Continue'}
+              </button>
+              <small className={cx('save-message')}>{saved ? 'Saved.' : ''}</small>
+            </div>
+          </>
         )}
       </section>
-    </section>
+    </div>
   );
 }

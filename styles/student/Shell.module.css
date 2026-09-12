@@ -235,8 +235,12 @@
 
 /* A page over the scene is one white card, like the wizard's frame. The
    dashboard renders its own panels (its root is display: contents), so this
-   only bites where the page brought a single root. */
-.host.scene .main:not(.workspace) .wrap > *:first-child:not(:empty) {
+   only bites where the page brought a single root.
+
+   `bare` opts out: a page that brings its own card — the loan journey draws the
+   wizard's frame — would otherwise sit in a card inside a card. */
+.host.scene .main.bare .wrap > *:first-child { padding: 0; border-radius: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.host.scene .main:not(.workspace):not(.bare) .wrap > *:first-child:not(:empty) {
   padding: clamp(22px, 3vw, 36px);
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.94);
@@ -293,7 +297,7 @@
 }
 @media (max-width: 620px) {
   .search { display: none; }
-  .host.scene .main:not(.workspace) .wrap > *:first-child:not(:empty) { padding: 18px 14px; border-radius: 22px; }
+  .host.scene .main:not(.workspace):not(.bare) .wrap > *:first-child:not(:empty) { padding: 18px 14px; border-radius: 22px; }
   .host.scene .main.workspace .wrap { padding: 0; }
   .host.scene .main.workspace .wrap > *:first-child { border-radius: 0; border: 0; }
 }

@@ -31,6 +31,30 @@
 }
 .scene * { box-sizing: border-box; }
 
+/* The same frame, hosted inside the workspace shell rather than owning the
+   whole viewport — the loan journey keeps the rail and header, so the shell
+   already draws the sky and sets the height. This carries only the tokens the
+   frame's own rules read, which would otherwise resolve to nothing. */
+.embedded {
+  --ink: #111113;
+  --ink-2: #52525b;
+  --ink-3: #71717a;
+  --line: rgba(17, 17, 19, 0.08);
+  --em: #047857;
+  --em-soft: #ecfdf5;
+  --violet: #6d5dfc;
+  --violet-soft: #f1efff;
+  --r-xl: 18px;
+  --r-2xl: 24px;
+  --r-3xl: 30px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  isolation: isolate;
+  color: var(--ink);
+}
+.embedded * { box-sizing: border-box; }
+.embedded .frame { width: 100%; }
+
 /* ------------------------------------------------------------- backdrop */
 
 .sky {
