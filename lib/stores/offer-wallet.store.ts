@@ -4,9 +4,9 @@ import { authApi } from '../api/auth-api';
 import { isSessionExpired, readAccessToken, reportSessionExpired } from '../storage';
 import { ObservableStore } from './observable-store';
 
-export type OfferCategory = 'University' | 'Bank' | 'Scholarship' | 'Consultancy';
-export type OfferDecisionStatus = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
-export type JourneyStage = 'Received' | 'Viewed' | 'Compared' | 'Shortlisted' | 'Accepted' | 'Declined';
+export type OfferCategory = 'University' | 'Bank' | 'Scholarship';
+export type OfferDecisionStatus = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected' | 'Withdrawn';
+export type JourneyStage = 'Received' | 'Viewed' | 'Compared' | 'Shortlisted' | 'Accepted' | 'Declined' | 'Withdrawn';
 
 /** Mirrors the server's frozen copy; see `Offer.programSnapshot`. */
 export interface OfferSnapshot {
@@ -87,10 +87,6 @@ export interface StudentOffer {
   coverage?: string;
   eligibility?: string;
 
-  // Consultancy comparison fields
-  visaServices?: string;
-  accommodationSupport?: string;
-  supportServices?: string;
 }
 
 /**
@@ -159,13 +155,12 @@ export interface OfferCounts {
   university: number;
   bank: number;
   scholarship: number;
-  consultancy: number;
   saved: number;
   accepted: number;
 }
 
 const EMPTY_COUNTS: OfferCounts = {
-  total: 0, new: 0, university: 0, bank: 0, scholarship: 0, consultancy: 0, saved: 0, accepted: 0
+  total: 0, new: 0, university: 0, bank: 0, scholarship: 0, saved: 0, accepted: 0
 };
 
 const shortDate = (iso: string) =>
@@ -264,7 +259,6 @@ class OfferWalletStore extends ObservableStore {
       university: byCategory('University'),
       bank: byCategory('Bank'),
       scholarship: byCategory('Scholarship'),
-      consultancy: byCategory('Consultancy'),
       saved: this.offers.filter(offer => offer.saved).length,
       accepted: this.offers.filter(offer => offer.status === 'Accepted').length
     };
@@ -318,6 +312,7 @@ class OfferWalletStore extends ObservableStore {
   }
 
   stage(offer: StudentOffer): JourneyStage {
+    if (offer.status === 'Withdrawn') return 'Withdrawn';
     if (offer.status === 'Accepted') return 'Accepted';
     if (offer.status === 'Rejected') return 'Declined';
     if (offer.status === 'Shortlisted') return 'Shortlisted';
@@ -331,7 +326,6 @@ class OfferWalletStore extends ObservableStore {
   get universityCount(): number { return this.counts.university; }
   get bankCount(): number { return this.counts.bank; }
   get scholarshipCount(): number { return this.counts.scholarship; }
-  get consultancyCount(): number { return this.counts.consultancy; }
   get savedCount(): number { return this.counts.saved; }
   get acceptedCount(): number { return this.counts.accepted; }
 }

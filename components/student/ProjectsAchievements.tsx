@@ -174,15 +174,54 @@ export function ProjectsAchievements() {
     return marks;
   };
 
-  const formInvalid = projects.some(
+  const isFormInvalid = (links.length === 0 && !linkDraft.trim()) || (achievements.length === 0 && !achievementDraft.trim()) || projects.some(
     project => !!rows.missingIn(project as unknown as Record<string, unknown>).length
   );
+  const formInvalid = isFormInvalid; // keep the variable for the render block
 
   const saveAndContinue = async () => {
     setSubmitted(true);
     extras.touchAll();
     setSaveError('');
-    if (formInvalid) return;
+    setLinkError('');
+
+    const finalLinks = [...links];
+    let draftLinkError = '';
+    const cleanLink = linkDraft.trim();
+    if (cleanLink) {
+      if (!/^https?:\/\/.+\..+/i.test(cleanLink)) {
+        draftLinkError = 'Enter a valid link starting with http:// or https://';
+      } else if (!finalLinks.includes(cleanLink)) {
+        finalLinks.push(cleanLink);
+      }
+    }
+
+    const finalAchievements = [...achievements];
+    const cleanAchievement = achievementDraft.trim();
+    if (cleanAchievement && !finalAchievements.includes(cleanAchievement)) {
+      finalAchievements.push(cleanAchievement);
+    }
+
+    const actuallyInvalid = finalLinks.length === 0 || finalAchievements.length === 0 || projects.some(
+      project => !!rows.missingIn(project as unknown as Record<string, unknown>).length
+    );
+
+    if (draftLinkError) {
+      setLinkError(draftLinkError);
+      return;
+    }
+
+    if (actuallyInvalid) return;
+    
+    // Update state so UI reflects the drafts becoming real tags
+    if (cleanLink && !draftLinkError) {
+      setLinks(finalLinks);
+      setLinkDraft('');
+    }
+    if (cleanAchievement) {
+      setAchievements(finalAchievements);
+      setAchievementDraft('');
+    }
 
     const token = readAccessToken();
     if (!token) {
@@ -190,8 +229,8 @@ export function ProjectsAchievements() {
       return;
     }
 
-    const githubLink = links.find(link => linkLabel(link) === 'GitHub') || '';
-    const linkedinLink = links.find(link => linkLabel(link) === 'LinkedIn') || '';
+    const githubLink = finalLinks.find(link => linkLabel(link) === 'GitHub') || '';
+    const linkedinLink = finalLinks.find(link => linkLabel(link) === 'LinkedIn') || '';
     const first = projects[0];
     const projectTitle = first ? first.title : '';
     const projectRole = first ? first.role : '';
@@ -201,8 +240,8 @@ export function ProjectsAchievements() {
       await authApi.saveStudentProjectsAchievements(token, {
         ...extras.values0,
         projects,
-        achievements,
-        links,
+        achievements: finalAchievements,
+        links: finalLinks,
         githubLink,
         linkedinLink,
         projectTitle,
@@ -343,7 +382,13 @@ export function ProjectsAchievements() {
             <p className={cx('tag-empty-hint')}>No achievements added yet — type your own or pick a suggestion above.</p>
           )}
 
-          {submitted && formInvalid && (
+          {submitted && links.length === 0 && !linkDraft.trim() && (
+            <p className={cx('save-message', 'error')}>Please add at least one social presence link.</p>
+          )}
+          {submitted && achievements.length === 0 && !achievementDraft.trim() && (
+            <p className={cx('save-message', 'error')}>Please add at least one achievement.</p>
+          )}
+          {submitted && projects.some(p => !!rows.missingIn(p as any).length) && (
             <p className={cx('save-message', 'error')}>Please fix the highlighted fields before continuing.</p>
           )}
           {saveError && <p className={cx('save-message', 'error')}>{saveError}</p>}

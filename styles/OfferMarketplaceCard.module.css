@@ -17,6 +17,7 @@
 .market-card-status.status-shortlisted{background:#fff3df;color:#93600d}
 .market-card-status.status-accepted{background:#e5f4ec;color:#047857}
 .market-card-status.status-rejected{background:#fdeceb;color:#a1372c}
+.market-card-status.status-withdrawn{background:#f3f4f6;color:#4b5563}
 .market-card-headline{margin:0;font-size:15.5px;font-weight:700;color:#233129;line-height:1.4}
 .market-card-highlights{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:1px;background:#eef2ef;border-radius:12px;overflow:hidden}
 .market-card-highlights>div{padding:10px 12px;background:#fbfcfb;display:flex;flex-direction:column;gap:4px}

@@ -19,7 +19,7 @@ export function organizationTypeFromRole(role: string): OrganizationType {
 }
 
 /** Roles allowed inside the organization workspace. */
-export const ORGANIZATION_ROLES = ['UNIVERSITY_OFFICER', 'LOAN_OFFICER', 'CONSULTANT'];
+export const ORGANIZATION_ROLES = ['UNIVERSITY_OFFICER', 'LOAN_OFFICER'];
 
 /**
  * The home each role belongs to. Used to bounce someone who has landed in the

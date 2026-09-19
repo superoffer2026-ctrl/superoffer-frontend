@@ -37,7 +37,7 @@ import {
   type TemplateDraft
 } from './workspace-data';
 
-export type WorkspaceFilter = 'All' | 'Accepted' | 'Shortlisted' | 'Rejected' | 'Discover' | 'Offers' | 'Negotiating';
+export type WorkspaceFilter = 'All' | 'Accepted' | 'Shortlisted' | 'Rejected' | 'Withdrawn' | 'Discover' | 'Offers' | 'Negotiating';
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 const parseAmount = (v: string) => Number((v || '').replace(/[^0-9.]/g, '')) || 0;
@@ -636,12 +636,12 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
       students.map(student => {
         /** Newest first, so the default thread is the most recent conversation. */
         const studentOffers = orgOffers
-          .filter(row => row.studentUserId === student.id && row.status !== 'Withdrawn')
+          .filter(row => row.studentUserId === student.id )
           .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
         const offer = studentOffers.find(row => row.id === selectedThreadId) || studentOffers[0];
         const score = overallScore(student);
         const status: WorkspaceCandidate['status'] = offer
-          ? 'Accepted'
+          ? (offer.status === 'Withdrawn' ? 'Withdrawn' : 'Accepted')
           : rejectedIds.has(student.id)
             ? 'Rejected'
             : shortlistedIds.has(student.id)
@@ -764,6 +764,20 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
    * organisation wrote against that product, which is what makes a single click
    * a responsible thing to offer at all.
    */
+  
+  const withdrawInvite = async (candidate: WorkspaceCandidate) => {
+    if (!confirm('Withdraw this invite?\n\nThis will remove the invitation from this opportunity. The student will be notified.')) return;
+    const token = requireToken();
+    if (!token || !candidate.offerId) return;
+    try {
+      await authApi.withdrawOrganizationOffer(token, candidate.offerId);
+      await loadOffers(token);
+      notify('Invite withdrawn');
+    } catch (e) {
+      reportFailure(e, 'Invite could not be withdrawn.');
+    }
+  };
+
   const openQuickInvite = (candidate: WorkspaceCandidate) => {
     if (candidate.offerId) {
       notify(`An invitation is already open with ${candidate.name}`);
@@ -1517,7 +1531,7 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
     filters, setFilter, clearFilters, activeFilterCount, filtersOpen, setFiltersOpen, searching, filterFields,
     user, profile,
     candidates, selectedOfferItem, setSelectedOfferId, filteredWorkspaceOffers, countWorkspaceOffers,
-    setOfferStatus, chatDraft, setChatDraft, sendChatMessage,
+    setOfferStatus, withdrawInvite, chatDraft, setChatDraft, sendChatMessage,
     openQuickInvite, sendQuickInvite, quickInvite, setQuickInvite,
     offerTemplates, archivedTemplates, templateDraft, setTemplateDraft, saveTemplate, archiveTemplate, restoreTemplate, makeTemplateDefault,
     chatFile, setChatFile, openAttachment, selectThread, selectedThreadId,

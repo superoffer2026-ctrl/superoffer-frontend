@@ -487,7 +487,7 @@ export interface WorkspaceCandidate {
   detail?: StudentRecord;
   deadline: string;
   received: string;
-  status: 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
+  status: 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected' | 'Withdrawn';
   conditions: string;
   nextSteps: string[];
   unread: number;

@@ -44,12 +44,6 @@ function fieldsFor(category: OfferCategory): Array<{ label: string; value: (offe
         { label: 'Coverage', value: o => o.coverage || '' },
         { label: 'Eligibility', value: o => o.eligibility || '' }
       ];
-    case 'Consultancy':
-      return [
-        { label: 'Visa Services', value: o => o.visaServices || '' },
-        { label: 'Accommodation', value: o => o.accommodationSupport || '' },
-        { label: 'Support Services', value: o => o.supportServices || '' }
-      ];
   }
 }
 

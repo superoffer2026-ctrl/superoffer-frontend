@@ -134,9 +134,6 @@ export function StudentOfferInbox() {
     { key: 'amount', label: 'AMOUNT' },
     { key: 'coverage', label: 'COVERAGE' },
     { key: 'eligibility', label: 'ELIGIBILITY' },
-    { key: 'visaServices', label: 'VISA SERVICES' },
-    { key: 'accommodationSupport', label: 'ACCOMMODATION SUPPORT' },
-    { key: 'supportServices', label: 'SUPPORT SERVICES' }
   ];
 
   const offerDetails = (offer: StudentOffer) =>
@@ -152,7 +149,6 @@ export function StudentOfferInbox() {
   const heroLabel =
     selected?.category === 'Bank' ? 'FINANCE PROPOSAL'
       : selected?.category === 'Scholarship' ? 'SCHOLARSHIP AWARD'
-        : selected?.category === 'Consultancy' ? 'SERVICE PROPOSAL'
           : 'ADMISSION OPPORTUNITY';
 
   return (

@@ -46,8 +46,7 @@ export function StudentSettings() {
   const [saving, setSaving] = useState(false);
 
   const settings = profile.profile.settings as Record<string, unknown>;
-  /** The account identifier, not the contact address on the profile — a student has no account email. */
-  const whatsappNumber = profile.user?.phone || '';
+  const accountEmail = profile.user?.email || '';
   const fullName = profile.user?.full_name || profile.profile.personal['fullName'] || '';
 
   /** Notification toggles default to on until the student turns one off. */
@@ -188,10 +187,10 @@ export function StudentSettings() {
               <header><h2>Account</h2><p>Your sign-in details and account access.</p></header>
               {flashMessage && <p className={cx('settings-flash')}>{flashMessage}</p>}
 
-              {/* Read-only: the number is the account, so changing it means proving the new one with a code. */}
+              {/* Read-only: the email is the account identifier. */}
               <div className={cx('professional-setting-row')}>
-                <div><strong>WhatsApp number</strong><small>{whatsappNumber || 'Not set'}</small></div>
-                <small>Sign-in number</small>
+                <div><strong>Email address</strong><small>{accountEmail || 'Not set'}</small></div>
+                <small>Sign-in email</small>
               </div>
 
               {!editingPassword && (

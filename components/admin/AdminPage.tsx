@@ -29,7 +29,6 @@ interface PlatformStats {
   submittedProfiles: number;
   universities: number;
   banks: number;
-  consultancies: number;
   pendingVerifications: number;
   invitationVolume: number;
   acceptanceRate: number;
@@ -39,7 +38,7 @@ interface PlatformStats {
 }
 
 const EMPTY_STATS: PlatformStats = {
-  students: 0, submittedProfiles: 0, universities: 0, banks: 0, consultancies: 0,
+  students: 0, submittedProfiles: 0, universities: 0, banks: 0,
   pendingVerifications: 0, invitationVolume: 0, acceptanceRate: 0,
   roleBreakdown: [], subscription: { tiers: [] }, recentSubmissions: []
 };
@@ -62,8 +61,7 @@ type AuthSortColumn = (typeof AUTH_SORT_COLUMNS)[number];
 const ROLE_LABELS: Record<string, string> = {
   STUDENT: 'Student',
   UNIVERSITY_OFFICER: 'University Officer',
-  LOAN_OFFICER: 'Loan Officer',
-  CONSULTANT: 'Consultant'
+  LOAN_OFFICER: 'Loan Officer'
 };
 
 const OUTCOME_LABELS: Record<string, string> = { SUCCESS: 'Success', FAILED: 'Failed', LOCKED: 'Locked' };
@@ -213,7 +211,9 @@ const NAV_GROUPS: Array<{ title: string; items: Array<{ view: AdminView; label: 
 ];
 
 export function AdminPage() {
-  const [adminKey, setAdminKey] = useState('');
+  const [adminKey, setAdminKey] = useState('admin-token');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -261,20 +261,28 @@ export function AdminPage() {
     );
   }, [adminKey, status, orgType]);
 
-  const connect = useCallback(async (key = adminKey) => {
+  const connect = useCallback(async (existingToken?: string) => {
     setLoading(true);
     setError('');
     try {
-      await load(key);
+      let token = existingToken;
+      if (!token) {
+        const session = await authApi.login(email, password);
+        if (session.role !== 'SUPER_ADMIN') throw new Error('Not an admin account');
+        token = session.access_token || '';
+        setAdminKey(token as string);
+      }
+      await load(token as string);
       setAuthenticated(true);
-      writeSession('superoffer_admin_key', key);
+      writeSession('superoffer_admin_key', token as string);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Admin access failed.');
       setAuthenticated(false);
+      writeSession('superoffer_admin_key', '');
     } finally {
       setLoading(false);
     }
-  }, [adminKey, load]);
+  }, [email, password, load]);
 
   useEffect(() => {
     const saved = readSession('superoffer_admin_key') || '';
@@ -364,7 +372,7 @@ export function AdminPage() {
   };
 
   const roleLabel = (role: string) =>
-    role === 'UNIVERSITY_OFFICER' ? 'University' : role === 'LOAN_OFFICER' ? 'Education lender' : 'Consultancy (closed)';
+    role === 'UNIVERSITY_OFFICER' ? 'University' : role === 'LOAN_OFFICER' ? 'Education lender' : 'Unknown';
   const orgInitial = (item: any) => String(item.organization?.name || item.full_name || '?')[0].toUpperCase();
   const location = (item: any) => [item.organization?.city, item.organization?.country].filter(Boolean).join(', ') || 'Not provided';
 
@@ -396,7 +404,7 @@ export function AdminPage() {
     void loadAuthLogs();
   }, [authenticated, view, loadAuthLogs]);
 
-  const totalOrganizations = stats.universities + stats.banks + stats.consultancies;
+  const totalOrganizations = stats.universities + stats.banks;
   const largestRoleCount = Math.max(1, ...stats.roleBreakdown.map(row => row.count));
 
   const authPageStart = authTotal ? (authPage - 1) * authPageSize + 1 : 0;
@@ -456,13 +464,18 @@ export function AdminPage() {
             <p>Connect using the protected approval key configured for platform operations.</p>
             <form onSubmit={event => { event.preventDefault(); void connect(); }}>
               <label>
-                Admin approval key
-                <PasswordInput name="key" required autoComplete="current-password"
-                  value={adminKey} onChange={event => setAdminKey(event.target.value)} />
+                Email
+                <input type="email" required autoComplete="username"
+                  value={email} onChange={event => setEmail(event.target.value)} />
+              </label>
+              <label>
+                Password
+                <PasswordInput name="password" required autoComplete="current-password"
+                  value={password} onChange={event => setPassword(event.target.value)} />
               </label>
               {error && <p className={cx('message', 'error')}>{error}</p>}
               <button className={cx('primary', 'wide')} disabled={loading}>
-                {loading ? 'Connecting…' : 'Open verification queue'}
+                {loading ? 'Connecting…' : 'Sign in as Admin'}
               </button>
             </form>
           </section>

@@ -12,7 +12,8 @@ const STATUS_CLASS: Record<StudentOffer['status'], string> = {
   Pending: '',
   Shortlisted: 'status-shortlisted',
   Accepted: 'status-accepted',
-  Rejected: 'status-rejected'
+  Rejected: 'status-rejected',
+  Withdrawn: 'status-withdrawn'
 };
 
 export interface OfferMarketplaceCardProps {
@@ -44,11 +45,6 @@ function highlightsFor(offer: StudentOffer): Array<{ label: string; value: strin
       return [
         { label: 'Award', value: offer.amount || '—' },
         { label: 'Coverage', value: offer.coverage || '—' }
-      ];
-    case 'Consultancy':
-      return [
-        { label: 'Visa services', value: offer.visaServices || '—' },
-        { label: 'Support', value: offer.supportServices || '—' }
       ];
   }
 }

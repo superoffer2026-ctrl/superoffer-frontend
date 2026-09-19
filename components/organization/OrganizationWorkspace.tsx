@@ -210,6 +210,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                     <button type="button" className={cx(workspaceFilter === 'Accepted' && 'active')} onClick={() => setWorkspaceFilter('Accepted')}>Invited <b>{countWorkspaceOffers('Accepted')}</b></button>
                     <button type="button" className={cx(workspaceFilter === 'Shortlisted' && 'active')} onClick={() => setWorkspaceFilter('Shortlisted')}>Shortlisted <b>{countWorkspaceOffers('Shortlisted')}</b></button>
                     <button type="button" className={cx(workspaceFilter === 'Rejected' && 'active')} onClick={() => setWorkspaceFilter('Rejected')}>Rejected <b>{countWorkspaceOffers('Rejected')}</b></button>
+                    <button type="button" className={cx(workspaceFilter === 'Withdrawn' && 'active')} onClick={() => setWorkspaceFilter('Withdrawn')}>Withdrawn <b>{countWorkspaceOffers('Withdrawn')}</b></button>
                   </div>
                 </header>
 
@@ -283,38 +284,70 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                           </svg>
                         </button>
-                        <button
-                          type="button"
-                          className={cx('secondary-btn', 'reject-action', candidate.status === 'Rejected' && 'chosen')}
-                          title="Reject"
-                          style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: '#b91c1c' }}
-                          onClick={() => setOfferStatus(candidate, 'Rejected')}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          className={cx('secondary-btn')}
-                          style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#047857', borderColor: '#047857' }}
-                          onClick={openProductInviteModal}
-                        >
-                          Product Invite
-                        </button>
-                        <button
-                          type="button"
-                          className={cx('primary-btn')}
-                          style={{ padding: '6px 16px', height: 32, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}
-                          onClick={() => openQuickInvite(candidate)}
-                        >
-                          {candidate.status !== 'Accepted' && (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                            </svg>
-                          )}
-                          <span>{candidate.status === 'Accepted' ? '✓ Invite Sent' : 'Invite'}</span>
-                        </button>
+                        
+  {candidate.status !== 'Accepted' && candidate.status !== 'Withdrawn' && (
+    <button
+      type="button"
+      className={cx('secondary-btn', 'reject-action', candidate.status === 'Rejected' && 'chosen')}
+      title="Reject"
+      style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: '#b91c1c' }}
+      onClick={() => setOfferStatus(candidate, 'Rejected')}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  )}
+  {candidate.status === 'Accepted' && (
+    <button
+      type="button"
+      className={cx('secondary-btn')}
+      style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#b91c1c', borderColor: '#b91c1c' }}
+      onClick={() => workspace.withdrawInvite(candidate)}
+    >
+      Withdraw Invite
+    </button>
+  )}
+  
+                        
+  {candidate.status !== 'Withdrawn' && (
+    <button
+      type="button"
+      className={cx('secondary-btn')}
+      style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#047857', borderColor: '#047857' }}
+      onClick={openProductInviteModal}
+    >
+      Product Invite
+    </button>
+  )}
+  
+                        
+  {candidate.status !== 'Withdrawn' && (
+    <button
+      type="button"
+      className={cx('primary-btn')}
+      style={{ padding: '6px 16px', height: 32, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}
+      onClick={() => openQuickInvite(candidate)}
+    >
+      {candidate.status !== 'Accepted' && (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      )}
+      <span>{candidate.status === 'Accepted' ? '✓ Invite Sent' : 'Invite'}</span>
+    </button>
+  )}
+  {candidate.status === 'Withdrawn' && (
+    <button
+      type="button"
+      className={cx('secondary-btn')}
+      style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#6d7972', borderColor: '#d7e0dc', cursor: 'not-allowed' }}
+      disabled
+    >
+      Withdrawn
+    </button>
+  )}
+  
                       </div>
                     </header>
 
