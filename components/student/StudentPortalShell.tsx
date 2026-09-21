@@ -43,11 +43,20 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   };
 
   /** The next unfinished step is always reachable, and so is whichever step is open. */
-  const completedCount = steps.filter((_, index) => isComplete(index)).length;
-  const furthestIndex = Math.max(Math.min(completedCount, steps.length - 1), currentIndex);
+  const firstIncompleteIndex = steps.findIndex((_, index) => !isComplete(index));
+  const furthestIndex = firstIncompleteIndex === -1 ? steps.length - 1 : firstIncompleteIndex;
 
   /** On narrow viewports the stepper scrolls horizontally, so the active step can start off-screen —
    *  keep it in view without fighting manual scroll. */
+  useEffect(() => {
+    if (isOffers || isDashboard || !profile.loaded) return;
+    if (currentIndex > furthestIndex && steps[furthestIndex]) {
+      // Force user back to their furthest allowed step
+      // using standard window.location to bypass router caching temporarily
+      window.location.replace(`/student/${steps[furthestIndex].path}`);
+    }
+  }, [currentIndex, furthestIndex, isOffers, isDashboard, steps, profile.loaded]);
+
   useEffect(() => {
     if (isOffers || currentIndex === lastScrolledIndex.current) return;
     const current = stepperNav.current?.querySelector<HTMLElement>('[aria-current="step"]');
@@ -128,12 +137,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className={wz('body', pathname === '/student/review' && 'is-review')}>
-            {pathname !== '/student/review' && (
-              <aside className={wz('side')}>
-                <div className={wz('picture')}><WizardIllustration name={copy.illustration} /></div>
-              </aside>
-            )}
+          <div className={wz('body')}>
             <main className={wz('form')}>{children}</main>
           </div>
         </section>

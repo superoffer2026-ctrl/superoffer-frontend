@@ -152,7 +152,7 @@ export function StudentOfferInbox() {
           : 'ADMISSION OPPORTUNITY';
 
   return (
-    <StudentWorkspaceShell layout="workspace" backdrop="scene" sky={['#d9ecff', '#e6e3ff', '#ffe9dc']}>
+    <StudentWorkspaceShell layout="workspace" backdrop="canvas">
       {error && <p className={cx('mailbox-error')}>{error}</p>}
 
       <main className={cx('offer-workspace-page')}>

@@ -219,6 +219,104 @@ export function WorkspaceModals({ workspace }: { workspace: Workspace }) {
                 </div>
               </label>
 
+
+              <label style={fieldLabel}>
+                Optional Template
+                <select
+                  value={productInviteDraft.templateId || ''}
+                  onChange={event => {
+                    const tid = event.target.value;
+                    const template = offerTemplates.find((t: any) => t.id === tid);
+                    if (template) {
+                      setProductInviteDraft({
+                        ...productInviteDraft,
+                        templateId: tid,
+                        headline: template.name || '',
+                        valueLabel: template.valueLabel || '',
+                        value: template.value || '',
+                        description: template.description || '',
+                        conditions: template.conditions || productInviteDraft.conditions || '',
+                        responseWindowDays: template.responseWindowDays || '',
+                        nextSteps: template.nextSteps ? template.nextSteps.join('\n') : ''
+                      });
+                    } else {
+                      setProductInviteDraft({ ...productInviteDraft, templateId: '' });
+                    }
+                  }}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14 }}
+                >
+                  <option value="">-- No template (manual) --</option>
+                  {offerTemplates.map((t: any) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={fieldLabel}>
+                Headline
+                <input
+                  type="text"
+                  value={productInviteDraft.headline || ''}
+                  onChange={e => setProductInviteDraft({ ...productInviteDraft, headline: e.target.value })}
+                  placeholder={`Invitation for ${productInviteDraft.productNames.join(', ')}`}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14 }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <label style={fieldLabel}>
+                  Value Label
+                  <input
+                    type="text"
+                    value={productInviteDraft.valueLabel || ''}
+                    onChange={e => setProductInviteDraft({ ...productInviteDraft, valueLabel: e.target.value })}
+                    placeholder="e.g. Scholarship"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14 }}
+                  />
+                </label>
+                <label style={fieldLabel}>
+                  Value
+                  <input
+                    type="text"
+                    value={productInviteDraft.value || ''}
+                    onChange={e => setProductInviteDraft({ ...productInviteDraft, value: e.target.value })}
+                    placeholder="e.g. 40% tuition"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14 }}
+                  />
+                </label>
+              </div>
+
+              <label style={fieldLabel}>
+                Message / Description
+                <textarea
+                  value={productInviteDraft.description || ''}
+                  onChange={e => setProductInviteDraft({ ...productInviteDraft, description: e.target.value })}
+                  placeholder="e.g. We were impressed by your profile..."
+                  style={{ width: '100%', minHeight: 80, padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14, resize: 'none' }}
+                />
+              </label>
+
+              <label style={fieldLabel}>
+                Next Steps (one per line)
+                <textarea
+                  value={productInviteDraft.nextSteps || ''}
+                  onChange={e => setProductInviteDraft({ ...productInviteDraft, nextSteps: e.target.value })}
+                  placeholder="Review conditions\nConfirm acceptance"
+                  style={{ width: '100%', minHeight: 80, padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14, resize: 'none' }}
+                />
+              </label>
+
+              <label style={fieldLabel}>
+                Response Deadline (days)
+                <input
+                  type="number"
+                  value={productInviteDraft.responseWindowDays || ''}
+                  onChange={e => setProductInviteDraft({ ...productInviteDraft, responseWindowDays: e.target.value })}
+                  placeholder="e.g. 14"
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #d8d8d5', borderRadius: 9, background: '#fbfbfa', fontSize: 14 }}
+                />
+              </label>
+
               <label style={fieldLabel}>
                 {inviteForm.labelOf('conditions', 'Notes')}
                 <textarea

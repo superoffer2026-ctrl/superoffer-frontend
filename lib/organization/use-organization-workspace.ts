@@ -1165,7 +1165,20 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
   const getPresetsByCategory = (category: string) => presetConditions.filter(p => p.category === category);
 
   const openProductInviteModal = () =>
-    setProductInviteDraft({ productNames: [], conditions: '', expandedCategory: null, selectedPresetByCategory: {}, insertedTextByCategory: {} });
+    setProductInviteDraft({ 
+      productNames: [], 
+      conditions: '', 
+      expandedCategory: null, 
+      selectedPresetByCategory: {}, 
+      insertedTextByCategory: {},
+      templateId: '',
+      headline: '',
+      valueLabel: '',
+      value: '',
+      description: '',
+      responseWindowDays: '',
+      nextSteps: ''
+    });
 
   const addProductToInvite = (name: string) => {
     if (!name) return;
@@ -1235,12 +1248,16 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
       await authApi.createOrganizationOffer(token, {
         studentUserId: selectedOfferItem.id,
         program: productInviteDraft.productNames.join(', '),
-        headline: `Invitation for ${productInviteDraft.productNames.join(', ')}`,
+        headline: productInviteDraft.headline || `Invitation for ${productInviteDraft.productNames.join(', ')}`,
         location: selectedOfferItem.targetCountry,
         intake: selectedOfferItem.intake,
-        valueLabel: role === 'BANK' ? 'Loan amount' : 'Scholarship',
-        value: role === 'BANK' ? (product as LoanProduct)?.maxAmount || 'To be confirmed' : (product as Product)?.scholarshipRange || 'To be confirmed',
-        conditions: productInviteDraft.conditions || 'Subject to document verification.',
+        valueLabel: productInviteDraft.valueLabel || (role === 'BANK' ? 'Loan amount' : 'Scholarship'),
+        value: productInviteDraft.value || (role === 'BANK' ? (product as LoanProduct)?.maxAmount || 'To be confirmed' : (product as Product)?.scholarshipRange || 'To be confirmed'),
+        conditions: productInviteDraft.conditions || undefined,
+        description: productInviteDraft.description || undefined,
+        responseWindowDays: productInviteDraft.responseWindowDays ? parseInt(productInviteDraft.responseWindowDays, 10) : undefined,
+        nextSteps: productInviteDraft.nextSteps ? productInviteDraft.nextSteps.split('\n').map((s: string) => s.trim()).filter(Boolean) : [],
+        templateId: productInviteDraft.templateId || undefined,
         contactName: user?.full_name || cfg.userTitle,
         contactRole: cfg.userTitle,
         terms: product ? productTerms(product as Product) : {}

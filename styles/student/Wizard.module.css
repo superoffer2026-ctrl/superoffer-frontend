@@ -188,20 +188,16 @@ a.segment:hover { transform: scaleY(1.6); }
 /* ----------------------------------------------------------------- body */
 
 .body {
-  --wz-side: 300px;
+  --wz-side: 0px;
   --wz-gap: clamp(18px, 2.5vw, 30px);
   --wz-pad: clamp(18px, 3vw, 32px);
   display: grid;
-  grid-template-columns: var(--wz-side) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   gap: var(--wz-gap);
   padding: 22px var(--wz-pad) 0;
 }
 
-.body.is-review {
-  --wz-side: 0px;
-  --wz-gap: 0px;
-  grid-template-columns: 1fr;
-}
+
 .side {
   position: sticky;
   top: 20px;

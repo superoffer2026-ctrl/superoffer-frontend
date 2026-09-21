@@ -642,10 +642,6 @@ export function CoApplicantPanel() {
             </div>
 
             <div className={wz('body')}>
-              <aside className={wz('side')}>
-                <div className={wz('picture')}><WizardIllustration name="funding" /></div>
-                
-              </aside>
 
               <main className={wz('form')}>
                 <div className={cx('journey-step')}>

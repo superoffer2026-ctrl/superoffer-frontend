@@ -127,8 +127,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
   const candidate = selectedOfferItem;
 
   return (
-    <div className={cx('host', 'scene')}>
-      <div className={cx('sky')} aria-hidden="true"><OrganizationScene /></div>
+    <div className={cx('host')}>
 
       <div className={cx('uni-shell')}>
         <div className={cx('uni-scrim', menuOpen && 'show')} onClick={() => setMenuOpen(false)} aria-hidden={!menuOpen} />
@@ -272,7 +271,7 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
                           <p className={cx('reading-course')} style={{ fontSize: 14, margin: 0, color: '#52525b', lineHeight: 1 }}>{candidate.course}</p>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
+                      <div className="candidate-actions-wrap" style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap', justifyContent: 'flex-end', paddingLeft: 12 }}>
                         <button
                           type="button"
                           className={cx('secondary-btn', 'shortlist-action', candidate.status === 'Shortlisted' && 'chosen')}
@@ -302,10 +301,10 @@ export function OrganizationWorkspace(options: WorkspaceOptions) {
     <button
       type="button"
       className={cx('secondary-btn')}
-      style={{ padding: '6px 16px', height: 32, fontSize: 13, fontWeight: 700, color: '#b91c1c', borderColor: '#b91c1c' }}
+      style={{ padding: '6px 12px', height: 32, fontSize: 13, fontWeight: 700, color: '#b91c1c', borderColor: '#b91c1c' }}
       onClick={() => workspace.withdrawInvite(candidate)}
     >
-      Withdraw Invite
+      Withdraw
     </button>
   )}
   
