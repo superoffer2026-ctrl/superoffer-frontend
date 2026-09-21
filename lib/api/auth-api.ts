@@ -76,6 +76,7 @@ const put = (path: string, token: string, payload: ApiPayload) =>
   request(path, { method: 'PUT', headers: bearer(token), body: JSON.stringify(payload) });
 
 export const authApi = {
+  sendRegistrationOtp: (payload: { email: string; fullName: string }) => request('/auth/register/send-otp', { method: 'POST', body: JSON.stringify(payload) }),
   register: (payload: ApiPayload) => request('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
 
   login: (identifier: string, password: string) =>

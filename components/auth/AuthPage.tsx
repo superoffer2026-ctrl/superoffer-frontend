@@ -28,7 +28,7 @@ const EMPTY_FORM: AuthFormState = {
   remember: true
 };
 
-type Step = 'credentials' | 'newPassword';
+type Step = 'credentials' | 'newPassword' | 'otp';
 
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
   const router = useRouter();
@@ -42,6 +42,8 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   const [step, setStep] = useState<Step>('credentials');
   const [forgotPassword, setForgotPassword] = useState(false);
   const [resetToken, setResetToken] = useState('');
+  const [registerToken, setRegisterToken] = useState('');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState({ password: '', confirm: '' });
 
   const set = <K extends keyof AuthFormState>(key: K, value: AuthFormState[K]) =>
@@ -162,6 +164,32 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
       return;
     }
 
+        if (step === 'otp' && mode === 'register' && isStudent) {
+      if (otp.length < 6) {
+        setError('Please enter the 6-digit code.');
+        return;
+      }
+      try {
+        await authApi.register({
+          email: form.email,
+          password: form.password,
+          fullName: form.fullName || undefined,
+          phone: form.phone || undefined,
+          role: role(),
+          token: registerToken,
+          otp
+        });
+        
+        setMessage('Account created and verified. You can now log in.');
+        setForm(current => ({ ...current, password: '', confirmPassword: '' }));
+        setStep('credentials');
+        router.push('/auth/login/student');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'OTP verification failed.');
+      }
+      return;
+    }
+
     if (mode === 'register') {
       if (!isPasswordValid(form.password)) return;
       if (form.password !== form.confirmPassword) {
@@ -169,6 +197,14 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         return;
       }
       try {
+        if (isStudent) {
+          const res = await authApi.sendRegistrationOtp({ email: form.email, fullName: form.fullName || '' });
+          setRegisterToken(res.token);
+          setStep('otp');
+          setMessage(`An OTP has been sent to ${form.email}.`);
+          return;
+        }
+
         const session = await authApi.register({
           email: form.email,
           password: form.password,
@@ -187,11 +223,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           } : {})
         });
         
-        if (isStudent) {
-          // Immediately login for students
-          const loginSession = await authApi.login(form.email, form.password);
-          await openPortal(loginSession, true);
-        } else {
+        if (!isStudent) {
           setMessage('Account created. Sign in to finish your verification — student data unlocks once an admin approves it.');
           setForm(current => ({ ...current, password: '', confirmPassword: '' }));
           router.push(`/auth/login/${portal}`);
@@ -238,6 +270,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   const subheading = (() => {
     if (step === 'newPassword') return 'Enter a strong password you haven\'t used before.';
     if (forgotPassword) return 'Enter the email address for your account. We\'ll send a reset link.';
+    if (step === 'otp') return 'We have sent a verification code to your email.';
     if (mode === 'register') {
       return isStudent ? 'Fill in your details below to create your profile.' : 'Set up your organization account.';
     }
@@ -268,7 +301,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         <form onSubmit={handleAction} noValidate>
           <Link className="back-link" href={`/${portal === 'student' ? 'students' : portal}`}>← Back to {portalLabel}</Link>
           <span className="eyebrow">
-            {step === 'credentials' && mode === 'register' ? 'Account registration' : 'Secure sign in'}
+            {step === 'otp' ? 'Verify your email' : (step === 'credentials' && mode === 'register' ? 'Account registration' : 'Secure sign in')}
           </span>
           <h2>{heading}</h2>
           <p>{subheading}</p>
@@ -315,6 +348,16 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
                   onChange={event => set('confirmPassword', event.target.value)} />
               </label>
               <div className="full">{passwordProblems(form.password)}</div>
+            </div>
+          )}
+
+          {step === 'otp' && mode === 'register' && isStudent && (
+            <div className="form-grid">
+              <label className="full">
+                Verification Code (OTP)
+                <input name="otp" type="text" value={otp} required placeholder="6-digit code" maxLength={6}
+                  onChange={event => setOtp(event.target.value)} style={{ letterSpacing: '0.2em', textAlign: 'center', fontSize: '1.25rem' }} />
+              </label>
             </div>
           )}
 
