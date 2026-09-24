@@ -28,24 +28,6 @@ interface VerificationStatus {
 }
 
 /**
- * The reviewer checks these against the body that issued them, so the field
- * names that body. "Accreditation reference" tells a registrar nothing about
- * which reference is wanted.
- */
-const EVIDENCE: Record<string, { licence: string; licenceHint: string; registrationHint: string }> = {
-  UNIVERSITY: {
-    licence: 'Accreditation / affiliation reference',
-    licenceHint: 'UGC, AICTE, NAAC or the equivalent body in your country',
-    registrationHint: 'As issued by the authority that registered the institution'
-  },
-  BANK: {
-    licence: 'Regulator licence number',
-    licenceHint: 'RBI, or the banking regulator in your country',
-    registrationHint: 'Company or entity registration number'
-  }
-};
-
-/**
  * What an organisation does while it waits.
  *
  * It exists because locking a pending organisation out gave a registrar a
@@ -70,12 +52,9 @@ export function OrganizationVerification() {
     const payload = (await authApi.organizationVerification(token)) as VerificationStatus;
     setStatus(payload);
     setDraft({
-      registrationNumber: payload.organization.registrationNumber || '',
-      licenseReference: payload.organization.licenseReference || '',
       website: payload.organization.website || '',
       country: payload.organization.country || '',
-      city: payload.organization.city || '',
-      description: payload.organization.description || ''
+      city: payload.organization.city || ''
     });
   }, [router]);
 
@@ -117,7 +96,6 @@ export function OrganizationVerification() {
     );
   }
 
-  const evidence = EVIDENCE[status.organization.organizationType] || EVIDENCE.UNIVERSITY;
   const rejected = status.approval_status === 'REJECTED';
 
   return (
@@ -149,13 +127,6 @@ export function OrganizationVerification() {
           </section>
         )}
 
-        {!rejected && !status.complete && (
-          <section className={cx('panel', 'outstanding')}>
-            <strong>Still needed before a review</strong>
-            <ul>{status.missing.map(item => <li key={item}>{item}</li>)}</ul>
-          </section>
-        )}
-
         {!rejected && status.complete && status.approval_status === 'PENDING' && (
           <section className={cx('panel', 'waiting')}>
             <strong>With the admin team</strong>
@@ -175,26 +146,6 @@ export function OrganizationVerification() {
           className={cx('form')}
           onSubmit={event => { event.preventDefault(); void save(true); }}
         >
-          <label className={cx('field')}>
-            <span>Registration number</span>
-            <input
-              name="registrationNumber"
-              value={draft.registrationNumber || ''}
-              placeholder={evidence.registrationHint}
-              onChange={event => set('registrationNumber', event.target.value)}
-            />
-          </label>
-
-          <label className={cx('field')}>
-            <span>{evidence.licence}</span>
-            <input
-              name="licenseReference"
-              value={draft.licenseReference || ''}
-              placeholder={evidence.licenceHint}
-              onChange={event => set('licenseReference', event.target.value)}
-            />
-          </label>
-
           <label className={cx('field', 'wide')}>
             <span>Official website</span>
             <input
@@ -216,16 +167,6 @@ export function OrganizationVerification() {
             <input name="city" value={draft.city || ''} onChange={event => set('city', event.target.value)} />
           </label>
 
-          <label className={cx('field', 'wide')}>
-            <span>Anything the reviewer should know</span>
-            <textarea
-              name="description"
-              rows={3}
-              value={draft.description || ''}
-              placeholder="Optional"
-              onChange={event => set('description', event.target.value)}
-            />
-          </label>
 
           {!!error && <p className={cx('error')}>{error}</p>}
           {!!note && <p className={cx('ok')}>{note}</p>}

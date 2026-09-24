@@ -108,16 +108,12 @@ const hostOf = (value: string) =>
 function evidenceGaps(row: {
   email?: string;
   organization?: {
-    registrationNumber?: string | null;
-    licenseReference?: string | null;
     website?: string | null;
     country?: string | null;
   } | null;
 }) {
   const org = row.organization;
   const missing = [
-    !org?.registrationNumber && 'registration number',
-    !org?.licenseReference && 'accreditation / licence reference',
     !org?.website && 'official website',
     !org?.country && 'country'
   ].filter(Boolean) as string[];
@@ -660,8 +656,6 @@ export function AdminPage() {
                       </header>
                       <dl>
                         <div><dt>Organisation type</dt><dd>{selected.organization?.organizationType || roleLabel(selected.role)}</dd></div>
-                        <div><dt>Registration number</dt><dd>{selected.organization?.registrationNumber || 'Not provided'}</dd></div>
-                        <div><dt>Accreditation / licence</dt><dd>{selected.organization?.licenseReference || 'Not provided'}</dd></div>
                         <div><dt>Website</dt><dd>{selected.organization?.website || 'Not provided'}</dd></div>
                         <div><dt>Location</dt><dd>{location(selected)}</dd></div>
                         <div><dt>Phone</dt><dd>{selected.phone || 'Not provided'}</dd></div>
@@ -674,7 +668,7 @@ export function AdminPage() {
                           return (
                             <section className={cx('evidence')}>
                               <strong>Verification evidence</strong>
-                              <p>Confirm the registration and accreditation/licence references against the issuing authority before approval.</p>
+                              <p>Confirm the organization details against the official website before approval.</p>
                             </section>
                           );
                         }
