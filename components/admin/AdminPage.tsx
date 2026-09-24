@@ -10,7 +10,6 @@ import { AdminAutomation } from './AdminAutomation';
 import { AdminAdmissions } from './AdminAdmissions';
 import { AdminBilling } from './AdminBilling';
 import { AdminFormBuilder } from './AdminFormBuilder';
-import { PasswordInput } from '@/components/shared/PasswordInput';
 
 const cx = classNames(styles);
 
@@ -211,9 +210,7 @@ const NAV_GROUPS: Array<{ title: string; items: Array<{ view: AdminView; label: 
 ];
 
 export function AdminPage() {
-  const [adminKey, setAdminKey] = useState('admin-token');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [adminKey, setAdminKey] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -265,16 +262,11 @@ export function AdminPage() {
     setLoading(true);
     setError('');
     try {
-      let token = existingToken;
-      if (!token) {
-        const session = await authApi.login(email, password);
-        if (session.role !== 'SUPER_ADMIN') throw new Error('Not an admin account');
-        token = session.access_token || '';
-        setAdminKey(token as string);
-      }
-      await load(token as string);
+      const token = existingToken || adminKey;
+      if (!token) throw new Error('An approval key is required');
+      await load(token);
       setAuthenticated(true);
-      writeSession('superoffer_admin_key', token as string);
+      writeSession('superoffer_admin_key', token);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Admin access failed.');
       setAuthenticated(false);
@@ -282,7 +274,7 @@ export function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [email, password, load]);
+  }, [adminKey, load]);
 
   useEffect(() => {
     const saved = readSession('superoffer_admin_key') || '';
@@ -464,14 +456,9 @@ export function AdminPage() {
             <p>Connect using the protected approval key configured for platform operations.</p>
             <form onSubmit={event => { event.preventDefault(); void connect(); }}>
               <label>
-                Email
-                <input type="email" required autoComplete="username"
-                  value={email} onChange={event => setEmail(event.target.value)} />
-              </label>
-              <label>
-                Password
-                <PasswordInput name="password" required autoComplete="current-password"
-                  value={password} onChange={event => setPassword(event.target.value)} />
+                Admin Approval Key
+                <input type="password" required autoFocus
+                  value={adminKey} onChange={event => setAdminKey(event.target.value)} />
               </label>
               {error && <p className={cx('message', 'error')}>{error}</p>}
               <button className={cx('primary', 'wide')} disabled={loading}>

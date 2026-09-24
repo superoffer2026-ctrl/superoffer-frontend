@@ -488,11 +488,11 @@ export const authApi = {
 
   // ── Admin ──
 
-  adminStats: (adminKey: string) => request('/admin/stats', { headers: { authorization: `Bearer ${adminKey}` } }),
+  adminStats: (adminKey: string) => request('/admin/stats', { headers: { 'x-admin-key': adminKey } }),
 
   adminAuthLogs: (adminKey: string, query: Record<string, string> = {}) => {
     const search = new URLSearchParams(Object.entries(query).filter(([, value]) => value)).toString();
-    return request(`/admin/auth-logs${search ? `?${search}` : ''}`, { headers: { authorization: `Bearer ${adminKey}` } });
+    return request(`/admin/auth-logs${search ? `?${search}` : ''}`, { headers: { 'x-admin-key': adminKey } });
   },
 
   // ── Form builder ──
@@ -509,110 +509,110 @@ export const authApi = {
 
   adminFormVersions: (adminKey: string, variant = 'DEFAULT', form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   adminFormDraft: (adminKey: string, variant = 'DEFAULT', form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/draft?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   adminSaveFormDraft: (adminKey: string, variant: string, definition: unknown, label?: string, form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/draft?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
       method: 'PUT',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({ definition, label })
     }),
 
   adminResetFormDraft: (adminKey: string, variant: string, form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/draft/reset?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   /** What publishing the current draft would break. */
   adminFormImpact: (adminKey: string, variant = 'DEFAULT', form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/impact?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   adminPublishForm: (adminKey: string, variant: string, acknowledge = false, form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/publish?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({ acknowledge, actor: 'super-admin' })
     }),
 
   adminRestoreForm: (adminKey: string, variant: string, version: number, form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/restore/${version}?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   adminFormHealth: (adminKey: string, variant = 'DEFAULT', form = 'STUDENT_PROFILE') =>
     request(`/admin/form-schema/health?variant=${encodeURIComponent(variant)}&form=${encodeURIComponent(form)}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   /** Every rule, plus the triggers and placeholders an admin can write against. */
   adminAutomation: (adminKey: string) =>
-    request('/admin/automation', { headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/automation', { headers: { 'x-admin-key': adminKey } }),
 
   adminCreateAutomationRule: (adminKey: string, rule: unknown) =>
     request('/admin/automation', {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify(rule)
     }),
 
   adminUpdateAutomationRule: (adminKey: string, id: string, rule: unknown) =>
     request(`/admin/automation/${id}`, {
       method: 'PATCH',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify(rule)
     }),
 
   adminDeleteAutomationRule: (adminKey: string, id: string) =>
-    request(`/admin/automation/${id}`, { method: 'DELETE', headers: { authorization: `Bearer ${adminKey}` } }),
+    request(`/admin/automation/${id}`, { method: 'DELETE', headers: { 'x-admin-key': adminKey } }),
 
   /** The named lists every dropdown draws from, with which fields use each. */
   adminOptionSets: (adminKey: string) =>
-    request('/admin/form-schema/option-sets', { headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/form-schema/option-sets', { headers: { 'x-admin-key': adminKey } }),
 
   /** Who would be left holding a value, asked before it is removed. */
   adminOptionSetImpact: (adminKey: string, key: string, values: string[]) =>
     request(`/admin/form-schema/option-sets/${encodeURIComponent(key)}/impact`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({ values })
     }),
 
   adminSaveOptionSet: (adminKey: string, key: string, payload: ApiPayload) =>
     request(`/admin/form-schema/option-sets/${encodeURIComponent(key)}`, {
       method: 'PATCH',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify(payload)
     }),
 
   /** What a condition may read, and which comparisons each field allows. */
   adminAutomationFields: (adminKey: string) =>
-    request('/admin/automation/fields', { headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/automation/fields', { headers: { 'x-admin-key': adminKey } }),
 
   /** Students who accepted an offer, for the team to follow up. */
   adminAdmissions: (adminKey: string, status?: string) =>
     request(`/admin/admissions${status ? `?status=${encodeURIComponent(status)}` : ''}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   /** One acceptance in full: the offer, who sent it, and the student. */
   adminAdmissionDetail: (adminKey: string, offerId: string) =>
-    request(`/admin/admissions/${offerId}`, { headers: { authorization: `Bearer ${adminKey}` } }),
+    request(`/admin/admissions/${offerId}`, { headers: { 'x-admin-key': adminKey } }),
 
   /** What the team found when they checked with the university. */
   adminRecordAdmission: (adminKey: string, offerId: string, body: { status: string; note: string }) =>
     request(`/admin/admissions/${offerId}`, {
       method: 'PATCH',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify(body)
     }),
 
@@ -620,44 +620,44 @@ export const authApi = {
   adminPurgeAdmission: (adminKey: string, offerId: string) =>
     request(`/admin/admissions/${offerId}/purge`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({})
     }),
 
   /** Which channels exist and whether each is configured to actually send. */
   adminAutomationChannels: (adminKey: string) =>
-    request('/admin/automation/channels', { headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/automation/channels', { headers: { 'x-admin-key': adminKey } }),
 
   /** What a rule has actually done lately, per channel, newest first. */
   adminAutomationDeliveries: (adminKey: string, ruleId: string) =>
-    request(`/admin/automation/${ruleId}/deliveries`, { headers: { authorization: `Bearer ${adminKey}` } }),
+    request(`/admin/automation/${ruleId}/deliveries`, { headers: { 'x-admin-key': adminKey } }),
 
   /** What a condition means in English, and whether it means anything at all. */
   adminExplainCondition: (adminKey: string, condition: unknown) =>
     request('/admin/automation/explain', {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({ condition })
     }),
 
   /** What is waiting to be sent, and what was skipped and why. */
   adminScheduledAutomation: (adminKey: string) =>
-    request('/admin/automation/scheduled', { headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/automation/scheduled', { headers: { 'x-admin-key': adminKey } }),
 
   adminRunScheduledAutomation: (adminKey: string) =>
-    request('/admin/automation/scheduled/run', { method: 'POST', headers: { authorization: `Bearer ${adminKey}` } }),
+    request('/admin/automation/scheduled/run', { method: 'POST', headers: { 'x-admin-key': adminKey } }),
 
   /** Renders a body against a sample offer, so wording is checked before it is saved. */
   adminPreviewAutomation: (adminKey: string, body: string) =>
     request('/admin/automation/preview', {
       method: 'POST',
-      headers: { authorization: `Bearer ${adminKey}`, 'content-type': 'application/json' },
+      headers: { 'x-admin-key': adminKey, 'content-type': 'application/json' },
       body: JSON.stringify({ body })
     }),
 
   adminRegistrations: (adminKey: string, status = 'PENDING', orgType = 'ALL') =>
     request(`/admin/registrations?status=${encodeURIComponent(status)}&org_type=${encodeURIComponent(orgType)}`, {
-      headers: { authorization: `Bearer ${adminKey}` }
+      headers: { 'x-admin-key': adminKey }
     }),
 
   reviewRegistration: (
@@ -669,7 +669,7 @@ export const authApi = {
   ) =>
     request(`/admin/users/${encodeURIComponent(userId)}/approval`, {
       method: 'PATCH',
-      headers: { authorization: `Bearer ${adminKey}` },
+      headers: { 'x-admin-key': adminKey },
       body: JSON.stringify({
         approval_status: approvalStatus,
         rejection_reason: rejectionReason,
@@ -679,28 +679,28 @@ export const authApi = {
 
   // ── Subscriptions, sold and settled offline ───────────────────────────────
 
-  adminBilling: (adminKey: string) => request('/admin/billing', { headers: { authorization: `Bearer ${adminKey}` } }),
+  adminBilling: (adminKey: string) => request('/admin/billing', { headers: { 'x-admin-key': adminKey } }),
 
   adminCreateSubscription: (
     adminKey: string,
     payload: { organizationId: string; plan: string; periodStart: string; periodEnd: string; amount: number; currency?: string; note?: string }
-  ) => request('/admin/billing/subscriptions', { method: 'POST', headers: { authorization: `Bearer ${adminKey}` }, body: JSON.stringify(payload) }),
+  ) => request('/admin/billing/subscriptions', { method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify(payload) }),
 
   /** The money arrived by transfer or cheque; this writes down that it did. */
   adminMarkSubscriptionPaid: (adminKey: string, id: string, payload: { paymentRef?: string; recordedBy?: string }) =>
     request(`/admin/billing/subscriptions/${encodeURIComponent(id)}/paid`, {
-      method: 'POST', headers: { authorization: `Bearer ${adminKey}` }, body: JSON.stringify(payload)
+      method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify(payload)
     }),
 
   adminSetSubscriptionStatus: (adminKey: string, id: string, status: string) =>
     request(`/admin/billing/subscriptions/${encodeURIComponent(id)}`, {
-      method: 'PATCH', headers: { authorization: `Bearer ${adminKey}` }, body: JSON.stringify({ status })
+      method: 'PATCH', headers: { 'x-admin-key': adminKey }, body: JSON.stringify({ status })
     }),
 
   adminSetOrganizationSuspension: (adminKey: string, organizationId: string, suspended: boolean, reason?: string) =>
     request(`/admin/billing/organizations/${encodeURIComponent(organizationId)}/suspension`, {
-      method: 'POST', headers: { authorization: `Bearer ${adminKey}` }, body: JSON.stringify({ suspended, reason })
+      method: 'POST', headers: { 'x-admin-key': adminKey }, body: JSON.stringify({ suspended, reason })
     }),
 
-  adminAuditLog: (adminKey: string) => request('/admin/audit-log?limit=100', { headers: { authorization: `Bearer ${adminKey}` } })
+  adminAuditLog: (adminKey: string) => request('/admin/audit-log?limit=100', { headers: { 'x-admin-key': adminKey } })
 };
