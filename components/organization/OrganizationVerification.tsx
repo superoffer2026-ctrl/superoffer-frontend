@@ -114,8 +114,7 @@ export function OrganizationVerification() {
           <span className={cx('eyebrow')}>VERIFICATION</span>
           <h1>Finish verifying {status.organization.name}</h1>
           <p>
-            Your workspace opens as soon as an admin approves this. Until then you can sign in and
-            work on it — no student profiles are visible to anyone who has not been verified.
+            Add a few basic details so our team can review your organization.
           </p>
         </section>
 
@@ -147,14 +146,14 @@ export function OrganizationVerification() {
           onSubmit={event => { event.preventDefault(); void save(true); }}
         >
           <label className={cx('field', 'wide')}>
-            <span>Official website</span>
+            <span>Official website (Optional)</span>
             <input
               name="website"
               value={draft.website || ''}
               placeholder="www.example.edu"
               onChange={event => set('website', event.target.value)}
             />
-            <small>A reviewer checks that your sign-in address belongs to this domain.</small>
+            
           </label>
 
           <label className={cx('field')}>

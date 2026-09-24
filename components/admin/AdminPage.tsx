@@ -110,12 +110,13 @@ function evidenceGaps(row: {
   organization?: {
     website?: string | null;
     country?: string | null;
+    city?: string | null;
   } | null;
 }) {
   const org = row.organization;
   const missing = [
-    !org?.website && 'official website',
-    !org?.country && 'country'
+    !org?.country && 'country',
+    !row.organization?.city && 'city'
   ].filter(Boolean) as string[];
 
   const emailDomain = hostOf((row.email || '').split('@')[1] || '');
