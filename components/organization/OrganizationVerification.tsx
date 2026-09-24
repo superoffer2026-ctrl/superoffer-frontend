@@ -133,14 +133,6 @@ export function OrganizationVerification() {
           </section>
         )}
 
-        {/* Not a blocker, but the reviewer will see it, so say so now. */}
-        {!!status.notes.length && (
-          <section className={cx('panel', 'note')}>
-            <strong>Worth knowing</strong>
-            <ul>{status.notes.map(item => <li key={item}>{item}</li>)}</ul>
-          </section>
-        )}
-
         <form
           className={cx('form')}
           onSubmit={event => { event.preventDefault(); void save(true); }}
