@@ -278,7 +278,8 @@ export function useOrganizationWorkspace({ page, tab, studentId }: WorkspaceOpti
          * the page where it can actually do something instead of loading a
          * shell full of empty panels.
          */
-        if (account.approval_status && account.approval_status !== 'APPROVED') {
+        const approvalStatus = account.approval_status || account.organization?.approval_status;
+        if (approvalStatus && approvalStatus !== 'APPROVED') {
           router.replace('/organization/verification');
           return;
         }
