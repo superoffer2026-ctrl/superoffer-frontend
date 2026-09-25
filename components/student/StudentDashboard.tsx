@@ -69,10 +69,10 @@ export function StudentDashboard() {
     if (!token) return;
     await authApi.saveStudentFinancial(token, { needsLoan: 'yes' });
     await profile.refresh();
-    router.push('/student/co-applicant');
+    router.push('/student/loan-eligibility');
   };
   const openLoan = () => {
-    if (bankState === 'progress') { router.push('/student/co-applicant'); return; }
+    if (bankState === 'progress') { router.push('/student/loan-eligibility'); return; }
     void startLoan();
   };
 

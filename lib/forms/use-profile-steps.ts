@@ -15,9 +15,7 @@ import { loadFormSchema } from './use-form-schema';
  * hook, read by the wizard, the step guard and anything else that walks the
  * steps alike.
  */
-export const SECTION_APPLIES: Record<string, (answers: { needsLoan: string }) => boolean> = {
-  coApplicant: ({ needsLoan }) => needsLoan === 'yes'
-};
+export const SECTION_APPLIES: Record<string, (answers: { needsLoan: string }) => boolean> = {};
 
 export const sectionApplies = (sectionKey: string, needsLoan: string) =>
   SECTION_APPLIES[sectionKey] ? SECTION_APPLIES[sectionKey]({ needsLoan }) : true;

@@ -1,10 +1,6 @@
-import { CoApplicantPanel } from '@/components/student/CoApplicantPanel';
-import styles from '@/styles/student/Wizard.module.css';
+import { redirect } from 'next/navigation';
 
+/** No longer a wizard step — the parent/guardian details now live on the dashboard's loan flow. */
 export default function CoApplicantPage() {
-  return (
-    <div className={styles.host}>
-      <CoApplicantPanel wizard />
-    </div>
-  );
+  redirect('/student/loan-eligibility');
 }
