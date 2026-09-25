@@ -224,9 +224,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         });
         
         if (!isStudent) {
-          setMessage('Account created. Sign in to finish your verification — student data unlocks once an admin approves it.');
-          setForm(current => ({ ...current, password: '', confirmPassword: '' }));
-          router.push(`/auth/login/${portal}`);
+          await openPortal(session, true);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not submit your registration.');
