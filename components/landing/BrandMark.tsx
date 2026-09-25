@@ -29,7 +29,7 @@ export function BrandMark({ size = 32, wordmark = true, tone = 'light', gradient
         alt="SuperOffer" 
         width={size} 
         height={size} 
-        style={{ display: 'block', borderRadius: size * (9/32) }} 
+        style={{ display: 'block' }} 
       />
       {wordmark ? (
         <b className={cx('word')} aria-hidden="true">
