@@ -660,8 +660,6 @@
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: #064e3b;
-  color: #6ee7b7;
   font-size: 20px;
   font-weight: 800;
 }
