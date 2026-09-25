@@ -278,7 +278,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   })();
 
   const rememberField = (
-    <label className="checkbox-field checkbox-field-tight remember-device">
+    <label className="remember">
       <input type="checkbox" checked={form.remember} onChange={e => set('remember', e.target.checked)} />
       Stay signed in on this device
     </label>
