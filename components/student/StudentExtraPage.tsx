@@ -8,6 +8,7 @@ import { readAccessToken } from '@/lib/storage';
 import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
 import { useStore } from '@/lib/stores/observable-store';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
+import { useRouter } from 'next/navigation';
 import styles from '@/styles/StudentExtraPage.module.css';
 import { CoApplicantPanel } from './CoApplicantPanel';
 import { StudentWorkspaceShell } from './StudentWorkspaceShell';
@@ -61,6 +62,7 @@ const SKY: Record<ExtraPageKey, [string, string, string]> = {
 
 export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
   const profile = useStudentProfile();
+  const router = useRouter();
   const wallet = useStore(offerWalletStore);
 
   const [query, setQuery] = useState('');
@@ -91,7 +93,10 @@ export function StudentExtraPage({ page }: { page: ExtraPageKey }) {
     await profile.refresh();
   };
 
-  const chooseWantsLoan = (value: boolean) => void writeFinancial({ needsLoan: value ? 'yes' : 'no' });
+  const chooseWantsLoan = async (value: boolean) => {
+    await writeFinancial({ needsLoan: value ? 'yes' : 'no' });
+    if (value) router.push('/student/co-applicant');
+  };
 
   const title = TITLES[page] || 'Student workspace';
   const description = DESCRIPTIONS[page] || '';

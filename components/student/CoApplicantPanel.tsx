@@ -7,6 +7,7 @@ import { classNames } from '@/lib/cx';
 import { useSectionFields } from '@/lib/forms/use-section-fields';
 import { clearAccessToken, readAccessToken } from '@/lib/storage';
 import { useStudentProfile } from '@/lib/stores/student-profile.store';
+import { useNextStepPath } from '@/lib/forms/use-profile-steps';
 import styles from '@/styles/CoApplicant.module.css';
 import wizardStyles from '@/styles/student/Wizard.module.css';
 import { LOAN_COPY } from '@/lib/models/loan-journey-copy';
@@ -111,7 +112,8 @@ const SHIELD_ICON = icon('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/
  * The student stays the user throughout. Reached from the dashboard's loan flow
  * rather than as an onboarding step, since filling this in is opt-in.
  */
-export function CoApplicantPanel() {
+export function CoApplicantPanel({ wizard }: { wizard?: boolean } = {}) {
+  const nextStep = useNextStepPath('co-applicant');
   const profile = useStudentProfile();
   const router = useRouter();
 
@@ -586,9 +588,9 @@ export function CoApplicantPanel() {
                       <button
                         type="button"
                         className={cx('journey-btn', 'primary')}
-                        onClick={() => router.push('/student/offers')}
+                        onClick={() => router.push(wizard ? nextStep() : '/student/offers')}
                       >
-                        View funding opportunities
+                        {wizard ? 'Continue to next step' : 'View funding opportunities'}
                       </button>
                     ) : (
                       <button
@@ -605,9 +607,9 @@ export function CoApplicantPanel() {
                       <button
                         type="button"
                         className={cx('journey-btn', 'quiet')}
-                        onClick={() => router.push('/student/dashboard')}
+                        onClick={() => router.push(wizard ? nextStep() : '/student/dashboard')}
                       >
-                        Skip for now
+                        {wizard ? 'Skip and continue' : 'Skip for now'}
                       </button>
                     )}
                   </div>

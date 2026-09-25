@@ -15,6 +15,7 @@ export const STUDENT_PROFILE_STEPS: StudentProfileStep[] = [
   { path: 'competitive-exam', title: 'Competitive Exam', description: 'GRE or GMAT', icon: '05', completionKey: 'competitiveExam' },
   { path: 'work-experience', title: 'Work Experience', description: 'Relevant and non-relevant experience', icon: '06', completionKey: 'workExperience' },
   { path: 'financial-information', title: 'Financial Information', description: 'Funding and financial background', icon: '07', completionKey: 'financialInformation' },
+  { path: 'co-applicant', title: 'Parent or Guardian', description: 'The co-applicant on an education loan', icon: '08', completionKey: 'coApplicant' },
   { path: 'projects', title: 'Projects & Achievements', description: 'Experience and recognition', icon: '08', completionKey: 'projectsAchievements' },
   { path: 'review', title: 'Review Profile', description: 'Review all sections', icon: '09' }
 ];
