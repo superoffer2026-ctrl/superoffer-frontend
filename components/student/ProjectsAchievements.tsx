@@ -202,7 +202,7 @@ export function ProjectsAchievements() {
       finalAchievements.push(cleanAchievement);
     }
 
-    const actuallyInvalid = finalLinks.length === 0 || finalAchievements.length === 0 || projects.some(
+    const actuallyInvalid = projects.some(
       project => !!rows.missingIn(project as unknown as Record<string, unknown>).length
     );
 
@@ -382,12 +382,6 @@ export function ProjectsAchievements() {
             <p className={cx('tag-empty-hint')}>No achievements added yet — type your own or pick a suggestion above.</p>
           )}
 
-          {submitted && links.length === 0 && !linkDraft.trim() && (
-            <p className={cx('save-message', 'error')}>Please add at least one social presence link.</p>
-          )}
-          {submitted && achievements.length === 0 && !achievementDraft.trim() && (
-            <p className={cx('save-message', 'error')}>Please add at least one achievement.</p>
-          )}
           {submitted && projects.some(p => !!rows.missingIn(p as any).length) && (
             <p className={cx('save-message', 'error')}>Please fix the highlighted fields before continuing.</p>
           )}
