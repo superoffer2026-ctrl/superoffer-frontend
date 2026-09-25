@@ -441,7 +441,7 @@ export function AdminPage() {
     <div className={cx('host')}>
       <main className={cx('admin-shell')}>
         <header className={cx('topbar')}>
-          <Link className={cx('brand')} href="/"><span>S</span>SuperOffer</Link>
+          <Link className={cx('brand')} href="/"><img src="/superoffer-brand-mark.png" alt="SuperOffer" width={38} height={38} style={{borderRadius: 10}} />SuperOffer</Link>
           <small>Platform administration</small>
           {authenticated && <button onClick={signOut}>Sign out</button>}
         </header>

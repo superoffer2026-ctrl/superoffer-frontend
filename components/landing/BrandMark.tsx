@@ -24,32 +24,13 @@ export interface BrandMarkProps {
 export function BrandMark({ size = 32, wordmark = true, tone = 'light', gradientId = 'so-mark' }: BrandMarkProps) {
   return (
     <span className={cx('brand', tone === 'dark' && 'onDark')}>
-      <svg
-        className={cx('mark')}
-        width={size}
-        height={size}
-        viewBox="0 0 32 32"
-        fill="none"
-        role="img"
-        aria-label="SuperOffer"
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#065F46" />
-            <stop offset="1" stopColor="#10B981" />
-          </linearGradient>
-        </defs>
-        <rect width="32" height="32" rx="9" fill={`url(#${gradientId})`} />
-        <circle cx="16" cy="21" r="3" fill="#fff" />
-        <path d="M10.46 17.8a6.4 6.4 0 0 1 11.08 0" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        <path
-          d="M6.82 15.7a10.6 10.6 0 0 1 18.36 0"
-          stroke="#fff"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          opacity="0.55"
-        />
-      </svg>
+      <img 
+        src="/superoffer-brand-mark.png" 
+        alt="SuperOffer" 
+        width={size} 
+        height={size} 
+        style={{ display: 'block', borderRadius: size * (9/32) }} 
+      />
       {wordmark ? (
         <b className={cx('word')} aria-hidden="true">
           Super<em>Offer</em>

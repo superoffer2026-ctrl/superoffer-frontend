@@ -287,7 +287,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
   return (
     <main className="auth-layout">
       <aside className="auth-aside">
-        <Link className="brand light-brand" href="/"><span>S</span>SuperOffer</Link>
+        <Link className="brand light-brand" href="/"><img src="/superoffer-brand-mark.png" alt="SuperOffer" width={38} height={38} style={{borderRadius: 10}} />SuperOffer</Link>
         <div>
           <span className="eyebrow light">{portalLabel} account</span>
           <h1>{mode === 'login' ? 'Welcome back to your workspace.' : authTitle}</h1>

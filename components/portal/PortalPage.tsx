@@ -65,7 +65,7 @@ export function PortalPage({ portal }: { portal: string }) {
   return (
     <main className="workspace">
       <aside>
-        <Link className="brand light-brand" href="/"><span>S</span>SuperOffer</Link>
+        <Link className="brand light-brand" href="/"><img src="/superoffer-brand-mark.png" alt="SuperOffer" width={38} height={38} style={{borderRadius: 10}} />SuperOffer</Link>
         <nav>
           <a className="active">Overview</a>
           <a>Profile</a>
