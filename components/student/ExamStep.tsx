@@ -266,25 +266,23 @@ export function ExamStep({ config }: { config: ExamStepConfig }) {
             </div>
           )}
 
-          {!attended && (
-            <div className={cx('qualification-question')}>
-              <h2>
-                {fields.labelOf('attended', config.question)}
-                {fields.isRequired('attended', true) && <span className={cx('required-mark')}> *</span>}
-              </h2>
-              <div className={cx('choice-grid')}>
-                <button type="button" className={cx('choice-card')} onClick={() => onAttendedClick('Yes')}>
-                  <span className={cx('choice-icon')}>✓</span>
-                  <span><strong>Yes</strong><small>{fields.hintFor('attended', 'Yes', config.yesHint)}</small></span>
-                </button>
-                <button type="button" className={cx('choice-card')} onClick={() => onAttendedClick('No')}>
-                  <span className={cx('choice-icon')}>–</span>
-                  <span><strong>No</strong><small>{fields.hintFor('attended', 'No', config.noHint)}</small></span>
-                </button>
-              </div>
-              {(attendedTouched || submitted) && !attended && <small className={cx('field-error')}>Select an option</small>}
+          <div className={cx('qualification-question')}>
+            <h2>
+              {fields.labelOf('attended', config.question)}
+              {fields.isRequired('attended', true) && <span className={cx('required-mark')}> *</span>}
+            </h2>
+            <div className={cx('choice-grid')}>
+              <button type="button" className={cx('choice-card', attended === 'Yes' && 'active')} onClick={() => onAttendedClick('Yes')}>
+                <span className={cx('choice-icon')}>✓</span>
+                <span><strong>Yes</strong><small>{fields.hintFor('attended', 'Yes', config.yesHint)}</small></span>
+              </button>
+              <button type="button" className={cx('choice-card', attended === 'No' && 'active')} onClick={() => onAttendedClick('No')}>
+                <span className={cx('choice-icon')}>–</span>
+                <span><strong>No</strong><small>{fields.hintFor('attended', 'No', config.noHint)}</small></span>
+              </button>
             </div>
-          )}
+            {(attendedTouched || submitted) && !attended && <small className={cx('field-error')}>Select an option</small>}
+          </div>
 
           <div className={cx('reveal-section', attended === 'Yes' && 'open')}>
             <div className={cx('exam-category-card')}>

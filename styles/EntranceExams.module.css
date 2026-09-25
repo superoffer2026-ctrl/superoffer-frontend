@@ -156,6 +156,15 @@
   border-color: var(--slate-900);
   background: var(--slate-50);
 }
+.choice-card.active {
+  border-color: var(--slate-900);
+  background: var(--slate-50);
+}
+.choice-card.active .choice-icon {
+  background: var(--slate-900);
+  color: #fff;
+}
+
 
 .choice-icon {
   width: 36px;
