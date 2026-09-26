@@ -1,0 +1,21 @@
+--- superoffer-frontend/components/student/StudentDashboard.tsx
++++ superoffer-frontend/components/student/StudentDashboard.tsx
+@@ -46,20 +46,14 @@
+       <div className={cx('content')}>
+         <div className={cx('heroWrapper')}>
+           <div className={cx('heroBgContainer')}>
+-            <div className={cx('heroBgWave')} />
+             <div className={cx('heroBgImage')} />
+           </div>
+ 
+           <Reveal className={cx('hero')}>
+             <div className={cx('heroTextContainer')}>
+-              <svg className={cx('heroPaperPlane')} viewBox="0 0 150 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+-                <path d="M40 70 C60 20, 100 10, 130 30" stroke="#059669" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+-                <path d="M125 25 L145 20 L135 40 Z" fill="#059669" />
+-                <path d="M128 28 L142 22 L134 38 Z" fill="#ecfdf5" />
+-              </svg>
+               
+               <span className={cx('eyebrow')} data-i style={{ '--i': 0 } as React.CSSProperties}>
+                 SUPER OFFER
+               </span>

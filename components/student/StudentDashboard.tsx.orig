@@ -1,0 +1,198 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { Icon } from '@/components/landing/Icon';
+import { Reveal } from '@/components/landing/Reveal';
+import { authApi } from '@/lib/api/auth-api';
+import { classNames } from '@/lib/cx';
+import { STUDENT_PROFILE_STEPS } from '@/lib/models/student-portal';
+import { readAccessToken, readSession, writeSession } from '@/lib/storage';
+import { StudentWorkspaceShell } from './StudentWorkspaceShell';
+import { offerWalletStore } from '@/lib/stores/offer-wallet.store';
+import { useStore } from '@/lib/stores/observable-store';
+import { useStudentProfile } from '@/lib/stores/student-profile.store';
+import styles from '@/styles/student/Dashboard.module.css';
+
+const cx = classNames(styles);
+
+const WIZARD_STEPS = STUDENT_PROFILE_STEPS.filter(step => step.completionKey);
+
+export function StudentDashboard() {
+  const profile = useStudentProfile();
+  const walletStore = useStore(offerWalletStore);
+  const router = useRouter();
+
+  const isSubmitted = profile.isSubmitted;
+  const { completionPercent, sections } = profile.completion;
+  const firstName = profile.fullName.split(/\s+/)[0];
+
+  useEffect(() => {
+    void walletStore.load();
+  }, [walletStore]);
+
+  const doneOf = (key: string) => sections.find(s => s.key === key)?.done ?? false;
+  const doneCount = WIZARD_STEPS.filter(s => doneOf(s.completionKey as string)).length;
+
+  const roadmap = WIZARD_STEPS
+    .filter(step => !doneOf(step.completionKey as string))
+    .map(step => ({ route: `/student/${step.path}` }));
+  const nextRoute = roadmap[0]?.route || '/student/personal-information';
+
+  return (
+    <StudentWorkspaceShell backdrop="canvas" frame="bare">
+      <div className={cx('content')}>
+        <div className={cx('heroWrapper')}>
+          <div className={cx('heroBgContainer')}>
+            <div className={cx('heroBgWave')} />
+            <div className={cx('heroBgImage')} />
+          </div>
+
+          <Reveal className={cx('hero')}>
+            <div className={cx('heroTextContainer')}>
+              <svg className={cx('heroPaperPlane')} viewBox="0 0 150 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 70 C60 20, 100 10, 130 30" stroke="#059669" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+                <path d="M125 25 L145 20 L135 40 Z" fill="#059669" />
+                <path d="M128 28 L142 22 L134 38 Z" fill="#ecfdf5" />
+              </svg>
+              
+              <span className={cx('eyebrow')} data-i style={{ '--i': 0 } as React.CSSProperties}>
+                SUPER OFFER
+              </span>
+              <div className={cx('heroGreeting')} data-i style={{ '--i': 1 } as React.CSSProperties}>Hey {firstName},</div>
+              <h1 data-i style={{ '--i': 2 } as React.CSSProperties}>
+                Your future,<span>finds you here.</span>
+              </h1>
+              <p className={cx('heroLede')} data-i style={{ '--i': 3 } as React.CSSProperties}>
+                Universities. Banks. Opportunities.<br />All in one place.
+              </p>
+              <div className={cx('heroActions')} data-i style={{ '--i': 4 } as React.CSSProperties}>
+                <Link className={cx('btn', 'em')} href={isSubmitted ? "/student/review" : nextRoute}>
+                  {isSubmitted ? 'View Your Profile' : 'Complete Your Profile'} <Icon name="arrow-right" size={17} />
+                </Link>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal>
+          <div className={cx('blockHead')}>
+            <div>
+              <span className={cx('eyebrowPlain')}>YOUR NEXT STEP</span>
+              <h2>Explore Opportunities</h2>
+            </div>
+            <Link href="/student/offers" className={cx('viewAll')}>View all <Icon name="arrow-right" size={16}/></Link>
+          </div>
+          <div className={cx('grid4')}>
+            <Link href="/student/saved-universities" className={cx('oppCard')}>
+              <div className={cx('oppImg')}>
+                <img src="/dashboard/card-uni.jpg" alt="University" />
+                <div className={cx('oppIcon')}><Icon name="school" size={20} /></div>
+              </div>
+              <div className={cx('oppBody')}>
+                <div className={cx('oppTitleRow')}>
+                  <h3>University Offers</h3>
+                  <Icon name="arrow-right" size={16} className={cx('oppArrow')} />
+                </div>
+                <p>Top universities, global programs</p>
+              </div>
+            </Link>
+            <Link href="/student/loan-eligibility" className={cx('oppCard')}>
+              <div className={cx('oppImg')}>
+                <img src="/dashboard/card-bank.jpg" alt="Bank" />
+                <div className={cx('oppIcon')}><Icon name="bank" size={20} /></div>
+              </div>
+              <div className={cx('oppBody')}>
+                <div className={cx('oppTitleRow')}>
+                  <h3>Bank Loans</h3>
+                  <Icon name="arrow-right" size={16} className={cx('oppArrow')} />
+                </div>
+                <p>Get funds for your dreams</p>
+                <div className={cx('oppBadge')}><Icon name="bolt" size={12}/> 24h</div>
+              </div>
+            </Link>
+            <Link href="/student/saved-universities" className={cx('oppCard')}>
+              <div className={cx('oppImg')}>
+                <img src="/dashboard/card-plane.jpg" alt="Study Abroad" />
+                <div className={cx('oppIcon')}><Icon name="globe" size={20} /></div>
+              </div>
+              <div className={cx('oppBody')}>
+                <div className={cx('oppTitleRow')}>
+                  <h3>Study Abroad</h3>
+                  <Icon name="arrow-right" size={16} className={cx('oppArrow')} />
+                </div>
+                <p>Your global journey</p>
+              </div>
+            </Link>
+            <Link href="/student/offers" className={cx('oppCard')}>
+              <div className={cx('oppImg')}>
+                <img src="/dashboard/card-invite.jpg" alt="Quick Invite" />
+                <div className={cx('oppIcon')}><Icon name="sparkle" size={20} /></div>
+              </div>
+              <div className={cx('oppBody')}>
+                <div className={cx('oppTitleRow')}>
+                  <h3>Quick Invite</h3>
+                  <Icon name="arrow-right" size={16} className={cx('oppArrow')} />
+                </div>
+                <p>Match with the right programs</p>
+              </div>
+            </Link>
+          </div>
+        </Reveal>
+
+        <Reveal className={cx('lowerGrid')}>
+          <div className={cx('loanBanner')}>
+            <div className={cx('loanBannerBg')}>
+              <img src="/dashboard/banner-loan.jpg" alt="Loan Banner" />
+            </div>
+            <div className={cx('loanBannerContent')}>
+              <span className={cx('loanBannerEyebrow')}><Icon name="bolt" size={14}/> PRIORITY SERVICE</span>
+              <h2 className={cx('loanBannerTitle')}>Bank Loans in <span>24 Hours</span></h2>
+              <p className={cx('loanBannerDesc')}>Get pre-approved and move closer to your dream.</p>
+              <Link href="/student/loan-eligibility" className={cx('btn', 'em-dark')}>Check Eligibility <Icon name="arrow-right" size={16} /></Link>
+            </div>
+          </div>
+          <div className={cx('recentActivity')}>
+            <div className={cx('blockHead')} style={{ marginBottom: 0 }}>
+              <h2 style={{ fontSize: 18, marginTop: 0 }}>Recent Activity</h2>
+              <Link href="#" className={cx('viewAll')} style={{ fontSize: 12 }}>View all <Icon name="arrow-right" size={14}/></Link>
+            </div>
+            <div className={cx('activityList')}>
+              <div className={cx('activityItem')}>
+                <div className={cx('activityIcon')}><Icon name="mail" size={18} /></div>
+                <div className={cx('activityBody')}>
+                  <div className={cx('activityText')}>
+                    <b>You received an invite</b>
+                    <span>University of Melbourne</span>
+                  </div>
+                  <div className={cx('activityTime')}>2h ago</div>
+                </div>
+              </div>
+              <div className={cx('activityItem')}>
+                <div className={cx('activityIcon')}><Icon name="award" size={18} /></div>
+                <div className={cx('activityBody')}>
+                  <div className={cx('activityText')}>
+                    <b>Offer shortlisted</b>
+                    <span>Monash University</span>
+                  </div>
+                  <div className={cx('activityTime')}>5h ago</div>
+                </div>
+              </div>
+              <div className={cx('activityItem')}>
+                <div className={cx('activityIcon')}><Icon name="badge" size={18} /></div>
+                <div className={cx('activityBody')}>
+                  <div className={cx('activityText')}>
+                    <b>Profile updated</b>
+                    <span>Academic details</span>
+                  </div>
+                  <div className={cx('activityTime')}>1d ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </StudentWorkspaceShell>
+  );
+}
