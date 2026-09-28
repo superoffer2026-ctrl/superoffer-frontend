@@ -59,6 +59,10 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
       setResetToken(token);
       setStep('newPassword');
     }
+    const prefillEmail = searchParams.get('email');
+    if (prefillEmail) {
+      setForm(current => ({ ...current, email: prefillEmail }));
+    }
   }, [searchParams]);
 
   const portalLabel = portal.charAt(0).toUpperCase() + portal.slice(1);
@@ -448,7 +452,7 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           {step === 'credentials' && !forgotPassword && (
             <p className="switch">
               {mode === 'login' ? 'New to SuperOffer?' : 'Already registered?'}{' '}
-              <Link href={`/auth/${mode === 'login' ? 'register' : 'login'}/${portal}`}>
+              <Link href={`/auth/${mode === 'login' ? 'register' : 'login'}/${portal}${form.email ? `?email=${encodeURIComponent(form.email)}` : ''}`}>
                 {mode === 'login' ? 'Create an account' : 'Log in'}
               </Link>
             </p>
