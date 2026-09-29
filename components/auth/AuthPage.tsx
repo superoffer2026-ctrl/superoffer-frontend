@@ -28,7 +28,7 @@ const EMPTY_FORM: AuthFormState = {
   remember: true
 };
 
-type Step = 'credentials' | 'newPassword' | 'otp';
+type Step = 'credentials' | 'newPassword' | 'otp' | 'pendingApproval';
 
 export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) {
   const router = useRouter();
@@ -229,10 +229,9 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         
         if (!isStudent) {
           if (session.approval_status === 'PENDING') {
-            setMessage('Your organization registration is pending Super Admin approval. We will email you once approved.');
+            setMessage('');
             setForm(current => ({ ...current, password: '', confirmPassword: '' }));
-            setStep('credentials');
-            router.push('/auth/login/organization');
+            setStep('pendingApproval');
             return;
           }
           await openPortal(session, true);
@@ -452,9 +451,25 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
           {message && <p className="form-message success">{message}</p>}
           {error && <p className="form-message error">{error}</p>}
 
-          <button type="submit" className="button primary wide-button" disabled={loading}>
-            {loading ? 'Please wait…' : buttonLabel}
-          </button>
+          {step === 'pendingApproval' && (
+            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⏳</div>
+              <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>Waiting for Admin Approval</h2>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Your organization registration has been submitted successfully. 
+                Our admin team is currently reviewing your application.
+              </p>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '1rem' }}>
+                We will email you once your account has been approved and you can log in.
+              </p>
+            </div>
+          )}
+
+          {step !== 'pendingApproval' && (
+            <button type="submit" className="button primary wide-button" disabled={loading}>
+              {loading ? 'Please wait…' : buttonLabel}
+            </button>
+          )}
 
           {step === 'credentials' && !forgotPassword && (
             <p className="switch">
