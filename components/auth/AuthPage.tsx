@@ -228,6 +228,13 @@ export function AuthPage({ mode, portal }: { mode: string; portal: PortalKey }) 
         });
         
         if (!isStudent) {
+          if (session.approval_status === 'PENDING') {
+            setMessage('Your organization registration is pending Super Admin approval. We will email you once approved.');
+            setForm(current => ({ ...current, password: '', confirmPassword: '' }));
+            setStep('credentials');
+            router.push('/auth/login/organization');
+            return;
+          }
           await openPortal(session, true);
         }
       } catch (e) {
